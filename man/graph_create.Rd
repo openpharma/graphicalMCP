@@ -101,7 +101,7 @@ transitions <- rbind(
   H3 = c(0, 1, 0, 0),
   H4 = c(1, 0, 0, 0)
 )
-\dontrun{
+\try{
 g <- graph_create(hypotheses, transitions)
 }
 

@@ -4,10 +4,10 @@
   "identifier": "graphicalMCP",
   "description": "Multiple comparison procedures (MCPs) control the familywise error rate in clinical trials. Graphical MCPs include many commonly used procedures as special cases; see Bretz et al. (2011) <doi:10.1002/bimj.201000239>, Lu (2016) <doi:10.1002/sim.6985>, and Xi et al. (2017) <doi:10.1002/bimj.201600233>. This package is a low-dependency implementation of graphical MCPs which allow mixed types of tests. It also includes power simulations and visualization of graphical MCPs.",
   "name": "graphicalMCP: Graphical Multiple Comparison Procedures",
-  "codeRepository": "https://github.com/Gilead-BioStats/graphicalMCP",
-  "issueTracker": "https://github.com/Gilead-BioStats/graphicalMCP/issues",
+  "codeRepository": "https://github.com/openpharma/graphicalMCP",
+  "issueTracker": "https://github.com/openpharma/graphicalMCP/issues",
   "license": "Apache License 2",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
@@ -330,10 +330,10 @@
         }
       ],
       "name": "{graphicalMCP}: Graphical multiple comparison procedures",
-      "url": "https://github.com/Gilead-BioStats/graphicalMCP"
+      "url": "https://github.com/openpharma/graphicalMCP"
     }
   ],
-  "relatedLink": "https://gilead-biostats.github.io/graphicalMCP/",
-  "releaseNotes": "https://github.com/Gilead-BioStats/graphicalMCP/blob/master/NEWS.md",
-  "readme": "https://github.com/Gilead-BioStats/graphicalMCP/blob/main/README.md"
+  "relatedLink": "https://github.com/openpharma/graphicalMCP",
+  "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/master/NEWS.md",
+  "readme": "https://github.com/openpharma/graphicalMCP/blob/main/README.md"
 }

@@ -41,3 +41,8 @@
 
 * Updated adjust_weights_parametric_util.Rd
 * Resubmission for first CRAN release
+
+# graphicalMCP 0.2.6
+
+* Github repo transferred to openpharma
+* Submission for CRAN release

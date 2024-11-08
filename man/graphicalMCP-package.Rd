@@ -13,8 +13,8 @@ Multiple comparison procedures (MCPs) control the familywise error rate in clini
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://gilead-biostats.github.io/graphicalMCP/}
-  \item Report bugs at \url{https://github.com/Gilead-BioStats/graphicalMCP/issues}
+  \item \url{https://github.com/openpharma/graphicalMCP}
+  \item Report bugs at \url{https://github.com/openpharma/graphicalMCP/issues}
 }
 
 }

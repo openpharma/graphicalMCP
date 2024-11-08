@@ -4,7 +4,7 @@ bibentry(
   "manual",
   title   = "{graphicalMCP}: Graphical multiple comparison procedures",
   author  = as.person("Dong Xi and Ethan Brockmann"),
-  edition = "version 0.2.5",
+  edition = "version 0.2.6",
   year    = 2024,
-  url     = "https://github.com/Gilead-BioStats/graphicalMCP"
+  url     = "https://CRAN.R-project.org/package=graphicalMCP"
 )

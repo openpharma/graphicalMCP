@@ -2,12 +2,20 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
 
+[![Project Status: Active – The project has reached a stable, usable
+state and is being actively
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/graphicalMCP)](https://cran.r-project.org/package=graphicalMCP)
+[![CRAN monthly
+downloads](https://cranlogs.r-pkg.org/badges/graphicalMCP)](https://cranlogs.r-pkg.org/badges/graphicalMCP)
+[![CRAN total
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/graphicalMCP)](https://cranlogs.r-pkg.org/badges/grand-total/graphicalMCP)
+<!-- [![Code Coverage](https://raw.githubusercontent.com/openpharma/graphicalMCP/_xml_coverage_reports/data/main/badge.svg)](https://openpharma.github.io/graphicalMCP/latest-tag/coverage-report/) -->
 
 <!-- badges: end -->
 
-# graphicalMCP <a href="https://gilead-biostats.github.io/graphicalMCP/"><img src="man/figures/logo.png" align="right" height="139" /></a>
+# graphicalMCP <a href="https://openpharma.github.io/graphicalMCP/"><img src="man/figures/logo.png" align="right" height="139" /></a>
 
 # Introduction
 
@@ -21,12 +29,21 @@ efficient way.
 
 # Installation
 
-`graphicalMCP` is currently not on CRAN but can be installed from GitHub
-using the following code:
+### Release
+
+You can install the current release version from *CRAN* with:
+
+``` r
+install.packages("graphicalMCP")
+```
+
+### Development
+
+You can install the current development version from *GitHub* with:
 
 ``` r
 # install.packages("pak")
-pak::pak("Gilead-BioStats/graphicalMCP")
+pak::pak("openpharma/graphicalMCP")
 ```
 
 # Documentation
@@ -46,10 +63,10 @@ pak::pak("Gilead-BioStats/graphicalMCP")
         the closure and the weighting strategy of a graph
     -   see `vignette("comparisons")` for comparisons to other R
         packages
--   To view vignettes in R after properly installing `graphicalMCP` from
-    GitHub, we can build vignettes by
-    `devtools::install(build_vignettes = TRUE)`, and then use
-    `browseVignettes("graphicalMCP")` to view the full list of vignettes
+-   To view vignettes in R after properly installing `graphicalMCP`, we
+    can build vignettes by `devtools::install(build_vignettes = TRUE)`,
+    and then use `browseVignettes("graphicalMCP")` to view the full list
+    of vignettes
 
 # Related work
 
@@ -70,7 +87,7 @@ for their suggestions and inspirations on the package:
 
 Frank Bretz, Willi Maurer, Ekkehard Glimm, Nan Chen, Jeremy Wildfire,
 Spencer Childress, Colleen McLaughlin, Matt Roumaya, Chelsea Dickens,
-and Ron Yu
+Nan Xiao, Keaven Anderson, and Ron Yu
 
 We owe a debt of gratitude to the authors of
 [gMCP](https://cran.r-project.org/package=gMCP) for their pioneering

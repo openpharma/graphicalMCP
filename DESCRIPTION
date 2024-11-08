@@ -1,7 +1,7 @@
 Type: Package
 Package: graphicalMCP
 Title: Graphical Multiple Comparison Procedures
-Version: 0.2.5
+Version: 0.2.6
 Authors@R: c(
     person("Dong", "Xi", , "dong.xi1@gilead.com", role = c("aut", "cre")),
     person("Ethan", "Brockmann", , "ethan.brockmann@atorusresearch.com", role = "aut"),
@@ -15,8 +15,8 @@ Description: Multiple comparison procedures (MCPs) control the familywise error
     implementation of graphical MCPs which allow mixed types of tests. It also
     includes power simulations and visualization of graphical MCPs.
 License: Apache License (>= 2)
-URL: https://gilead-biostats.github.io/graphicalMCP/
-BugReports: https://github.com/Gilead-BioStats/graphicalMCP/issues
+URL: https://github.com/openpharma/graphicalMCP
+BugReports: https://github.com/openpharma/graphicalMCP/issues
 Depends:
     R (>= 4.1.0)
 Imports: 
