@@ -1,5 +1,5 @@
 pandoc: 3.1.11
-pkgdown: 2.1.0
+pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   closed-testing: closed-testing.html
@@ -9,7 +9,7 @@ articles:
   graph-examples: graph-examples.html
   graphicalMCP: graphicalMCP.html
   shortcut-testing: shortcut-testing.html
-last_built: 2024-07-11T22:02Z
+last_built: 2024-11-08T20:25Z
 urls:
-  reference: https://gilead-biostats.github.io/graphicalMCP/reference
-  article: https://gilead-biostats.github.io/graphicalMCP/articles
+  reference: https://openpharma.github.io/graphicalMCP/reference
+  article: https://openpharma.github.io/graphicalMCP/articles
