@@ -1,3 +1,12 @@
+# Version 0.2.6
+
+- This is the sixth submission to CRAN.
+  + Updated links since the repository has been moved to openpharma
+
+## R CMD check results
+
+0 errors | 0 warnings | 0 notes
+
 # Version 0.2.5
 
 - This is the fifth submission to CRAN.
