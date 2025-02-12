@@ -8,7 +8,8 @@
 #' hypothesis. Additional adjustment is needed for parametric and Simes tests:
 #' * Parametric tests for [adjust_weights_parametric()],
 #'     - Note that one-sided tests are required for parametric tests.
-#' * Simes tests for [adjust_weights_simes()].
+#' * Simes tests for [adjust_weights_simes()],
+#' * Hochberg tests for [adjust_weights_hocberg()].
 #'
 #' @param matrix_weights (Optional) A matrix of hypothesis weights of all
 #'   intersection hypotheses. This can be obtained as the second half of columns
@@ -48,10 +49,14 @@
 #' * [adjust_weights_simes()] returns a matrix with the same
 #'   dimensions as `matrix_weights`, whose hypothesis weights have been
 #'   adjusted according to Simes tests.
+#' * [adjust_weights_hochberg()] returns a matrix with the same
+#'   dimensions as `matrix_weights`, whose hypothesis weights have been
+#'   adjusted according to Hochberg tests.
 #'
 #' @seealso
 #'   [adjust_p_parametric()] for adjusted p-values using parametric tests,
-#'   [adjust_p_simes()] for adjusted p-values using Simes tests.
+#'   [adjust_p_simes()] for adjusted p-values using Simes tests,
+#'   [adjust_p_hochberg()] for adjusted p-values using Hochberg tests.
 #'
 #' @rdname adjust_weights
 #'
@@ -64,6 +69,10 @@
 #'   Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
 #'   for weighted parametric multiple test procedures.
 #'   \emph{Biometrical Journal}, 59(5), 918-931.
+#'
+#'   Xi, D., and Bretz, F. (2019). Symmetric graphs for equally weighted tests,
+#'   with application to the Hochberg procedure. \emph{Statistics in Medicine},
+#'   38(27), 5268-5282.
 #'
 #' @examples
 #' alpha <- 0.025
@@ -147,6 +156,38 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
       matrix_weights[, ordered_p %in% test_groups[[i]], drop = FALSE],
       useNames = TRUE
     )
+  }
+
+  do.call(cbind, group_adjusted_weights)
+}
+
+#' @rdname adjust_weights
+#' @export
+#' @examples
+#' alpha <- 0.025
+#' p <- c(0.018, 0.01, 0.105, 0.006)
+#' num_hyps <- length(p)
+#' g <- bonferroni_holm(rep(1 / 4, 4))
+#' weighting_strategy <- graph_generate_weights(g)
+#' matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
+#' matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
+#'
+#' adjust_weights_hochberg(
+#'   matrix_weights = matrix_weights,
+#'   p = p,
+#'   test_groups = list(1:4)
+#' )
+adjust_weights_hochberg <- function(matrix_weights, p, test_groups) {
+  ordered_p <- order(p)
+
+  matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
+
+  group_adjusted_weights <- vector("list", length(test_groups))
+  for (i in seq_along(test_groups)) {
+    temp <- matrix_weights[, ordered_p %in% test_groups[[i]], drop = FALSE]
+    group_adjusted_weights[[i]] <- rowSums(temp) /
+      matrix(rep(dim(temp)[2] - seq_len(dim(temp)[2]) + 1, dim(temp)[1]),
+             ncol = dim(temp)[2], byrow = T, dimnames = dimnames(temp))
   }
 
   do.call(cbind, group_adjusted_weights)

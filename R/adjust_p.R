@@ -9,7 +9,8 @@
 #' * Bonferroni tests for [adjust_p_bonferroni()],
 #' * Parametric tests for [adjust_p_parametric()],
 #'     - Note that one-sided tests are required for parametric tests.
-#' * Simes tests for [adjust_p_simes()].
+#' * Simes tests for [adjust_p_simes()],
+#' * Hochberg tests for [adjust_p_hochberg()].
 #'
 #' @param p A numeric vector of p-values (unadjusted, raw), whose values should
 #'   be between 0 & 1. The length should match the length of `hypotheses`.
@@ -35,7 +36,8 @@
 #' @seealso
 #'   [adjust_weights_parametric()] for adjusted hypothesis weights using
 #'   parametric tests, [adjust_weights_simes()] for adjusted hypothesis weights
-#'   using Simes tests.
+#'   using Simes tests, [adjust_weights_hochberg()] for adjusted hypothesis
+#'   weights using Hochberg tests.
 #'
 #' @rdname adjust_p
 #'
@@ -52,6 +54,10 @@
 #'   Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
 #'   for weighted parametric multiple test procedures.
 #'   \emph{Biometrical Journal}, 59(5), 918-931.
+#'
+#'   Xi, D., and Bretz, F. (2019). Symmetric graphs for equally weighted tests,
+#'   with application to the Hochberg procedure. \emph{Statistics in Medicine},
+#'   38(27), 5268-5282.
 #'
 #' @examples
 #' hypotheses <- c(H1 = 0.5, H2 = 0.25, H3 = 0.25)
@@ -149,6 +155,47 @@ adjust_p_simes <- function(p, hypotheses) {
     adjusted_p <- min(
       adjusted_p,
       p[[i]] / sum(hypotheses[p <= p[[i]]]),
+      na.rm = TRUE
+    )
+  }
+
+  round(adjusted_p, 10)
+}
+
+#' @rdname adjust_p
+#' @export
+#' @examples
+#' hypotheses <- c(H1 = 0.5, H2 = 0.25, H3 = 0.25)
+#' p <- c(0.019, 0.025, 0.05)
+#' adjust_p_hochberg(p, hypotheses)
+adjust_p_hochberg <- function(p, hypotheses) {
+  if (sum(hypotheses) == 0) {
+    return(Inf)
+  }
+
+  adjusted_p <- Inf
+  for (i in seq_along(hypotheses)) {
+    # This demonstrates a different and slightly more accurate way of
+    # calculating Hochberg adjusted weights/adjusted p-values compared to the
+    # method used in [adjust_weights_hochberg()]. In this function (and
+    # [test_values_hochberg()]), we count how many hypotheses with
+    # a smaller p-value than hypothesis_j, for all j in J. In the case that two
+    # p-values are identical, the corresponding hypotheses will get identical
+    # adjusted weights/adjusted p-values. [adjust_weights_hochberg()], on the
+    # other hand, uses an alternate method that's faster: First order hypotheses
+    # according to their p-values in ascending order, then take the cumulative
+    # sum. In the case that two p-values are identical, they will be sorted
+    # sequentially, and the hypothesis that happens to come first will get a
+    # smaller, incorrect adjusted weight (larger, incorrect adjusted p-value).
+    # The hypothesis that comes second will be correct. [adjust_weights_hochberg()]
+    # is only used in power calculations where it should not be possible to have
+    # identical p-values, since they are sampled randomly (unless `all(test_corr
+    # == 1)`). Furthermore, even when there are incorrect adjusted weights, it
+    # cannot affect the hypothesis rejections. See Bonferroni function above for
+    # na.rm reasoning.
+    adjusted_p <- min(
+      adjusted_p,
+      p[[i]] / sum(hypotheses) * (length(hypotheses) - sum(p <= p[[i]]) + 1),
       na.rm = TRUE
     )
   }
