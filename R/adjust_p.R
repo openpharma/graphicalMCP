@@ -165,8 +165,8 @@ adjust_p_simes <- function(p, hypotheses) {
 #' @rdname adjust_p
 #' @export
 #' @examples
-#' hypotheses <- c(H1 = 0.5, H2 = 0.25, H3 = 0.25)
-#' p <- c(0.019, 0.025, 0.05)
+#' hypotheses <- c(H1 = .25, H2 = .25, H3 = 0.25, H4 = 0.25)
+#' p <- c(0.019, 0.025, 0.05, .05)
 #' adjust_p_hochberg(p, hypotheses)
 adjust_p_hochberg <- function(p, hypotheses) {
   if (sum(hypotheses) == 0) {
@@ -178,16 +178,16 @@ adjust_p_hochberg <- function(p, hypotheses) {
     # This demonstrates a different and slightly more accurate way of
     # calculating Hochberg adjusted weights/adjusted p-values compared to the
     # method used in [adjust_weights_hochberg()]. In this function (and
-    # [test_values_hochberg()]), we count how many hypotheses with
-    # a smaller p-value than hypothesis_j, for all j in J. In the case that two
-    # p-values are identical, the corresponding hypotheses will get identical
-    # adjusted weights/adjusted p-values. [adjust_weights_hochberg()], on the
-    # other hand, uses an alternate method that's faster: First order hypotheses
-    # according to their p-values in ascending order, then take the cumulative
-    # sum. In the case that two p-values are identical, they will be sorted
-    # sequentially, and the hypothesis that happens to come first will get a
-    # smaller, incorrect adjusted weight (larger, incorrect adjusted p-value).
-    # The hypothesis that comes second will be correct. [adjust_weights_hochberg()]
+    # [test_values_hochberg()]), we count how many hypotheses with a smaller
+    # p-value than hypothesis_j, for all j in J. In the case that two p-values
+    # are identical, the corresponding hypotheses will get identical adjusted
+    # weights/adjusted p-values. [adjust_weights_hochberg()], on the other hand,
+    # uses an alternate method that's faster: First order hypotheses according
+    # to their p-values in ascending order, then take the cumulative sum. In the
+    # case that two p-values are identical, they will be sorted sequentially,
+    # and the hypothesis that happens to come first will get a smaller,
+    # incorrect adjusted weight (larger, incorrect adjusted p-value). The
+    # hypothesis that comes second will be correct. [adjust_weights_hochberg()]
     # is only used in power calculations where it should not be possible to have
     # identical p-values, since they are sampled randomly (unless `all(test_corr
     # == 1)`). Furthermore, even when there are incorrect adjusted weights, it

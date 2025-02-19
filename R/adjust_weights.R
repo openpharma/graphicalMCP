@@ -187,7 +187,43 @@ adjust_weights_hochberg <- function(matrix_weights, p, test_groups) {
     temp <- matrix_weights[, ordered_p %in% test_groups[[i]], drop = FALSE]
     group_adjusted_weights[[i]] <- rowSums(temp) /
       matrix(rep(dim(temp)[2] - seq_len(dim(temp)[2]) + 1, dim(temp)[1]),
-             ncol = dim(temp)[2], byrow = T, dimnames = dimnames(temp))
+             ncol = dim(temp)[2], byrow = TRUE, dimnames = dimnames(temp))
+  }
+
+  do.call(cbind, group_adjusted_weights)
+}
+
+adjust_weights_hochberg2 <- function(matrix_weights, p, test_groups) {
+  ordered_p <- order(p)
+
+  matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
+
+  group_adjusted_weights <- vector("list", length(test_groups))
+  for (i in seq_along(test_groups)) {
+    temp <- matrix_weights[, ordered_p %in% test_groups[[i]], drop = FALSE]
+    group_adjusted_weights[[i]] <- matrixStats::rowSums2(temp) /
+      matrix(rep(dim(temp)[2] - seq_len(dim(temp)[2]) + 1, dim(temp)[1]),
+             ncol = dim(temp)[2], byrow = TRUE, dimnames = dimnames(temp))
+  }
+
+  do.call(cbind, group_adjusted_weights)
+}
+
+adjust_weights_hochberg3 <- function(matrix_weights, p, test_groups) {
+  ordered_p <- order(p)
+
+  matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
+
+  group_adjusted_weights <- vector("list", length(test_groups))
+  nrow <- nrow(matrix_weights)
+  for (i in seq_along(test_groups)) {
+    temp <- matrix_weights[, ordered_p %in% test_groups[[i]], drop = FALSE]
+
+    ncol <- length(test_groups[[i]])
+
+    group_adjusted_weights[[i]] <- matrixStats::rowSums2(temp) /
+      matrix(rep(ncol - seq_len(ncol) + 1, nrow),
+             ncol = ncol, byrow = TRUE, dimnames = dimnames(temp))
   }
 
   do.call(cbind, group_adjusted_weights)

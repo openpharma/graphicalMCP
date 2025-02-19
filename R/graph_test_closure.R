@@ -173,9 +173,11 @@ graph_test_closure <- function(graph,
     bonferroni = "bonferroni",
     parametric = "parametric",
     simes = "simes",
+    hochberg = "hochberg",
     b = "bonferroni",
     p = "parametric",
-    s = "simes"
+    s = "simes",
+    h = "hochberg"
   )
   test_types <- test_opts[tolower(test_types)]
   names(test_types) <- test_types_names
@@ -283,6 +285,11 @@ graph_test_closure <- function(graph,
           p[group_by_intersection],
           vec_weights[group_by_intersection]
         )
+      } else if (test == "hochberg") {
+        adjusted_p[[intersection_index, group_index]] <- adjust_p_hochberg(
+          p[group_by_intersection],
+          vec_weights[group_by_intersection]
+        )
       } else if (test == "parametric") {
         adjusted_p[[intersection_index, group_index]] <- adjust_p_parametric(
           p[group_by_intersection],
@@ -362,6 +369,13 @@ graph_test_closure <- function(graph,
           )
         } else if (test == "simes") {
           test_values_list[[test_values_index]] <- test_values_simes(
+            p[group_by_intersection],
+            vec_weights[group_by_intersection],
+            alpha,
+            str_intersection
+          )
+        } else if (test == "hochberg") {
+          test_values_list[[test_values_index]] <- test_values_hochberg(
             p[group_by_intersection],
             vec_weights[group_by_intersection],
             alpha,
