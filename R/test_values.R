@@ -134,23 +134,24 @@ test_values_hochberg <- function(p, hypotheses, alpha, intersection = NA) {
     NULL
   } else {
     vec_res <- vector(length = length(hypotheses))
-    w_sum <- vector("numeric", length = length(hypotheses))
+    w_quo <- vector("numeric", length = length(hypotheses))
+    total_weight <- sum(hypotheses)
 
     for (i in seq_along(hypotheses)) {
-      w_sum[[i]] <- sum(hypotheses[p <= p[[i]]])
-      vec_res[[i]] <- p[[i]] <= alpha * w_sum[[i]]
+      w_quo[[i]] <- total_weight / sum(p <= p[[i]])
+      vec_res[[i]] <- p[[i]] <= alpha * w_quo[[i]]
     }
 
     data.frame(
       Intersection = intersection,
       Hypothesis = names(hypotheses),
-      Test = "simes",
+      Test = "hochberg",
       p = p,
       "c_value" = "",
-      "Weight" = w_sum,
+      "Weight" = w_quo,
       Alpha = alpha,
       Inequality_holds = ifelse(
-        p == 0 & w_sum == 0,
+        p == 0 & w_quo == 0,
         NA,
         vec_res
       ),
