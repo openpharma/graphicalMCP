@@ -81,7 +81,7 @@ test_input_val <- function(graph,
     "Alpha must be numeric" = is.numeric(alpha),
     "Please choose a single alpha level for testing" = length(alpha) == 1,
     "Alpha must be between 0 & 1" = alpha >= 0 && alpha <= 1,
-    "Only Bonferroni, parametric, and Simes tests are currently supported" =
+    "Only Bonferroni, parametric, Simes, or Hochberg tests are currently supported" =
       all(test_types %in% test_opts),
     "Groups specification must be a list" = is.list(test_groups),
     "Please include each hypothesis in exactly one group" =
@@ -144,6 +144,39 @@ test_input_val <- function(graph,
     "Correlation matrix must be positive definite for parametric test groups" =
       positive_definite_corr
   )
+
+  # Additional Hochberg checks -------------------------------------------------
+  if (is.null(names(test_types))) {
+    groups_hochberg <- test_groups[test_types == "hochberg"]
+  } else {
+    groups_hochberg <- test_groups[names(test_types)[test_types == "hochberg"]]
+  }
+
+  num_hyps <- length(graph$hypotheses)
+  weighting_strategy <- graph_generate_weights(graph)
+  matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
+  matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
+  weighting_strategy_compact <- ifelse(
+    matrix_intersections,
+    matrix_weights,
+    NA_real_
+  )
+
+  hochberg_weights_all_equal <- TRUE
+  for (row in seq_len(nrow(weighting_strategy_compact))) {
+    for (group in groups_hochberg) {
+      hypotheses <- weighting_strategy_compact[row, group, drop = TRUE]
+      hypotheses <- hypotheses[!is.na(hypotheses)]
+
+      hypotheses_all_equal <- length(unique(hypotheses)) <= 1
+
+      hochberg_weights_all_equal <-
+        hochberg_weights_all_equal && hypotheses_all_equal
+    }
+  }
+
+  stopifnot("Each Hochberg group must have uniform weights in all subgraphs" =
+              hochberg_weights_all_equal)
 
   invisible(graph)
 }
