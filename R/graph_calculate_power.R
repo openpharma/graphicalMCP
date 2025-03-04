@@ -178,9 +178,11 @@ graph_calculate_power <- function(graph,
     bonferroni = "bonferroni",
     parametric = "parametric",
     simes = "simes",
+    hochberg = "hochberg",
     b = "bonferroni",
     p = "parametric",
-    s = "simes"
+    s = "simes",
+    h = "hochberg"
   )
   test_types <- test_opts[tolower(test_types)]
   names(test_types) <- test_types_names
@@ -330,6 +332,23 @@ graph_calculate_power <- function(graph,
     # for each test type
     p_sim_simes <- p_sim[, unlist(groups_simes), drop = FALSE]
 
+    # Separate Hochberg weighting strategy -------------------------------------
+    # All Simes comments apply to Hochberg
+    groups_hochberg <- test_groups[test_types == "hochberg", drop = FALSE]
+
+    matrix_weights_hochberg <-
+      matrix_weights[, unlist(groups_hochberg), drop = FALSE]
+
+    matrix_intersections_hochberg <-
+      matrix_intersections[, unlist(groups_hochberg), drop = FALSE]
+
+    groups_hochberg_reduce <- lapply(
+      groups_hochberg,
+      function(group) which(unlist(groups_hochberg) %in% group)
+    )
+
+    p_sim_hochberg <- p_sim[, unlist(groups_hochberg), drop = FALSE]
+
     # Apply closure testing to each simulation ---------------------------------
     for (row in seq_len(sim_n)) {
       # If there are no Simes groups, adjusted weights are the Simes weighting
@@ -353,6 +372,19 @@ graph_calculate_power <- function(graph,
         # testing
       }
 
+      # All Simes comments apply to similar lines for Hochberg
+      if (length(groups_hochberg) == 0) {
+        adjusted_weights_hochberg <- matrix_weights_hochberg
+      } else {
+        adjusted_weights_hochberg <- adjust_weights_hochberg(
+          matrix_weights_hochberg,
+          matrix_intersections_hochberg,
+          p_sim_hochberg[row, ],
+          groups_hochberg_reduce
+        )
+
+      }
+
       # `graph_test_closure_fast()` requires hypotheses, p-values, and the
       # intersections matrix to all have hypotheses/columns in the same order.
       # P-values and the intersections matrix are already in the original order,
@@ -360,12 +392,13 @@ graph_calculate_power <- function(graph,
       adjusted_weights_all <- cbind(
         adjusted_weights_bonferroni,
         adjusted_weights_simes,
+        adjusted_weights_hochberg,
         adjusted_weights_parametric
       )[, hyp_names, drop = FALSE]
 
       # Similar to Simes adjusted weights, the optimized testing function
       # requires missing values to be replaced by zero. This line also replaces
-      # the incorrect Simes adjusted weights with zero.
+      # the incorrect Simes and Hochberg adjusted weights with zero.
       adjusted_weights_all[!matrix_intersections] <- 0
 
       # Record test results for one simulation, all groups
