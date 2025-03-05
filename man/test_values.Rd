@@ -4,6 +4,7 @@
 \alias{test_values_bonferroni}
 \alias{test_values_parametric}
 \alias{test_values_simes}
+\alias{test_values_hochberg}
 \title{Organize outputs for testing an intersection hypothesis}
 \usage{
 test_values_bonferroni(p, hypotheses, alpha, intersection = NA)
@@ -11,6 +12,8 @@ test_values_bonferroni(p, hypotheses, alpha, intersection = NA)
 test_values_parametric(p, hypotheses, alpha, intersection = NA, test_corr)
 
 test_values_simes(p, hypotheses, alpha, intersection = NA)
+
+test_values_hochberg(p, hypotheses, alpha, intersection = NA)
 }
 \arguments{
 \item{p}{A numeric vector of p-values (unadjusted, raw), whose values should

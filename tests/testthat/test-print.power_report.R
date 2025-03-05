@@ -5,7 +5,8 @@ test_that("printing Bonferroni power - sequential", {
   expect_snapshot(graph_calculate_power(g, sim_n = 5, verbose = TRUE))
 
   set.seed(51223)
-  expect_snapshot(print(graph_calculate_power(g, sim_n = 100), indent = 6, precision = 3))
+  expect_snapshot(print(graph_calculate_power(g, sim_n = 100),
+                        indent = 6, precision = 3))
 })
 
 test_that("printing Simes power", {
@@ -28,7 +29,8 @@ test_that("printing parametric power", {
 
   set.seed(51223)
   expect_snapshot(
-    graph_calculate_power(g, test_types = "p", sim_n = 100, test_corr = list(diag(4)))
+    graph_calculate_power(g, test_types = "p", sim_n = 100,
+                          test_corr = list(diag(4)))
   )
 
   set.seed(51223)

@@ -46,11 +46,11 @@ Adjust edges by adding an entry with name \verb{"vertex1|vertex2}, and adjust
 default edge pairs curvature by adding an entry with name \code{"pairs"} -
 \code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
 
-\item{precision}{An integer scalar indicating the number of decimal places
-to to display.}
+\item{precision}{An integer scalar indicating the number of decimal places to
+to display.}
 
-\item{eps}{A numeric scalar. The transition weight of \code{eps} will be
-displayed as \eqn{\epsilon}, which indicates edges with infinitesimally small
+\item{eps}{A numeric scalar. The transition weight of \code{eps} will be displayed
+as \eqn{\epsilon}, which indicates edges with infinitesimally small
 weights. See Bretz et al. (2009) for more details.}
 
 \item{background_color}{A character scalar specifying a background color for
@@ -65,17 +65,17 @@ An object x of class \code{initial_graph}, after plotting the initial
 graph.
 }
 \description{
-The plot of an \code{initial_graph} translates the \code{hypotheses} into vertices and
-\code{transitions} into edges to create a network plot. Vertices are labeled with
-hypothesis names and hypothesis weights, and edges are labeled with
-transition weights. See \code{vignette("graph-examples")} for more illustration
-of commonly used multiple comparison procedure using graphs.
+The plot of an \code{initial_graph} translates the \code{hypotheses} into
+vertices and \code{transitions} into edges to create a network plot. Vertices are
+labeled with hypothesis names and hypothesis weights, and edges are labeled
+with transition weights. See \code{vignette("graph-examples")} for more
+illustration of commonly used multiple comparison procedure using graphs.
 }
 \section{Customization of graphs}{
-
-There are a few values for \code{\link[igraph:plot.igraph]{igraph::plot.igraph()}} that get their defaults
-changed for graphicalMCP. These values can still be changed by passing them
-as arguments to \code{plot.initial_graph()}. Here are the new defaults:
+ There are a few values for
+\code{\link[igraph:plot.igraph]{igraph::plot.igraph()}} that get their defaults changed for graphicalMCP.
+These values can still be changed by passing them as arguments to
+\code{plot.initial_graph()}. Here are the new defaults:
 \itemize{
 \item \code{vertex.color = "#6baed6"},
 \item \code{vertex.label.color = "black"},
@@ -88,11 +88,11 @@ as arguments to \code{plot.initial_graph()}. Here are the new defaults:
 
 Neither \code{graphicalMCP} nor \code{igraph} does anything about overlapping edge
 labels. If you run into this problem, and vertices can't practically be
-moved enough to avoid collisions of edge labels, using edge curves can help.
-\code{igraph} puts edge labels closer to the tail of an edge when an edge is
-straight, and closer to the head of an edge when it's curved. By setting an
-edge's curve to some very small value, an effectively straight edge can be
-shifted to a new position.
+moved enough to avoid collisions of edge labels, using edge curves can
+help. \code{igraph} puts edge labels closer to the tail of an edge when an edge
+is straight, and closer to the head of an edge when it's curved. By setting
+an edge's curve to some very small value, an effectively straight edge can
+be shifted to a new position.
 }
 
 \examples{
@@ -138,8 +138,8 @@ plot_layout <- rbind(
 plot(g, layout = plot_layout, eps = epsilon, edge_curves = c(pairs = .5))
 }
 \references{
-Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
-Rohmeyer, K. (2011). Graphical approaches for multiple comparison
+Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,
+and Rohmeyer, K. (2011). Graphical approaches for multiple comparison
 procedures using weighted Bonferroni, Simes, or parametric tests.
 \emph{Biometrical Journal}, 53(6), 894-913.
 
@@ -148,6 +148,6 @@ with application to the Hochberg procedure. \emph{Statistics in Medicine},
 38(27), 5268-5282.
 }
 \seealso{
-\code{\link[=plot.updated_graph]{plot.updated_graph()}} for the plot method for the updated graph after
-hypotheses being deleted from the initial graph.
+\code{\link[=plot.updated_graph]{plot.updated_graph()}} for the plot method for the updated graph
+after hypotheses being deleted from the initial graph.
 }

@@ -176,8 +176,10 @@ test_input_val <- function(graph,
     }
   }
 
-  stopifnot("Each Hochberg group must have uniform weights in all subgraphs" =
-              hochberg_weights_all_equal)
+  stopifnot(
+    "Each Hochberg group must have uniform weights in all subgraphs" =
+      hochberg_weights_all_equal
+  )
 
   invisible(graph)
 }

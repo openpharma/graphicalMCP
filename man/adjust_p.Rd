@@ -4,6 +4,7 @@
 \alias{adjust_p_bonferroni}
 \alias{adjust_p_parametric}
 \alias{adjust_p_simes}
+\alias{adjust_p_hochberg}
 \title{Calculate adjusted p-values}
 \usage{
 adjust_p_bonferroni(p, hypotheses)
@@ -18,6 +19,8 @@ adjust_p_parametric(
 )
 
 adjust_p_simes(p, hypotheses)
+
+adjust_p_hochberg(p, hypotheses)
 }
 \arguments{
 \item{p}{A numeric vector of p-values (unadjusted, raw), whose values should
@@ -59,7 +62,8 @@ supported:
 \itemize{
 \item Note that one-sided tests are required for parametric tests.
 }
-\item Simes tests for \code{\link[=adjust_p_simes]{adjust_p_simes()}}.
+\item Simes tests for \code{\link[=adjust_p_simes]{adjust_p_simes()}},
+\item Hochberg tests for \code{\link[=adjust_p_hochberg]{adjust_p_hochberg()}}.
 }
 }
 \examples{
@@ -76,6 +80,9 @@ adjust_p_parametric(p, hypotheses, corr)
 hypotheses <- c(H1 = 0.5, H2 = 0.25, H3 = 0.25)
 p <- c(0.019, 0.025, 0.05)
 adjust_p_simes(p, hypotheses)
+hypotheses <- c(H1 = .25, H2 = .25, H3 = 0.25, H4 = 0.25)
+p <- c(0.019, 0.025, 0.05, .05)
+adjust_p_hochberg(p, hypotheses)
 }
 \references{
 Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
@@ -88,9 +95,14 @@ Simes tests. \emph{Statistics in Medicine}, 35(22), 4041-4055.
 Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
 for weighted parametric multiple test procedures.
 \emph{Biometrical Journal}, 59(5), 918-931.
+
+Xi, D., and Bretz, F. (2019). Symmetric graphs for equally weighted tests,
+with application to the Hochberg procedure. \emph{Statistics in Medicine},
+38(27), 5268-5282.
 }
 \seealso{
 \code{\link[=adjust_weights_parametric]{adjust_weights_parametric()}} for adjusted hypothesis weights using
 parametric tests, \code{\link[=adjust_weights_simes]{adjust_weights_simes()}} for adjusted hypothesis weights
-using Simes tests.
+using Simes tests, \code{\link[=adjust_weights_hochberg]{adjust_weights_hochberg()}} for adjusted hypothesis
+weights using Hochberg tests.
 }

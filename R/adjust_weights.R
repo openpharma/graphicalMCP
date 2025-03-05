@@ -172,6 +172,7 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
 #'
 #' adjust_weights_hochberg(
 #'   matrix_weights = matrix_weights,
+#'   matrix_intersections = matrix_intersections,
 #'   p = p,
 #'   test_groups = list(1:4)
 #' )
@@ -202,7 +203,7 @@ adjust_weights_hochberg <- function(matrix_weights,
     group_intersection_sums <-
       matrixStats::rowCumsums(
         group_intersections[, rev_group, drop = FALSE]
-        )[, rev_group, drop = FALSE]
+      )[, rev_group, drop = FALSE]
 
     group_adjusted_weights[[i]] <- group_total_weights / group_intersection_sums
   }

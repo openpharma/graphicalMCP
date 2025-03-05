@@ -30,10 +30,10 @@ possible direction) are detected automatically and get 0.25 curvature.
 Adjust edges by adding an entry with name \verb{"vertex1|vertex2}, and adjust
 default edge pairs curvature by adding an entry with name \code{"pairs"} -
 \code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
-    \item{\code{precision}}{An integer scalar indicating the number of decimal places
-to to display.}
-    \item{\code{eps}}{A numeric scalar. The transition weight of \code{eps} will be
-displayed as \eqn{\epsilon}, which indicates edges with infinitesimally small
+    \item{\code{precision}}{An integer scalar indicating the number of decimal places to
+to display.}
+    \item{\code{eps}}{A numeric scalar. The transition weight of \code{eps} will be displayed
+as \eqn{\epsilon}, which indicates edges with infinitesimally small
 weights. See Bretz et al. (2009) for more details.}
     \item{\code{background_color}}{A character scalar specifying a background color for
 the whole plotting area. Passed directly to \code{\link[graphics:par]{graphics::par()}} (\code{bg}).}

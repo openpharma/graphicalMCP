@@ -1,11 +1,10 @@
 #' S3 plot method for class `initial_graph`
 #'
-#' @description
-#' The plot of an `initial_graph` translates the `hypotheses` into vertices and
-#' `transitions` into edges to create a network plot. Vertices are labeled with
-#' hypothesis names and hypothesis weights, and edges are labeled with
-#' transition weights. See `vignette("graph-examples")` for more illustration
-#' of commonly used multiple comparison procedure using graphs.
+#' @description The plot of an `initial_graph` translates the `hypotheses` into
+#' vertices and `transitions` into edges to create a network plot. Vertices are
+#' labeled with hypothesis names and hypothesis weights, and edges are labeled
+#' with transition weights. See `vignette("graph-examples")` for more
+#' illustration of commonly used multiple comparison procedure using graphs.
 #'
 #' @param x An object of class `initial_graph` to plot.
 #' @param ... Other arguments passed on to `igraph::plot.igraph()`.
@@ -27,10 +26,10 @@
 #'   Adjust edges by adding an entry with name `"vertex1|vertex2`, and adjust
 #'   default edge pairs curvature by adding an entry with name `"pairs"` -
 #'   `edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)`.
-#' @param precision An integer scalar indicating the number of decimal places
-#'   to to display.
-#' @param eps A numeric scalar. The transition weight of `eps` will be
-#'   displayed as \eqn{\epsilon}, which indicates edges with infinitesimally small
+#' @param precision An integer scalar indicating the number of decimal places to
+#'   to display.
+#' @param eps A numeric scalar. The transition weight of `eps` will be displayed
+#'   as \eqn{\epsilon}, which indicates edges with infinitesimally small
 #'   weights. See Bretz et al. (2009) for more details.
 #' @param background_color A character scalar specifying a background color for
 #'   the whole plotting area. Passed directly to [graphics::par()] (`bg`).
@@ -41,10 +40,10 @@
 #' @return An object x of class `initial_graph`, after plotting the initial
 #'   graph.
 #'
-#' @section Customization of graphs:
-#' There are a few values for [igraph::plot.igraph()] that get their defaults
-#' changed for graphicalMCP. These values can still be changed by passing them
-#' as arguments to `plot.initial_graph()`. Here are the new defaults:
+#' @section Customization of graphs: There are a few values for
+#'   [igraph::plot.igraph()] that get their defaults changed for graphicalMCP.
+#'   These values can still be changed by passing them as arguments to
+#'   `plot.initial_graph()`. Here are the new defaults:
 #'   * `vertex.color = "#6baed6"`,
 #'   * `vertex.label.color = "black"`,
 #'   * `vertex.size = 20`,
@@ -53,31 +52,29 @@
 #'   * `edge.label.color = "black"`
 #'   * `asp = 0`.
 #'
-#' Neither `graphicalMCP` nor `igraph` does anything about overlapping edge
-#' labels. If you run into this problem, and vertices can't practically be
-#' moved enough to avoid collisions of edge labels, using edge curves can help.
-#' `igraph` puts edge labels closer to the tail of an edge when an edge is
-#' straight, and closer to the head of an edge when it's curved. By setting an
-#' edge's curve to some very small value, an effectively straight edge can be
-#' shifted to a new position.
+#'   Neither `graphicalMCP` nor `igraph` does anything about overlapping edge
+#'   labels. If you run into this problem, and vertices can't practically be
+#'   moved enough to avoid collisions of edge labels, using edge curves can
+#'   help. `igraph` puts edge labels closer to the tail of an edge when an edge
+#'   is straight, and closer to the head of an edge when it's curved. By setting
+#'   an edge's curve to some very small value, an effectively straight edge can
+#'   be shifted to a new position.
 #'
-#' @seealso
-#'   [plot.updated_graph()] for the plot method for the updated graph after
-#'   hypotheses being deleted from the initial graph.
+#' @seealso [plot.updated_graph()] for the plot method for the updated graph
+#' after hypotheses being deleted from the initial graph.
 #'
 #' @rdname plot.initial_graph
 #'
 #' @export
 #'
-#' @references
-#'   Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
-#'   Rohmeyer, K. (2011). Graphical approaches for multiple comparison
-#'   procedures using weighted Bonferroni, Simes, or parametric tests.
-#'   \emph{Biometrical Journal}, 53(6), 894-913.
+#' @references Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,
+#' and Rohmeyer, K. (2011). Graphical approaches for multiple comparison
+#' procedures using weighted Bonferroni, Simes, or parametric tests.
+#' \emph{Biometrical Journal}, 53(6), 894-913.
 #'
-#'   Xi, D., and Bretz, F. (2019). Symmetric graphs for equally weighted tests,
-#'   with application to the Hochberg procedure. \emph{Statistics in Medicine},
-#'   38(27), 5268-5282.
+#' Xi, D., and Bretz, F. (2019). Symmetric graphs for equally weighted tests,
+#' with application to the Hochberg procedure. \emph{Statistics in Medicine},
+#' 38(27), 5268-5282.
 #'
 #' @examples
 #' # A graphical multiple comparison procedure with two primary hypotheses (H1

@@ -92,38 +92,39 @@ results for each simulation.
 }
 }
 \description{
-Under the alternative hypotheses, the distribution of test statistics is
-assumed to be a multivariate normal distribution. Given this distribution,
-this function calculates power values for a graphical multiple comparison
-procedure. By default, it calculate the local power, which is the probability
-to reject an individual hypothesis, the probability to reject at least one
-hypothesis, the probability to reject all hypotheses, the expected number of
-rejections, and the probability of user-defined success criteria. See
-\code{vignette("shortcut-testing")} and \code{vignette("closed-testing")} for more
-illustration of power calculation.
+Under the alternative hypotheses, the distribution of test
+statistics is assumed to be a multivariate normal distribution. Given this
+distribution, this function calculates power values for a graphical
+multiple comparison procedure. By default, it calculate the local power,
+which is the probability to reject an individual hypothesis, the
+probability to reject at least one hypothesis, the probability to reject
+all hypotheses, the expected number of rejections, and the probability of
+user-defined success criteria. See \code{vignette("shortcut-testing")} and
+\code{vignette("closed-testing")} for more illustration of power calculation.
 }
 \section{Simulation details}{
-
-The power calculation is based on simulations. The distribution to simulate
-from is determined as a multivariate normal distribution by \code{power_marginal}
-and \code{sim_corr}. In particular, \code{power_marginal} is a vector of marginal
-power values for all hypotheses. The marginal power is the power to reject
-the null hypothesis at the significance level \code{alpha}
+ The power calculation is based on simulations.
+The distribution to simulate from is determined as a multivariate normal
+distribution by \code{power_marginal} and \code{sim_corr}. In particular,
+\code{power_marginal} is a vector of marginal power values for all hypotheses.
+The marginal power is the power to reject the null hypothesis at the
+significance level \code{alpha}
 \emph{without multiplicity adjustment}. This value could be readily available from
-standard software and other R packages. Then we can determine the mean of the
-multivariate normal distribution as
-\deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)},
-which is often called the non-centrality parameter or the drift parameter.
-Here \eqn{d_i} is the marginal power \code{power_marginal} of hypothesis \eqn{i}.
+standard software and other R packages. Then we can determine the mean of
+the multivariate normal distribution as
+\deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)}, which is
+often called the non-centrality parameter or the drift parameter. Here
+\eqn{d_i} is the marginal power \code{power_marginal} of hypothesis \eqn{i}.
 Given the correlation matrix \code{sim_corr}, we can simulate from this
 multivariate normal distribution using the \code{mvtnorm} R package (Genz and
 Bretz, 2009).
 
 Each set simulated values can be used to calculate the corresponding
-one-sided p-values. Then this set of p-values are plugged into the graphical
-multiple comparison procedure to determine which hypotheses are rejected.
-This process is repeated \code{n_sim} times to produce the power values as the
-proportion of simulations in which a particular success criterion is met.
+one-sided p-values. Then this set of p-values are plugged into the
+graphical multiple comparison procedure to determine which hypotheses are
+rejected. This process is repeated \code{n_sim} times to produce the power
+values as the proportion of simulations in which a particular success
+criterion is met.
 }
 
 \examples{
@@ -184,8 +185,8 @@ graph_calculate_power(
 
 }
 \references{
-Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
-Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
+Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,
+and Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
 procedures using weighted Bonferroni, Simes, or parametric tests.
 \emph{Biometrical Journal}, 53(6), 894-913.
 
@@ -201,6 +202,6 @@ Lu, K. (2016). Graphical approaches using a Bonferroni mixture of weighted
 Simes tests. \emph{Statistics in Medicine}, 35(22), 4041-4055.
 
 Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
-for weighted parametric multiple test procedures.
-\emph{Biometrical Journal}, 59(5), 918-931.
+for weighted parametric multiple test procedures. \emph{Biometrical
+Journal}, 59(5), 918-931.
 }
