@@ -130,6 +130,7 @@ matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
 
 adjust_weights_hochberg(
   matrix_weights = matrix_weights,
+  matrix_intersections = matrix_intersections,
   p = p,
   test_groups = list(1:4)
 )
