@@ -104,7 +104,6 @@ test_input_val <- function(graph,
   if (is.null(names(test_types))) {
     corr_parametric <- test_corr[test_types == "parametric"]
   } else {
-    names(test_types) <- names(test_corr) <- names(test_groups)
     corr_parametric <- test_corr[names(test_types)[test_types == "parametric"]]
   }
 
