@@ -208,5 +208,13 @@ adjust_weights_hochberg <- function(matrix_weights,
     group_adjusted_weights[[i]] <- group_total_weights / group_intersection_sums
   }
 
-  do.call(cbind, group_adjusted_weights)
+  adjusted_weights <- do.call(cbind, group_adjusted_weights)
+  zero_locs <- which(
+    is.infinite(adjusted_weights) |
+      is.na(adjusted_weights) |
+      ordered_matrix_intersections == 0
+  )
+
+  adjusted_weights[zero_locs] <- 0
+  adjusted_weights
 }
