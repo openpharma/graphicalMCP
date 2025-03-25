@@ -112,7 +112,7 @@ test_that("adjusted p-values are capped at 1", {
   )
 })
 
-test_that("Simes & parametric adjusted p-values are less than Bonferroni", {
+test_that("Non-Bonferroni adjusted p-values are less than Bonferroni", {
   rando <- random_graph(4)
 
   expect_true(
@@ -122,6 +122,18 @@ test_that("Simes & parametric adjusted p-values are less than Bonferroni", {
           rando,
           rep(.01, 4),
           test_types = "s"
+        )$outputs$adjusted_p
+    )
+  )
+
+  expect_true(
+    all(
+      graph_test_closure(bonferroni_holm(rep(1/4, 4)),
+                         rep(.01, 4))$outputs$adjusted_p >=
+        graph_test_closure(
+          bonferroni_holm(rep(1/4, 4)),
+          rep(.01, 4),
+          test_types = "h"
         )$outputs$adjusted_p
     )
   )

@@ -138,7 +138,7 @@ test_values_hochberg <- function(p, hypotheses, alpha, intersection = NA) {
     total_weight <- sum(hypotheses)
 
     for (i in seq_along(hypotheses)) {
-      w_quo[[i]] <- total_weight / sum(p <= p[[i]])
+      w_quo[[i]] <- total_weight / (length(hypotheses) - sum(p <= p[[i]]) + 1)
       vec_res[[i]] <- p[[i]] <= alpha * w_quo[[i]]
     }
 
