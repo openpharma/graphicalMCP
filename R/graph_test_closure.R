@@ -223,14 +223,14 @@ graph_test_closure <- function(graph,
   # Correlation matrix input is easier for end users to input as a list, but
   # it's easier to work with internally as a full matrix, potentially with
   # missing values. This puts all the correlation pieces into one matrix
-  if (any(test_types == "parametric")) {
-    test_corr <- parse_parametric_corr(
-      test_groups,
-      test_corr
-    )
-  } else {
-    test_corr <- NULL
+  new_corr <- matrix(NA, num_hyps, num_hyps)
+
+  for (group_num in seq_along(test_groups)) {
+    new_corr[test_groups[[group_num]], test_groups[[group_num]]] <-
+      test_corr[[group_num]]
   }
+  diag(new_corr) <- 1
+  test_corr <- if (any(test_types == "parametric")) new_corr else NULL
 
   if (!is.null(test_corr)) dimnames(test_corr) <- list(hyp_names, hyp_names)
 
@@ -408,7 +408,7 @@ graph_test_closure <- function(graph,
       factor(df_test_values$Hypothesis, levels = hyp_names, ordered = TRUE)
 
     df_test_values <-
-      df_test_values[with(df_test_values, order(desc(Intersection), Hypothesis)), ]
+      df_test_values[with(df_test_values, order(-as.numeric(Intersection), Hypothesis)), ]
 
     # "c" value is only used in parametric testing, so there's no need to
     # include this column when there are no parametric groups

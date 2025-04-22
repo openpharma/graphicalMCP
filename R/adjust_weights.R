@@ -103,12 +103,8 @@ adjust_weights_parametric <- function(matrix_weights,
     dimnames = dimnames(matrix_weights)
   )
 
-  test_corr <-
-    parse_parametric_corr(test_groups, test_corr, ncol(matrix_weights))
-
   for (group in test_groups) {
     for (row in seq_len(nrow(matrix_weights))) {
-      if (all(group == c(2, 3))) browser()
       group_by_intersection <-
         group[as.logical(matrix_intersections[row, , drop = TRUE][group])]
 

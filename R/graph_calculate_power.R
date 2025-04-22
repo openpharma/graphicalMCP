@@ -232,14 +232,14 @@ graph_calculate_power <- function(graph,
   # Correlation matrix input is easier for end users to input as a list, but
   # it's easier to work with internally as a full matrix, potentially with
   # missing values. This puts all the correlation pieces into one matrix
-  # if (any(test_types == "parametric")) {
-  #   test_corr <- parse_parametric_corr(
-  #     test_groups,
-  #     test_corr
-  #   )
-  # } else {
-  #   test_corr <- NULL
-  # }
+  new_corr <- matrix(NA, num_hyps, num_hyps)
+
+  for (group_num in seq_along(test_groups)) {
+    new_corr[test_groups[[group_num]], test_groups[[group_num]]] <-
+      test_corr[[group_num]]
+  }
+  diag(new_corr) <- 1
+  test_corr <- if (any(test_types == "parametric")) new_corr else NULL
 
   power_input_val(graph, sim_n, power_marginal, sim_corr, sim_success)
 
