@@ -103,8 +103,12 @@ adjust_weights_parametric <- function(matrix_weights,
     dimnames = dimnames(matrix_weights)
   )
 
+  test_corr <-
+    parse_parametric_corr(test_groups, test_corr, ncol(matrix_weights))
+
   for (group in test_groups) {
     for (row in seq_len(nrow(matrix_weights))) {
+      if (all(group == c(2, 3))) browser()
       group_by_intersection <-
         group[as.logical(matrix_intersections[row, , drop = TRUE][group])]
 
@@ -144,6 +148,7 @@ adjust_weights_parametric <- function(matrix_weights,
 #'   test_groups = list(1:4)
 #' )
 adjust_weights_simes <- function(matrix_weights, p, test_groups) {
+  natural_order <- colnames(matrix_weights)
   ordered_p <- order(p)
 
   matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
@@ -156,7 +161,7 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
     )
   }
 
-  do.call(cbind, group_adjusted_weights)
+  do.call(cbind, group_adjusted_weights)[, natural_order, drop = FALSE]
 }
 
 #' @rdname adjust_weights
@@ -180,6 +185,7 @@ adjust_weights_hochberg <- function(matrix_weights,
                                     matrix_intersections,
                                     p,
                                     test_groups) {
+  natural_order <- colnames(matrix_weights)
   ordered_p <- order(p)
 
   ordered_matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
@@ -212,5 +218,5 @@ adjust_weights_hochberg <- function(matrix_weights,
 
   adjusted_weights <- do.call(cbind, group_adjusted_weights)
 
-  adjusted_weights
+  adjusted_weights[, natural_order, drop = FALSE]
 }
