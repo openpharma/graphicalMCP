@@ -403,6 +403,13 @@ graph_test_closure <- function(graph,
     df_test_values <- do.call(rbind, test_values_list)
     rownames(df_test_values) <- NULL
 
+    # sort by hypothesis natural order
+    df_test_values$Hypothesis <-
+      factor(df_test_values$Hypothesis, levels = hyp_names, ordered = TRUE)
+
+    df_test_values <-
+      df_test_values[with(df_test_values, order(desc(Intersection), Hypothesis)), ]
+
     # "c" value is only used in parametric testing, so there's no need to
     # include this column when there are no parametric groups
     if (!any(test_types == "parametric")) {
