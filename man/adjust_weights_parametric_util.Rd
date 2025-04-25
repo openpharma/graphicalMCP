@@ -3,6 +3,7 @@
 \name{c_value_function}
 \alias{c_value_function}
 \alias{solve_c_parametric}
+\alias{adjust_weights_parametric_util}
 \title{Calculate adjusted hypothesis weights for parametric tests}
 \usage{
 c_value_function(
@@ -19,6 +20,17 @@ solve_c_parametric(
   hypotheses,
   test_corr,
   alpha,
+  maxpts = 25000,
+  abseps = 1e-06,
+  releps = 0
+)
+
+adjust_weights_parametric_util(
+  matrix_weights,
+  matrix_intersections,
+  test_corr,
+  alpha,
+  test_groups,
   maxpts = 25000,
   abseps = 1e-06,
   releps = 0
@@ -87,4 +99,23 @@ for weighted parametric multiple test procedures.
 \code{\link[=adjust_weights_parametric]{adjust_weights_parametric()}} for adjusted hypothesis weights using
 parametric tests.
 }
+\keyword{This}
+\keyword{`adjust_weights_parametric()`}
+\keyword{`test_corr`}
+\keyword{a}
+\keyword{allows}
+\keyword{be}
+\keyword{correlation}
+\keyword{different}
+\keyword{from}
+\keyword{function}
 \keyword{internal}
+\keyword{is}
+\keyword{list}
+\keyword{matrices.}
+\keyword{matrix.}
+\keyword{of}
+\keyword{only}
+\keyword{single}
+\keyword{to}
+\keyword{which}

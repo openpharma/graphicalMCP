@@ -27,14 +27,14 @@
 #'   default edge pairs curvature by adding an entry with name `"pairs"` -
 #'   `edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)`.
 #' @param precision An integer scalar indicating the number of decimal places to
-#'   to display.
+#'   display.
 #' @param eps A numeric scalar. The transition weight of `eps` will be displayed
 #'   as \eqn{\epsilon}, which indicates edges with infinitesimally small
 #'   weights. See Bretz et al. (2009) for more details.
 #' @param background_color A character scalar specifying a background color for
 #'   the whole plotting area. Passed directly to [graphics::par()] (`bg`).
 #' @param margins A length 4 numeric vector specifying the margins for the plot.
-#'   Defaults to all 0, since igraph plots tend to have large margins. It is
+#'   Defaults to all 1, since igraph plots tend to have large margins. It is
 #'   passed directly to [graphics::par()] (`mar`).
 #'
 #' @return An object x of class `initial_graph`, after plotting the initial
@@ -127,7 +127,7 @@ plot.initial_graph <- function(x,
                                precision = 4,
                                eps = NULL,
                                background_color = "white",
-                               margins = c(0, 0, 0, 0)) {
+                               margins = c(1, 1, 1, 1)) {
   oldpar <- graphics::par("bg", "mar")
   on.exit(suppressWarnings(graphics::par(oldpar)))
 

@@ -33,8 +33,10 @@ reference:
   - adjust_p_bonferroni
   - adjust_p_parametric
   - adjust_p_simes
+  - adjust_p_hochberg
   - adjust_weights_parametric
   - adjust_weights_simes
+  - adjust_weights_hochberg
 - title: Power simulation
 - desc: Functions for performing power simulations
 - contents:
@@ -44,13 +46,21 @@ reference:
 - desc: Functions for creating example graphical multiple comparison procedures
 - contents:
   - bonferroni
+  - bonferroni_weighted
   - bonferroni_holm
+  - bonferroni_holm_weighted
+  - dunnett_single_step
+  - dunnett_single_step_weighted
+  - dunnett_closure_weighted
   - fallback
   - fallback_improved_1
   - fallback_improved_2
   - fixed_sequence
+  - hochberg
+  - hommel
   - huque_etal
   - random_graph
+  - sidak
   - simple_successive_1
   - simple_successive_2
   - two_doses_two_primary_two_secondary
@@ -74,6 +84,7 @@ articles:
   - shortcut-testing
   - closed-testing
   - graph-examples
+  - internal-validation
   - comparisons
   - generate-closure
 

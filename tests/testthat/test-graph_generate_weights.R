@@ -10,7 +10,7 @@ g <- graph_create(hypotheses, transitions, names)
 gw4 <- graph_generate_weights(g)
 gw4_gmcp <- gMCP::generateWeights(g$transitions, g$hypotheses)
 
-bh10 <- bonferroni_holm(rep(1 / 10, 10))
+bh10 <- bonferroni_holm(10)
 gw10 <- graph_generate_weights(bh10)
 gw10_gmcp <- gMCP::generateWeights(bh10$transitions, bh10$hypotheses)
 

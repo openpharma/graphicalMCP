@@ -46,3 +46,11 @@
 
 * Github repo transferred to openpharma
 * Submission for CRAN release
+
+# graphicalMCP 0.2.7
+
+* Added Hochberg-based procedures
+* Added internal validations
+* Expanded example graphs
+* Updated vignettes
+* Submission for CRAN release

@@ -1,14 +1,15 @@
 #' Calculate power values for a graphical multiple comparison procedure
 #'
-#' @description Under the alternative hypotheses, the distribution of test
-#'   statistics is assumed to be a multivariate normal distribution. Given this
-#'   distribution, this function calculates power values for a graphical
-#'   multiple comparison procedure. By default, it calculate the local power,
-#'   which is the probability to reject an individual hypothesis, the
-#'   probability to reject at least one hypothesis, the probability to reject
-#'   all hypotheses, the expected number of rejections, and the probability of
-#'   user-defined success criteria. See `vignette("shortcut-testing")` and
-#'   `vignette("closed-testing")` for more illustration of power calculation.
+#' @description
+#' Under the alternative hypotheses, the distribution of test statistics is
+#' assumed to be a multivariate normal distribution. Given this distribution,
+#' this function calculates power values for a graphical multiple comparison
+#' procedure. By default, it calculate the local power, which is the probability
+#' to reject an individual hypothesis, the probability to reject at least one
+#' hypothesis, the probability to reject all hypotheses, the expected number of
+#' rejections, and the probability of user-defined success criteria.
+#' See `vignette("shortcut-testing")` and `vignette("closed-testing")` for more
+#' illustration of power calculation.
 #'
 #' @inheritParams graph_test_closure
 #' @param alpha A numeric value of the one-sided overall significance level,
@@ -60,8 +61,7 @@
 #'   distribution by `power_marginal` and `sim_corr`. In particular,
 #'   `power_marginal` is a vector of marginal power values for all hypotheses.
 #'   The marginal power is the power to reject the null hypothesis at the
-#'   significance level `alpha`
-#' *without multiplicity adjustment*. This value could be readily available from
+#'   significance level `alpha` *without multiplicity adjustment*. This value could be readily available from
 #'   standard software and other R packages. Then we can determine the mean of
 #'   the multivariate normal distribution as
 #'   \deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)}, which is
@@ -295,7 +295,7 @@ graph_calculate_power <- function(graph,
     # Parametric adjusted weights depend only on the joint distribution and
     # alpha. This allows adjusted weights to be calculated once, rather than
     # re-calculating for each simulation
-    adjusted_weights_parametric <- adjust_weights_parametric(
+    adjusted_weights_parametric <- adjust_weights_parametric_util(
       matrix_weights,
       matrix_intersections,
       test_corr,

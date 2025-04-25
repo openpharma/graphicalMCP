@@ -37,6 +37,12 @@
 #'   procedures using weighted Bonferroni, Simes, or parametric tests.
 #'   \emph{Biometrical Journal}, 53(6), 894-913.
 #'
+#'   Hochberg, Y. (1988). A sharper Bonferroni procedure for multiple tests of
+#'   significance. \emph{Biometrika}, 75(4), 800-802.
+#'
+#'   Hommel, G. (1988). A stagewise rejective multiple test procedure based on a
+#'   modified Bonferroni test. \emph{Biometrika}, 75(2), 383-386.
+#'
 #'   Huque, M. F., Alosh, M., and Bhore, R. (2011). Addressing multiplicity
 #'   issues of a composite endpoint and its components in clinical trials.
 #'   \emph{Journal of Biopharmaceutical Statistics}, 21(4), 610-634.
@@ -44,6 +50,10 @@
 #'   Maurer, W., Hothorn, L., and Lehmacher, W. (1995). Multiple comparisons in
 #'   drug clinical trials and preclinical assays: a-priori ordered hypotheses.
 #'   \emph{Biometrie in der chemisch-pharmazeutischen Industrie}, 6, 3-18.
+#'
+#'   Šidák, Z. (1967). Rectangular confidence regions for the means of
+#'   multivariate normal distributions. \emph{Journal of the American Statistical
+#'   Association}, 62(318), 626-633.
 #'
 #'   Westfall, P. H., and Krishen, A. (2001). Optimally weighted, fixed sequence
 #'   and gatekeeper multiple testing procedures.
@@ -62,8 +72,25 @@
 #'
 #' @examples
 #' # Bretz et al. (2009)
-#' bonferroni(hypotheses = rep(1 / 3, 3))
-bonferroni <- function(hypotheses, hyp_names = NULL) {
+#' bonferroni(num_hyps = 3)
+bonferroni <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
+  transitions <- matrix(0, num_hyps, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Bretz et al. (2009)
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' bonferroni_weighted(hypotheses)
+bonferroni_weighted <- function(hypotheses, hyp_names = NULL) {
   num_hyps <- length(hypotheses)
   stopifnot(
     "number of hypotheses must match number of names" =
@@ -78,13 +105,116 @@ bonferroni <- function(hypotheses, hyp_names = NULL) {
 #' @rdname example_graphs
 #' @examples
 #' # Bretz et al. (2009)
-#' bonferroni_holm(hypotheses = rep(1 / 3, 3))
-bonferroni_holm <- function(hypotheses, hyp_names = NULL) {
+#' bonferroni_holm(num_hyps = 3)
+bonferroni_holm <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
+  transitions <- matrix(rep(1 / (num_hyps - 1), num_hyps^2), nrow = num_hyps)
+  diag(transitions) <- rep(0, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Bretz et al. (2009)
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' bonferroni_holm_weighted(hypotheses)
+bonferroni_holm_weighted <- function(hypotheses, hyp_names = NULL) {
   num_hyps <- length(hypotheses)
   stopifnot(
     "number of hypotheses must match number of names" =
       (num_hyps == length(hyp_names) || is.null(hyp_names))
   )
+  transitions <- matrix(rep(1 / (num_hyps - 1), num_hyps^2), nrow = num_hyps)
+  diag(transitions) <- rep(0, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Xi et al. (2017)
+#' dunnett_single_step(num_hyps = 3)
+dunnett_single_step <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
+  transitions <- matrix(0, num_hyps, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Xi et al. (2017)
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' dunnett_single_step_weighted(hypotheses)
+dunnett_single_step_weighted <- function(hypotheses, hyp_names = NULL) {
+  num_hyps <- length(hypotheses)
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  transitions <- matrix(0, num_hyps, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Xi et al. (2009)
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' dunnett_closure_weighted(hypotheses)
+dunnett_closure_weighted <- function(hypotheses, hyp_names = NULL) {
+  num_hyps <- length(hypotheses)
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  transitions <- matrix(rep(1 / (num_hyps - 1), num_hyps^2), nrow = num_hyps)
+  diag(transitions) <- rep(0, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Hochberg (1988)
+#' hochberg(num_hyps = 3)
+hochberg <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
+  transitions <- matrix(rep(1 / (num_hyps - 1), num_hyps^2), nrow = num_hyps)
+  diag(transitions) <- rep(0, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Hommel (1988)
+#' hommel(num_hyps = 3)
+hommel <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
   transitions <- matrix(rep(1 / (num_hyps - 1), num_hyps^2), nrow = num_hyps)
   diag(transitions) <- rep(0, num_hyps)
 
@@ -101,10 +231,10 @@ huque_etal <- function(hyp_names = NULL) {
     c(1, 0, 0, 0),
     matrix(
       c(
-        0,  0.5, 0.5, 0,
-        0,  0,   0,   1,
-        0,  0.5, 0,   0.5,
-        0,  1,   0,   0
+        0, 0.5, 0.5, 0,
+        0, 0, 0, 1,
+        0, 0.5, 0, 0.5,
+        0, 1, 0, 0
       ),
       nrow = 4,
       byrow = TRUE
@@ -117,7 +247,8 @@ huque_etal <- function(hyp_names = NULL) {
 #' @rdname example_graphs
 #' @examples
 #' # Wiens (2003)
-#' fallback(hypotheses = rep(1 / 3, 3))
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' fallback(hypotheses)
 fallback <- function(hypotheses, hyp_names = NULL) {
   num_hyps <- length(hypotheses)
   stopifnot(
@@ -136,7 +267,8 @@ fallback <- function(hypotheses, hyp_names = NULL) {
 #' @rdname example_graphs
 #' @examples
 #' # Wiens and Dmitrienko (2005)
-#' fallback_improved_1(hypotheses = rep(1 / 3, 3))
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' fallback_improved_1(hypotheses)
 fallback_improved_1 <- function(hypotheses, hyp_names = NULL) {
   num_hyps <- length(hypotheses)
   stopifnot(
@@ -150,7 +282,7 @@ fallback_improved_1 <- function(hypotheses, hyp_names = NULL) {
     transitions[i, i + 1] <- 1
   }
   transitions[num_hyps, seq_len(num_hyps - 1)] <-
-    hypotheses[-num_hyps] / sum(hypotheses[-num_hyps])
+    hypotheses[seq_len(num_hyps - 1)] / sum(hypotheses[seq_len(num_hyps - 1)])
 
   graph_create(hypotheses, transitions, hyp_names)
 }
@@ -159,7 +291,8 @@ fallback_improved_1 <- function(hypotheses, hyp_names = NULL) {
 #' @rdname example_graphs
 #' @examples
 #' # Bretz et al. (2009)
-#' fallback_improved_2(hypotheses = rep(1 / 3, 3))
+#' hypotheses <- c(0.5, 0.3, 0.2)
+#' fallback_improved_2(hypotheses)
 fallback_improved_2 <- function(hypotheses, epsilon = 1e-4, hyp_names = NULL) {
   num_hyps <- length(hypotheses)
   stopifnot(
@@ -195,6 +328,23 @@ fixed_sequence <- function(num_hyps, hyp_names = NULL) {
   graph_create(hypotheses, transitions, hyp_names)
 }
 
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # sidak (1967)
+#' sidak(num_hyps = 3)
+sidak <- function(num_hyps, hyp_names = NULL) {
+  stopifnot(
+    "number of hypotheses must match number of names" =
+      (num_hyps == length(hyp_names) || is.null(hyp_names))
+  )
+  hypotheses <- rep(1 / num_hyps, num_hyps)
+  transitions <- matrix(0, num_hyps, num_hyps)
+
+  graph_create(hypotheses, transitions, hyp_names)
+}
+
 #' @export
 #' @rdname example_graphs
 #' @examples
@@ -225,26 +375,6 @@ simple_successive_2 <- function(hyp_names = NULL) {
     c(0, 1, 0, 0),
     c(1, 0, 0, 0)
   )
-
-  graph_create(hypotheses, transitions, hyp_names)
-}
-
-#' @export
-#' @rdname example_graphs
-#' @examples
-#' # Create a random graph with three hypotheses
-#' random_graph(num_hyps = 3)
-random_graph <- function(num_hyps, hyp_names = NULL) {
-  hypotheses <- sample(seq_len(num_hyps), replace = TRUE)
-  hypotheses <- hypotheses / sum(hypotheses)
-
-  transitions <- replicate(
-    num_hyps,
-    sample(seq_len(num_hyps), replace = TRUE),
-    simplify = TRUE
-  )
-  diag(transitions) <- 0
-  transitions <- transitions / rowSums(transitions)
 
   graph_create(hypotheses, transitions, hyp_names)
 }
@@ -290,4 +420,23 @@ three_doses_two_primary_two_secondary <- function(hyp_names = NULL) {
   )
 
   graph_create(weights, transitions, hyp_names = hyp_names)
+}
+
+#' @export
+#' @rdname example_graphs
+#' @examples
+#' # Create a random graph with three hypotheses
+#' random_graph(num_hyps = 3)
+random_graph <- function(num_hyps, hyp_names = NULL) {
+  hypotheses <- sample(seq_len(num_hyps), replace = TRUE)
+  hypotheses <- hypotheses / sum(hypotheses)
+  transitions <- replicate(
+    num_hyps,
+    sample(seq_len(num_hyps), replace = TRUE),
+    simplify = TRUE
+  )
+  diag(transitions) <- 0
+  transitions <- transitions / rowSums(transitions)
+
+  graph_create(hypotheses, transitions, hyp_names)
 }

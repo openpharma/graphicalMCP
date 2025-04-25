@@ -1,6 +1,7 @@
 #' Convert between graphicalMCP, gMCP, and igraph graph classes
 #'
-#' @description Graph objects have different structures and attributes in
+#' @description
+#' Graph objects have different structures and attributes in
 #' `graphicalMCP`, `gMCP`, and `igraph` R packages. These functions convert
 #' between different classes to increase compatibility.
 #'

@@ -31,14 +31,14 @@ Adjust edges by adding an entry with name \verb{"vertex1|vertex2}, and adjust
 default edge pairs curvature by adding an entry with name \code{"pairs"} -
 \code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
     \item{\code{precision}}{An integer scalar indicating the number of decimal places to
-to display.}
+display.}
     \item{\code{eps}}{A numeric scalar. The transition weight of \code{eps} will be displayed
 as \eqn{\epsilon}, which indicates edges with infinitesimally small
 weights. See Bretz et al. (2009) for more details.}
     \item{\code{background_color}}{A character scalar specifying a background color for
 the whole plotting area. Passed directly to \code{\link[graphics:par]{graphics::par()}} (\code{bg}).}
     \item{\code{margins}}{A length 4 numeric vector specifying the margins for the plot.
-Defaults to all 0, since igraph plots tend to have large margins. It is
+Defaults to all 1, since igraph plots tend to have large margins. It is
 passed directly to \code{\link[graphics:par]{graphics::par()}} (\code{mar}).}
   }}
 }

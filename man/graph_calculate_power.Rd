@@ -92,15 +92,15 @@ results for each simulation.
 }
 }
 \description{
-Under the alternative hypotheses, the distribution of test
-statistics is assumed to be a multivariate normal distribution. Given this
-distribution, this function calculates power values for a graphical
-multiple comparison procedure. By default, it calculate the local power,
-which is the probability to reject an individual hypothesis, the
-probability to reject at least one hypothesis, the probability to reject
-all hypotheses, the expected number of rejections, and the probability of
-user-defined success criteria. See \code{vignette("shortcut-testing")} and
-\code{vignette("closed-testing")} for more illustration of power calculation.
+Under the alternative hypotheses, the distribution of test statistics is
+assumed to be a multivariate normal distribution. Given this distribution,
+this function calculates power values for a graphical multiple comparison
+procedure. By default, it calculate the local power, which is the probability
+to reject an individual hypothesis, the probability to reject at least one
+hypothesis, the probability to reject all hypotheses, the expected number of
+rejections, and the probability of user-defined success criteria.
+See \code{vignette("shortcut-testing")} and \code{vignette("closed-testing")} for more
+illustration of power calculation.
 }
 \section{Simulation details}{
  The power calculation is based on simulations.
@@ -108,8 +108,7 @@ The distribution to simulate from is determined as a multivariate normal
 distribution by \code{power_marginal} and \code{sim_corr}. In particular,
 \code{power_marginal} is a vector of marginal power values for all hypotheses.
 The marginal power is the power to reject the null hypothesis at the
-significance level \code{alpha}
-\emph{without multiplicity adjustment}. This value could be readily available from
+significance level \code{alpha} \emph{without multiplicity adjustment}. This value could be readily available from
 standard software and other R packages. Then we can determine the mean of
 the multivariate normal distribution as
 \deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)}, which is

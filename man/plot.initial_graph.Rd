@@ -15,7 +15,7 @@
   precision = 4,
   eps = NULL,
   background_color = "white",
-  margins = c(0, 0, 0, 0)
+  margins = c(1, 1, 1, 1)
 )
 }
 \arguments{
@@ -47,7 +47,7 @@ default edge pairs curvature by adding an entry with name \code{"pairs"} -
 \code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
 
 \item{precision}{An integer scalar indicating the number of decimal places to
-to display.}
+display.}
 
 \item{eps}{A numeric scalar. The transition weight of \code{eps} will be displayed
 as \eqn{\epsilon}, which indicates edges with infinitesimally small
@@ -57,7 +57,7 @@ weights. See Bretz et al. (2009) for more details.}
 the whole plotting area. Passed directly to \code{\link[graphics:par]{graphics::par()}} (\code{bg}).}
 
 \item{margins}{A length 4 numeric vector specifying the margins for the plot.
-Defaults to all 0, since igraph plots tend to have large margins. It is
+Defaults to all 1, since igraph plots tend to have large margins. It is
 passed directly to \code{\link[graphics:par]{graphics::par()}} (\code{mar}).}
 }
 \value{

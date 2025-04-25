@@ -1,6 +1,7 @@
 #' Calculate adjusted hypothesis weights
 #'
-#' @description An intersection hypothesis can be rejected if its p-values are
+#' @description
+#' An intersection hypothesis can be rejected if its p-values are
 #' less than or equal to their adjusted significance levels, which are their
 #' adjusted hypothesis weights times \eqn{\alpha}. For Bonferroni tests, their
 #' adjusted hypothesis weights are their hypothesis weights of the intersection
@@ -74,9 +75,8 @@
 #'
 #' @examples
 #' alpha <- 0.025
-#' p <- c(0.018, 0.01, 0.105, 0.006)
-#' num_hyps <- length(p)
-#' g <- bonferroni_holm(rep(1 / 4, 4))
+#' num_hyps <- 4
+#' g <- bonferroni_holm(num_hyps)
 #' weighting_strategy <- graph_generate_weights(g)
 #' matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 #' matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -85,9 +85,9 @@
 #' adjust_weights_parametric(
 #'   matrix_weights = matrix_weights,
 #'   matrix_intersections = matrix_intersections,
-#'   test_corr = diag(4),
+#'   test_corr = list(diag(2), diag(2)),
 #'   alpha = alpha,
-#'   test_groups = list(1:4)
+#'   test_groups = list(1:2, 3:4)
 #' )
 adjust_weights_parametric <- function(matrix_weights,
                                       matrix_intersections,
@@ -97,34 +97,35 @@ adjust_weights_parametric <- function(matrix_weights,
                                       maxpts = 25000,
                                       abseps = 1e-6,
                                       releps = 0) {
+  natural_order <- colnames(matrix_weights)
+
   c_values <- matrix(
     nrow = nrow(matrix_weights),
     ncol = ncol(matrix_weights),
     dimnames = dimnames(matrix_weights)
   )
-
-  for (group in test_groups) {
+  for (group in seq_along(test_groups)) {
     for (row in seq_len(nrow(matrix_weights))) {
       group_by_intersection <-
-        group[as.logical(matrix_intersections[row, , drop = TRUE][group])]
-
+        test_groups[[group]][as.logical(matrix_intersections[row, , drop = TRUE][test_groups[[group]]])]
       group_c_value <- solve_c_parametric(
         matrix_weights[row, group_by_intersection, drop = TRUE],
-        test_corr[group_by_intersection, group_by_intersection, drop = FALSE],
+        test_corr[[group]][test_groups[[group]] %in% group_by_intersection,
+          test_groups[[group]] %in% group_by_intersection,
+          drop = FALSE
+        ],
         alpha,
         maxpts,
         abseps,
         releps
       )
 
-      c_values[row, group] <-
-        group_c_value * matrix_intersections[row, group, drop = TRUE]
+      c_values[row, test_groups[[group]]] <-
+        group_c_value * matrix_intersections[row, test_groups[[group]], drop = TRUE]
     }
   }
-
   adjusted_weights <- c_values * matrix_weights
-
-  adjusted_weights[, unlist(test_groups), drop = FALSE]
+  adjusted_weights[, natural_order, drop = FALSE]
 }
 
 #' @rdname adjust_weights
@@ -133,7 +134,7 @@ adjust_weights_parametric <- function(matrix_weights,
 #' alpha <- 0.025
 #' p <- c(0.018, 0.01, 0.105, 0.006)
 #' num_hyps <- length(p)
-#' g <- bonferroni_holm(rep(1 / 4, 4))
+#' g <- bonferroni_holm(num_hyps)
 #' weighting_strategy <- graph_generate_weights(g)
 #' matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 #' matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -141,7 +142,7 @@ adjust_weights_parametric <- function(matrix_weights,
 #' adjust_weights_simes(
 #'   matrix_weights = matrix_weights,
 #'   p = p,
-#'   test_groups = list(1:4)
+#'   test_groups = list(1:2, 3:4)
 #' )
 adjust_weights_simes <- function(matrix_weights, p, test_groups) {
   natural_order <- colnames(matrix_weights)
@@ -166,7 +167,7 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
 #' alpha <- 0.025
 #' p <- c(0.018, 0.01, 0.105, 0.006)
 #' num_hyps <- length(p)
-#' g <- bonferroni_holm(rep(1 / 4, 4))
+#' g <- bonferroni_holm(num_hyps)
 #' weighting_strategy <- graph_generate_weights(g)
 #' matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 #' matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -175,7 +176,7 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
 #'   matrix_weights = matrix_weights,
 #'   matrix_intersections = matrix_intersections,
 #'   p = p,
-#'   test_groups = list(1:4)
+#'   test_groups = list(1:2, 3:4)
 #' )
 adjust_weights_hochberg <- function(matrix_weights,
                                     matrix_intersections,

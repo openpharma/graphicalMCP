@@ -120,7 +120,7 @@ test_that("medium graph runs without error", {
 
   expect_no_error(
     graph_calculate_power(
-      graph = bonferroni(rep(1 / 9, 9)),
+      graph = bonferroni(9),
       alpha = 0.025,
       test_groups = list(c(1, 4, 7), 2:3, 5:6, 8:9),
       test_types = c("p", "s", "s", "s"),

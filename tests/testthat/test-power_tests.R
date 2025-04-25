@@ -16,7 +16,7 @@ test_that("vectorized testing matches standard testing (single-group)", {
     groups1
   )
 
-  gw_compact_parametric <- adjust_weights_parametric(
+  gw_compact_parametric <- adjust_weights_parametric_util(
     gw_weights,
     gw_h,
     diag(m),
@@ -79,7 +79,7 @@ test_that("vectorized testing matches standard testing (multi-group)", {
     simes_groups_reduce
   )
 
-  adjusted_weights_para <- adjust_weights_parametric(
+  adjusted_weights_parametric <- adjust_weights_parametric_util(
     gw_weights,
     gw_h,
     diag(m),
@@ -96,7 +96,7 @@ test_that("vectorized testing matches standard testing (multi-group)", {
       cbind(
         gw_weights,
         adjusted_weights_simes,
-        adjusted_weights_para
+        adjusted_weights_parametric
       )[, hyp_names],
       gw_h
     ),

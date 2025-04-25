@@ -92,9 +92,8 @@ Hochberg tests:
 }
 \examples{
 alpha <- 0.025
-p <- c(0.018, 0.01, 0.105, 0.006)
-num_hyps <- length(p)
-g <- bonferroni_holm(rep(1 / 4, 4))
+num_hyps <- 4
+g <- bonferroni_holm(num_hyps)
 weighting_strategy <- graph_generate_weights(g)
 matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -103,14 +102,14 @@ set.seed(1234)
 adjust_weights_parametric(
   matrix_weights = matrix_weights,
   matrix_intersections = matrix_intersections,
-  test_corr = diag(4),
+  test_corr = list(diag(2), diag(2)),
   alpha = alpha,
-  test_groups = list(1:4)
+  test_groups = list(1:2, 3:4)
 )
 alpha <- 0.025
 p <- c(0.018, 0.01, 0.105, 0.006)
 num_hyps <- length(p)
-g <- bonferroni_holm(rep(1 / 4, 4))
+g <- bonferroni_holm(num_hyps)
 weighting_strategy <- graph_generate_weights(g)
 matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -118,12 +117,12 @@ matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
 adjust_weights_simes(
   matrix_weights = matrix_weights,
   p = p,
-  test_groups = list(1:4)
+  test_groups = list(1:2, 3:4)
 )
 alpha <- 0.025
 p <- c(0.018, 0.01, 0.105, 0.006)
 num_hyps <- length(p)
-g <- bonferroni_holm(rep(1 / 4, 4))
+g <- bonferroni_holm(num_hyps)
 weighting_strategy <- graph_generate_weights(g)
 matrix_intersections <- weighting_strategy[, seq_len(num_hyps)]
 matrix_weights <- weighting_strategy[, -seq_len(num_hyps)]
@@ -132,7 +131,7 @@ adjust_weights_hochberg(
   matrix_weights = matrix_weights,
   matrix_intersections = matrix_intersections,
   p = p,
-  test_groups = list(1:4)
+  test_groups = list(1:2, 3:4)
 )
 }
 \references{

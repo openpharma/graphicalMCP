@@ -97,13 +97,15 @@ test_that("shortcut testing handles 0 cases", {
   )
 
   expect_equal(
-    graph_test_shortcut(bonferroni_holm(rep(1 / 3, 3)),
-                        p_zero_2)$outputs$adjusted_p,
+    graph_test_shortcut(
+      bonferroni_holm(3),
+      p_zero_2
+    )$outputs$adjusted_p,
     rep(0, 3),
     ignore_attr = TRUE
   )
 
-  expect_no_error(graph_test_shortcut(bonferroni_holm(rep(1 / 3, 3)), p_zero_2))
+  expect_no_error(graph_test_shortcut(bonferroni_holm(3), p_zero_2))
 })
 
 test_that("shortcut testing rejects none when adjusted p-values exceed 1", {
