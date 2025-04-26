@@ -169,7 +169,7 @@ fixed_sequence_graph <- fixed_sequence(m)
 # )
 # fixed_sequence_graph <- graph_create(c(1, 0, 0), transitions)
 
-plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 60)
+plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 40)
 
 p_values <- runif(m, 0, alpha)
 
