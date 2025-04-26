@@ -157,7 +157,7 @@ test_results$outputs$rejected
 
 Fixed sequence (or hierarchical) procedures pre-specify an order of testing [@maurer-1995-multiple,@westfall-2001-optimally]. For example, the procedure will test $H_1$ first. If it is rejected, it will test $H_2$; otherwise the testing stops. If $H_2$ is rejected, it will test $H_3$; otherwise the testing stops. For each hypothesis, it will be tested at the full $\alpha$ level, when it can be tested.
 
-```{r fixed-sequence, fig.dim=c(4.5, 0.9)}
+```{r fixed-sequence}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -169,7 +169,7 @@ fixed_sequence_graph <- fixed_sequence(m)
 # )
 # fixed_sequence_graph <- graph_create(c(1, 0, 0), transitions)
 
-plot(fixed_sequence_graph, nrow = 1, asp = 0.05, vertex.size = 40)
+plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 60)
 
 p_values <- runif(m, 0, alpha)
 
@@ -187,7 +187,7 @@ test_results$outputs$rejected
 
 Fallback procedures have one-way propagation (like fixed sequence procedures) but allow hypotheses to be tested at different significance levels [@wiens-2003-fixed].
 
-```{r fallback, fig.dim=c(4.5, 0.9)}
+```{r fallback}
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -200,7 +200,7 @@ fallback_graph <- fallback(hypotheses)
 # )
 # fallback_graph <- graph_create(hypotheses, transitions)
 
-plot(fallback_graph, nrow = 1, asp = 0.05, vertex.size = 40)
+plot(fallback_graph, nrow = 1, asp = 0.5, vertex.size = 40)
 
 p_values <- runif(m, 0, alpha)
 
@@ -216,7 +216,7 @@ test_results$outputs$rejected
 
 Further they can be improved to allow propagation from later hypotheses to earlier hypotheses, because it is possible that a later hypothesis is rejected before an earlier hypothesis can be rejected. There are two versions of improvement: `fallback_improved_1` due to @wiens-2005-fallback and `fallback_improved_2` due to @bretz-2009-graphical respectively.
 
-```{r fallback-improved, fig.dim=c(4.5, 0.9)}
+```{r fallback-improved}
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -234,7 +234,7 @@ plot(
   nrow = 1,
   asp = 0.05,
   vertex.size = 40,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10)
+  edge_curves = c("pairs" = 10, "H3|H1" = -20)
 )
 
 epsilon <- 0.0001
@@ -251,7 +251,7 @@ plot(
   nrow = 1,
   asp = 0.05,
   eps = 0.0001,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10),
+  edge_curves = c("pairs" = 10, "H3|H1" = -15),
   vertex.size = 40
 )
 
@@ -271,7 +271,7 @@ test_results$outputs$rejected
 
 Serial gatekeeping procedures involve ordered multiple families of hypotheses, where all hypotheses of a family of hypotheses must be rejected before proceeding in the test sequence. The example below considers a primary family consisting of two hypotheses $H_1$ and $H_2$ and a secondary family consisting of a single hypothesis $H_3$. In the primary family, the Holm procedure is applied. If both $H_1$ and $H_2$ are rejected, $H_3$ can be tested at level $\alpha$; otherwise $H_3$ cannot be rejected. To allow the conditional propagation to $H_3$, an $\varepsilon$ edge is used from $H_2$ to $H_3$. It has a very small transition weight so that $H_2$ propagates most of its hypothesis weight to $H_1$ (if not already rejected) and retains a small (non-zero) weight for $H_3$ so that if $H_1$ has been rejected, all hypothesis weight of $H_2$ will be propagated to $H_3$. Here $\varepsilon$ is assigned to be 0.0001 and in practice, the value could be adjusted but it should be much smaller than the smallest p-value observed.
 
-```{r serial-gatekeeping, fig.dim=c(4.5, 0.9)}
+```{r serial-gatekeeping}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -290,7 +290,7 @@ plot(
   nrow = 1,
   asp = 0.05,
   eps = 0.0001,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10),
+  edge_curves = c("pairs" = 10, "H3|H1" = -15),
   vertex.size = 40
 )
 

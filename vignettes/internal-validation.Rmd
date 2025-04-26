@@ -98,8 +98,6 @@ all.equal(out$adjusted_significance_level, rep(TRUE, nrow(out)))
 # Conclusions
 Multiple approaches are implemented in `graphicalMCP` to reject a hypothesis for different purposes and/or considerations. One approach is to calculate the adjusted p-value of this hypothesis and compare it with `alpha`. Another approach is to calculate the adjusted significance level of this hypothesis and compare it with its p-value. Based on 1000 random graphs, these two approaches produce matching power for all types of tests. Therefore, the internal validation is considered to be complete.
 
-# Reference
-
 ```{r bonferroni, include = FALSE, eval = FALSE}
 n_graph <- 1000
 m <- 6

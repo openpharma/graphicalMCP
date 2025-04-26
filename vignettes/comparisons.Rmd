@@ -173,8 +173,8 @@ gmcp_power <- subset(diff, procedure == "gMCP")
 round(
   max(
     abs(
-      graphicalmcp_power_parametric[, -ncol(graphicalmcp_power_parametric)] -
-        gmcp_power_parametric[, -ncol(gmcp_power)]
+      graphicalmcp_power[, -ncol(graphicalmcp_power)] -
+        gmcp_power[, -ncol(gmcp_power)]
     )
   ),
   4
@@ -240,7 +240,7 @@ Power simulations are not available in `lrstat` for Simes tests. Thus a comparis
 A symmetric graph with five hypotheses will be generated and used for the comparison. A set of p-values is randomly generated to be used for the graphical MCP. Adjusted p-values are calculated and compared using the following functions: `graphicalMCP::graph_test_closure()` and `p.adjust`. This process is repeated 10000 times. Adjusted p-values are matched for all 10000 cases.
 
 ```{r hochberg}
-hochberg_graph <- bonferroni_holm(rep(1 / 5, 5))
+graph <- hochberg(5)
 
 set.seed(1234)
 alpha <- 0.025
