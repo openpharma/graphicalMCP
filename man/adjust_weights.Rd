@@ -12,9 +12,7 @@ adjust_weights_parametric(
   test_corr,
   alpha,
   test_groups,
-  maxpts = 25000,
-  abseps = 1e-06,
-  releps = 0
+  ...
 )
 
 adjust_weights_simes(matrix_weights, p, test_groups)
@@ -45,17 +43,12 @@ one-sided tests are supported.}
 to test together. Grouping is needed to correctly perform Simes and
 parametric tests.}
 
-\item{maxpts}{(Optional) An integer scalar for the maximum number of function
-values, which is needed to perform parametric tests using the
-\code{mvtnorm::GenzBretz} algorithm. The default is 25000.}
-
-\item{abseps}{(Optional) A numeric scalar for the absolute error tolerance,
-which is needed to perform parametric tests using the \code{mvtnorm::GenzBretz}
-algorithm. The default is 1e-6.}
-
-\item{releps}{(Optional) A numeric scalar for the relative error tolerance as
-double, which is needed to perform parametric tests using the
-\code{mvtnorm::GenzBretz} algorithm. The default is 0.}
+\item{...}{Additional arguments to perform parametric tests using the
+\code{mvtnorm::GenzBretz} algorithm. \code{maxpts} is an integer scalar for the
+maximum number of function values, whose default value is 25000. \code{abseps}
+is a numeric scalar for the absolute error tolerance, whose default value
+is 1e-6. \code{releps} is a numeric scalar for the relative error tolerance as
+double, whose default value is 0.}
 
 \item{p}{(Optional) A numeric vector of p-values (unadjusted, raw), whose
 values should be between 0 & 1. The length should match the number of

@@ -19,6 +19,7 @@ This is a list of tasks that can be done by contributors to make reviewing faste
 - [ ] Place Closes #<insert_issue_number> into the beginning of your Pull Request Title (Use Edit button in top-right if you need to update)
 - [ ] Format code according to the [tidyverse style guide](https://style.tidyverse.org/) (Run `styler::style_pkg()`)
 - [ ] Run `devtools::document()` so all `.Rd` files in the `man` folder and the `NAMESPACE` file in the project root are updated appropriately
+- [ ] Run `codemetar::write_codemeta()` to update codemeta.json
 - [ ] Address any updates needed for vignettes and/or templates
 - [ ] Link the issue Development Panel so that the related issue closes after successful merging
 - [ ] Fix merge conflicts

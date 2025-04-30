@@ -33,15 +33,12 @@
 #' @param test_groups (Optional) A list of numeric vectors specifying hypotheses
 #'   to test together. Grouping is needed to correctly perform Simes and
 #'   parametric tests.
-#' @param maxpts (Optional) An integer scalar for the maximum number of function
-#'   values, which is needed to perform parametric tests using the
-#'   `mvtnorm::GenzBretz` algorithm. The default is 25000.
-#' @param abseps (Optional) A numeric scalar for the absolute error tolerance,
-#'   which is needed to perform parametric tests using the `mvtnorm::GenzBretz`
-#'   algorithm. The default is 1e-6.
-#' @param releps (Optional) A numeric scalar for the relative error tolerance as
-#'   double, which is needed to perform parametric tests using the
-#'   `mvtnorm::GenzBretz` algorithm. The default is 0.
+#' @param ... Additional arguments to perform parametric tests using the
+#'   `mvtnorm::GenzBretz` algorithm. `maxpts` is an integer scalar for the
+#'   maximum number of function values, whose default value is 25000. `abseps`
+#'   is a numeric scalar for the absolute error tolerance, whose default value
+#'   is 1e-6. `releps` is a numeric scalar for the relative error tolerance as
+#'   double, whose default value is 0.
 #'
 #' @return
 #' * [adjust_weights_parametric()] returns a matrix with the same
@@ -94,38 +91,28 @@ adjust_weights_parametric <- function(matrix_weights,
                                       test_corr,
                                       alpha,
                                       test_groups,
-                                      maxpts = 25000,
-                                      abseps = 1e-6,
-                                      releps = 0) {
-  natural_order <- colnames(matrix_weights)
-
-  c_values <- matrix(
-    nrow = nrow(matrix_weights),
-    ncol = ncol(matrix_weights),
-    dimnames = dimnames(matrix_weights)
-  )
-  for (group in seq_along(test_groups)) {
-    for (row in seq_len(nrow(matrix_weights))) {
-      group_by_intersection <-
-        test_groups[[group]][as.logical(matrix_intersections[row, , drop = TRUE][test_groups[[group]]])]
-      group_c_value <- solve_c_parametric(
-        matrix_weights[row, group_by_intersection, drop = TRUE],
-        test_corr[[group]][test_groups[[group]] %in% group_by_intersection,
-          test_groups[[group]] %in% group_by_intersection,
-          drop = FALSE
-        ],
-        alpha,
-        maxpts,
-        abseps,
-        releps
-      )
-
-      c_values[row, test_groups[[group]]] <-
-        group_c_value * matrix_intersections[row, test_groups[[group]], drop = TRUE]
-    }
+                                      ...) {
+  # Convert the list of correlation matrices to a big matrix
+  num_hyps <- ncol(matrix_weights)
+  new_corr <- matrix(NA, num_hyps, num_hyps)
+  for (group_num in seq_along(test_groups)) {
+    new_corr[test_groups[[group_num]], test_groups[[group_num]]] <-
+      test_corr[[group_num]]
   }
-  adjusted_weights <- c_values * matrix_weights
-  adjusted_weights[, natural_order, drop = FALSE]
+  diag(new_corr) <- 1
+  test_corr <- new_corr
+
+  # Call the internal function
+  adjusted_weights <- adjust_weights_parametric_util(
+    matrix_weights,
+    matrix_intersections,
+    test_corr,
+    alpha,
+    test_groups,
+    ...
+  )
+
+  adjusted_weights[, colnames(matrix_weights), drop = FALSE]
 }
 
 #' @rdname adjust_weights
@@ -158,7 +145,9 @@ adjust_weights_simes <- function(matrix_weights, p, test_groups) {
     )
   }
 
-  do.call(cbind, group_adjusted_weights)[, natural_order, drop = FALSE]
+  adjusted_weights <- do.call(cbind, group_adjusted_weights)
+
+  adjusted_weights[, colnames(matrix_weights), drop = FALSE]
 }
 
 #' @rdname adjust_weights
@@ -182,7 +171,6 @@ adjust_weights_hochberg <- function(matrix_weights,
                                     matrix_intersections,
                                     p,
                                     test_groups) {
-  natural_order <- colnames(matrix_weights)
   ordered_p <- order(p)
 
   ordered_matrix_weights <- matrix_weights[, ordered_p, drop = FALSE]
@@ -215,5 +203,5 @@ adjust_weights_hochberg <- function(matrix_weights,
 
   adjusted_weights <- do.call(cbind, group_adjusted_weights)
 
-  adjusted_weights[, natural_order, drop = FALSE]
+  adjusted_weights[, colnames(matrix_weights), drop = FALSE]
 }

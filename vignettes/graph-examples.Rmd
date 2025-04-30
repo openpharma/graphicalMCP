@@ -169,7 +169,7 @@ fixed_sequence_graph <- fixed_sequence(m)
 # )
 # fixed_sequence_graph <- graph_create(c(1, 0, 0), transitions)
 
-plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 40)
+plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 
 p_values <- runif(m, 0, alpha)
 
@@ -200,7 +200,7 @@ fallback_graph <- fallback(hypotheses)
 # )
 # fallback_graph <- graph_create(hypotheses, transitions)
 
-plot(fallback_graph, nrow = 1, asp = 0.5, vertex.size = 40)
+plot(fallback_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 
 p_values <- runif(m, 0, alpha)
 
@@ -228,13 +228,18 @@ fallback_improved_1_graph <- fallback_improved_1(hypotheses)
 #   c(hypotheses[seq_len(m - 1)] / sum(hypotheses[seq_len(m - 1)]), 0)
 # )
 # fallback_improved_1_graph <- graph_create(hypotheses, transitions)
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
 
 plot(
   fallback_improved_1_graph,
-  nrow = 1,
-  asp = 0.05,
-  vertex.size = 40,
-  edge_curves = c("pairs" = 10, "H3|H1" = -20)
+  layout = plot_layout,
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 epsilon <- 0.0001
@@ -245,14 +250,19 @@ fallback_improved_2_graph <- fallback_improved_2(hypotheses, epsilon)
 #   c(1, 0, 0)
 # )
 # fallback_improved_2_graph <- graph_create(hypotheses, transitions)
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
 
 plot(
   fallback_improved_2_graph,
-  nrow = 1,
-  asp = 0.05,
+  layout = plot_layout,
   eps = 0.0001,
-  edge_curves = c("pairs" = 10, "H3|H1" = -15),
-  vertex.size = 40
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 p_values <- runif(m, 0, alpha)
@@ -285,13 +295,19 @@ transitions <- rbind(
 
 serial_gatekeeping_graph <- graph_create(c(0.5, 0.5, 0), transitions)
 
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
+
 plot(
   serial_gatekeeping_graph,
-  nrow = 1,
-  asp = 0.05,
+  layout = plot_layout,
   eps = 0.0001,
-  edge_curves = c("pairs" = 10, "H3|H1" = -15),
-  vertex.size = 40
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 p_values <- runif(m, 0, alpha)
