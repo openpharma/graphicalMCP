@@ -102,7 +102,7 @@
 #'   H4 = c(1, 0, 0, 0)
 #' )
 #' try(
-#' g <- graph_create(hypotheses, transitions)
+#'   g <- graph_create(hypotheses, transitions)
 #' )
 #'
 #' # When names are not specified, hypotheses are numbered sequentially as

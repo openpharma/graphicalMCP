@@ -29,15 +29,15 @@ To test $m$ hypotheses using a graphical MCP, each hypothesis $H_i$ receives a w
 
 # Bonferroni-based procedures
 
-## Weighted Bonferroni test
+## Bonferroni test
 
-A weighted Bonferroni test splits $\alpha$ among hypotheses by testing every hypothesis at a significance level of $w_i\alpha$. Thus it rejects a hypothesis if its p-value is less than or equal to its significance level. When $w_i=w_j$ for all $i,j$, this means an equal split and the test is the Bonferroni test. There is no propagation between any pair of hypothesis.
+A Bonferroni test splits $\alpha$ equally among hypotheses by testing every hypothesis at a significance level of $\alpha$ divided by the number of hypotheses. Thus it rejects a hypothesis if its p-value is less than or equal to its significance level. There is no propagation between any pair of hypothesis.
 
 ```{r bonferroni}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
-bonferroni_graph <- bonferroni(rep(1 / m, m))
+bonferroni_graph <- bonferroni(m)
 # transitions <- matrix(0, m, m)
 # bonferroni_graph <- graph_create(rep(1 / m, m), transitions)
 
@@ -62,6 +62,40 @@ test_results <-
 test_results$outputs$rejected
 ```
 
+## Weighted Bonferroni test
+
+A weighted Bonferroni test splits $\alpha$ among hypotheses by testing every hypothesis at a significance level of $w_i\alpha$. Thus it rejects a hypothesis if its p-value is less than or equal to its significance level. When $w_i=w_j$ for all $i,j$, this means an equal split and the test is the Bonferroni test. There is no propagation between any pair of hypothesis.
+
+```{r weighted-bonferroni}
+set.seed(1234)
+alpha <- 0.025
+hypotheses <- c(0.5, 0.3, 0.2)
+weighted_bonferroni_graph <- bonferroni_weighted(hypotheses)
+# m <- length(hypotheses)
+# transitions <- matrix(0, m, m)
+# weighted_bonferroni_graph <- graph_create(hypotheses, transitions)
+
+plot(
+  weighted_bonferroni_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(bonferroni_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+
+test_results <-
+  graph_test_shortcut(
+    weighted_bonferroni_graph,
+    p = p_values,
+    alpha = alpha
+  )
+
+test_results$outputs$rejected
+```
+
 ## Holm Procedure
 
 Holm (or Bonferroni-Holm) procedures improve over Bonferroni tests by allowing propagation [@holm-1979-simple]. In other words, transition weights between hypotheses may not be zero. So it is uniformly more powerful than Bonferroni tests.
@@ -70,7 +104,7 @@ Holm (or Bonferroni-Holm) procedures improve over Bonferroni tests by allowing p
 set.seed(1234)
 alpha <- 0.025
 m <- 3
-holm_graph <- bonferroni_holm(rep(1 / m, m))
+holm_graph <- bonferroni_holm(m)
 # transitions <- matrix(1 / (m - 1), m, m)
 # diag(transitions) <- 0
 # holm_graph <- graph_create(rep(1 / m, m), transitions)
@@ -90,11 +124,40 @@ test_results <- graph_test_shortcut(holm_graph, p = p_values, alpha = alpha)
 test_results$outputs$rejected
 ```
 
+## Weighted Holm Procedure
+
+Weighted Holm (or weighted Bonferroni-Holm) procedures improve over weighted Bonferroni tests by allowing propagation [@holm-1979-simple]. In other words, transition weights between hypotheses may not be zero. So it is uniformly more powerful than weighted Bonferroni tests.
+
+```{r weighted-bonferroni-holm}
+set.seed(1234)
+alpha <- 0.025
+hypotheses <- c(0.5, 0.3, 0.2)
+weighted_holm_graph <- bonferroni_holm_weighted(hypotheses)
+# m <- length(hypotheses)
+# transitions <- matrix(1 / (m - 1), m, m)
+# diag(transitions) <- 0
+# weighted_holm_graph <- graph_create(hypotheses, transitions)
+
+plot(weighted_holm_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(holm_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+
+test_results <- graph_test_shortcut(weighted_holm_graph, p = p_values, alpha = alpha)
+
+test_results$outputs$rejected
+```
+
 ## Fixed sequence procedure
 
-Fixed sequence (or hierarchical) procedures pre-specify an order of testing [@maurer-1995-multiple;westfall-2001-optimally]. For example, the procedure will test $H_1$ first. If it is rejected, it will test $H_2$; otherwise the testing stops. If $H_2$ is rejected, it will test $H_3$; otherwise the testing stops. For each hypothesis, it will be tested at the full $\alpha$ level, when it can be tested.
+Fixed sequence (or hierarchical) procedures pre-specify an order of testing [@maurer-1995-multiple,@westfall-2001-optimally]. For example, the procedure will test $H_1$ first. If it is rejected, it will test $H_2$; otherwise the testing stops. If $H_2$ is rejected, it will test $H_3$; otherwise the testing stops. For each hypothesis, it will be tested at the full $\alpha$ level, when it can be tested.
 
-```{r fixed-sequence-1, fig.dim=c(4.5, 0.9)}
+```{r fixed-sequence}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -106,7 +169,7 @@ fixed_sequence_graph <- fixed_sequence(m)
 # )
 # fixed_sequence_graph <- graph_create(c(1, 0, 0), transitions)
 
-plot(fixed_sequence_graph, nrow = 1, asp = 0.05, vertex.size = 40)
+plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 
 p_values <- runif(m, 0, alpha)
 
@@ -124,19 +187,20 @@ test_results$outputs$rejected
 
 Fallback procedures have one-way propagation (like fixed sequence procedures) but allow hypotheses to be tested at different significance levels [@wiens-2003-fixed].
 
-```{r fallback, fig.dim=c(4.5, 0.9)}
+```{r fallback}
 set.seed(1234)
 alpha <- 0.025
-m <- 3
-fallback_graph <- fallback(rep(1 / 3, 3))
+hypotheses <- c(0.5, 0.3, 0.2)
+m <- length(hypotheses)
+fallback_graph <- fallback(hypotheses)
 # transitions <- rbind(
 #   c(0, 1, 0),
 #   c(0, 0, 1),
 #   c(0, 0, 0)
 # )
-# fallback_graph <- graph_create(rep(1 / 3, 3), transitions)
+# fallback_graph <- graph_create(hypotheses, transitions)
 
-plot(fallback_graph, nrow = 1, asp = 0.05, vertex.size = 40)
+plot(fallback_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 
 p_values <- runif(m, 0, alpha)
 
@@ -150,46 +214,55 @@ test_results <-
 test_results$outputs$rejected
 ```
 
-Further they can be improved to allow propagation from later hypotheses to earlier hypotheses, because it is possible that a later hypothesis is rejected before an earlier hypothesis can be rejected. There are two versions of improvement: `fallback_improved_1` due to [@wiens-2005-fallback] and `fallback_improved_2` due to [@bretz-2009-graphical] respectively.
+Further they can be improved to allow propagation from later hypotheses to earlier hypotheses, because it is possible that a later hypothesis is rejected before an earlier hypothesis can be rejected. There are two versions of improvement: `fallback_improved_1` due to @wiens-2005-fallback and `fallback_improved_2` due to @bretz-2009-graphical respectively.
 
-```{r fallback-improved, fig.dim=c(4.5, 0.9)}
+```{r fallback-improved}
 set.seed(1234)
 alpha <- 0.025
-m <- 3
-fallback_improved_1_graph <- fallback_improved_1(rep(1 / 3, 3))
-# hypotheses <- rep(1 / 3, 3)
+hypotheses <- c(0.5, 0.3, 0.2)
+m <- length(hypotheses)
+fallback_improved_1_graph <- fallback_improved_1(hypotheses)
 # transitions <- rbind(
 #   c(0, 1, 0),
 #   c(0, 0, 1),
 #   c(hypotheses[seq_len(m - 1)] / sum(hypotheses[seq_len(m - 1)]), 0)
 # )
-# fallback_improved_1_graph <- graph_create(rep(1 / 3, 3), transitions)
+# fallback_improved_1_graph <- graph_create(hypotheses, transitions)
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
 
 plot(
   fallback_improved_1_graph,
-  nrow = 1,
-  asp = 0.05,
-  vertex.size = 40,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10)
+  layout = plot_layout,
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 epsilon <- 0.0001
-fallback_improved_2_graph <- fallback_improved_2(rep(1 / 3, 3), epsilon)
-# hypotheses <- rep(1 / 3, 3)
+fallback_improved_2_graph <- fallback_improved_2(hypotheses, epsilon)
 # transitions <- rbind(
 #   c(0, 1, 0),
 #   c(1 - epsilon, 0, epsilon),
 #   c(1, 0, 0)
 # )
-# fallback_improved_2_graph <- graph_create(rep(1 / 3, 3), transitions)
+# fallback_improved_2_graph <- graph_create(hypotheses, transitions)
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
 
 plot(
   fallback_improved_2_graph,
-  nrow = 1,
-  asp = 0.05,
+  layout = plot_layout,
   eps = 0.0001,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10),
-  vertex.size = 40
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 p_values <- runif(m, 0, alpha)
@@ -208,7 +281,7 @@ test_results$outputs$rejected
 
 Serial gatekeeping procedures involve ordered multiple families of hypotheses, where all hypotheses of a family of hypotheses must be rejected before proceeding in the test sequence. The example below considers a primary family consisting of two hypotheses $H_1$ and $H_2$ and a secondary family consisting of a single hypothesis $H_3$. In the primary family, the Holm procedure is applied. If both $H_1$ and $H_2$ are rejected, $H_3$ can be tested at level $\alpha$; otherwise $H_3$ cannot be rejected. To allow the conditional propagation to $H_3$, an $\varepsilon$ edge is used from $H_2$ to $H_3$. It has a very small transition weight so that $H_2$ propagates most of its hypothesis weight to $H_1$ (if not already rejected) and retains a small (non-zero) weight for $H_3$ so that if $H_1$ has been rejected, all hypothesis weight of $H_2$ will be propagated to $H_3$. Here $\varepsilon$ is assigned to be 0.0001 and in practice, the value could be adjusted but it should be much smaller than the smallest p-value observed.
 
-```{r serial-gatekeeping, fig.dim=c(4.5, 0.9)}
+```{r serial-gatekeeping}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -222,13 +295,19 @@ transitions <- rbind(
 
 serial_gatekeeping_graph <- graph_create(c(0.5, 0.5, 0), transitions)
 
+plot_layout <- rbind(
+  c(0, 0.8),
+  c(0.8, 0.8),
+  c(0.4, 0)
+)
+
 plot(
   serial_gatekeeping_graph,
-  nrow = 1,
-  asp = 0.05,
+  layout = plot_layout,
   eps = 0.0001,
-  edge_curves = c("pairs" = 7, "H3|H1" = -10),
-  vertex.size = 40
+  asp = 0.5,
+  edge_curves = c(pairs = 0.5),
+  vertex.size = 70
 )
 
 p_values <- runif(m, 0, alpha)
@@ -373,6 +452,39 @@ test_results <-
 test_results$outputs$rejected
 ```
 
+# Hochberg-based procedures
+
+## Hochberg procedure
+
+Hochberg procedure [@hochberg-1988-sharper] is a closed test procedure which uses Hochberg tests for every intersection hypothesis. According to @xi-2019-symmetric, the graph for Hochberg procedures is the same as the graph for Holm procedures. Thus to perform Hochberg procedure, we just need to specify `test_type` to be `hochberg`.
+
+```{r hochberg}
+set.seed(1234)
+alpha <- 0.025
+m <- 3
+hochberg_graph <- hochberg(m)
+
+plot(
+  hochberg_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(hochberg_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+
+test_results <- graph_test_closure(
+  hochberg_graph,
+  p = p_values,
+  alpha = alpha,
+  test_types = "hochberg"
+)
+
+test_results$outputs$rejected
+```
+
 # Simes-based procedures
 
 ## Hommel procedure
@@ -383,7 +495,7 @@ Hommel procedure [@hommel-1988-stagewise] is a closed test procedure which uses 
 set.seed(1234)
 alpha <- 0.025
 m <- 3
-hommel_graph <- bonferroni_holm(rep(1 / m, m))
+hommel_graph <- hommel(m)
 
 plot(
   hommel_graph,
@@ -408,15 +520,111 @@ test_results$outputs$rejected
 
 # Parametric procedures
 
-## Dunnett procedure
-
-Step-down Dunnett procedures are a closed test procedure and an improvement from Holm procedures by incorporating the correlation structure between test statistics [@dunnett-1991-stepdown]. Thus they are the same graph as Holm procedures. Assume an equi-correlated case, where the correlation between any pair of test statistics is the same, e.g., 0.5. Then we can perform the step-down Dunnett procedure by specifying `test_type` to be `parametric` and providing the correlation matrix.
-
-```{r dunnett}
+## Šidák test
+The Šidák test is similar to the equally weighted Bonferroni test but it assumes test statistics are independent of each other [@vsidak-1967-rectangular]. Thus it can be performed as a parametric procedure with the identity correlation matrix. Its graph is the same as the graph for the equally weighted Bonferroni test.
+```{r sidak}
 set.seed(1234)
 alpha <- 0.025
 m <- 3
-dunnett_graph <- bonferroni_holm(rep(1 / m, m))
+sidak_graph <- sidak(m)
+
+plot(
+  sidak_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(bonferroni_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+corr <- diag(m)
+
+test_results <- graph_test_closure(
+  sidak_graph,
+  p = p_values, alpha = alpha,
+  test_types = "parametric",
+  test_corr = list(corr)
+)
+
+test_results$outputs$rejected
+```
+
+## Dunnett test
+
+Single-step Dunnett tests are an improvement from Bonferroni tests by incorporating the correlation structure between test statistics [@dunnett-1955-multiple]. Thus their graphs are the same as Bonferroni tests. Assume an equi-correlated case, where the correlation between any pair of test statistics is the same, e.g., 0.5. Then we can perform the single-step Dunnett test by specifying `test_type` to be `parametric` and providing the correlation matrix.
+
+```{r dunnett-test}
+set.seed(1234)
+alpha <- 0.025
+m <- 3
+dunnett_graph <- dunnett_single_step(m)
+
+plot(
+  dunnett_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(dunnett_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+corr <- matrix(0.5, m, m)
+diag(corr) <- 1
+
+test_results <- graph_test_closure(
+  dunnett_graph,
+  p = p_values, alpha = alpha,
+  test_types = "parametric",
+  test_corr = list(corr)
+)
+
+test_results$outputs$rejected
+```
+
+## Weighted Dunnett test
+
+Weighted single-step Dunnett tests are an improvement from weighted Bonferroni tests by incorporating the correlation structure between test statistics [@xi-2017-unified]. Thus their graphs are the same as weighted Bonferroni tests. Assume an equi-correlated case, where the correlation between any pair of test statistics is the same, e.g., 0.5. Then we can perform the weighted single-step Dunnett test by specifying `test_type` to be `parametric` and providing the correlation matrix.
+
+```{r weighted-dunnett-test}
+set.seed(1234)
+alpha <- 0.025
+hypotheses <- c(0.5, 0.3, 0.2)
+dunnett_graph <- dunnett_single_step_weighted(hypotheses)
+
+plot(
+  dunnett_graph,
+  layout = igraph::layout_in_circle(
+    as_igraph(dunnett_graph),
+    order = c(2, 1, 3)
+  ),
+  vertex.size = 70
+)
+
+p_values <- runif(m, 0, alpha)
+corr <- matrix(0.5, m, m)
+diag(corr) <- 1
+
+test_results <- graph_test_closure(
+  dunnett_graph,
+  p = p_values, alpha = alpha,
+  test_types = "parametric",
+  test_corr = list(corr)
+)
+
+test_results$outputs$rejected
+```
+
+## Dunnett procedure
+
+Dunnett procedures are a closed test procedure and an improvement from Holm procedures by incorporating the correlation structure between test statistics [@xi-2017-unified]. Thus their graphs are the same as Holm procedures. Assume an equi-correlated case, where the correlation between any pair of test statistics is the same, e.g., 0.5. Then we can perform the step-down Dunnett procedure by specifying `test_type` to be `parametric` and providing the correlation matrix.
+
+```{r dunnett-procedure}
+set.seed(1234)
+alpha <- 0.025
+hypotheses <- c(0.5, 0.3, 0.2)
+dunnett_graph <- dunnett_closure_weighted(hypotheses)
 
 plot(
   dunnett_graph,

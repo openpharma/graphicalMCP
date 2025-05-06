@@ -38,9 +38,9 @@ as_igraph(graph)
 }
 }
 \description{
-Graph objects have different structures and attributes in \code{graphicalMCP},
-\code{gMCP}, and \code{igraph} R packages. These functions convert between different
-classes to increase compatibility.
+Graph objects have different structures and attributes in
+\code{graphicalMCP}, \code{gMCP}, and \code{igraph} R packages. These functions convert
+between different classes to increase compatibility.
 
 Note that \code{igraph} and \code{gMCP} have additional attributes for vertices, edges,
 or a graph itself. These conversion functions only handle attributes related
@@ -63,14 +63,16 @@ if (requireNamespace("igraph", quietly = TRUE)) {
 }
 }
 \references{
-Csardi, G., Nepusz, T., Traag, V., Horvat, S., Zanini, F., Noom, D.,
-and Mueller, K. (2024). \emph{igraph}: Network analysis and visualization
-in R. R package version 2.0.3. \url{https://CRAN.R-project.org/package=igraph}.
+Csardi, G., Nepusz, T., Traag, V., Horvat, S., Zanini, F., Noom,
+D., and Mueller, K. (2024). \emph{igraph}: Network analysis and visualization
+in R. R package version 2.0.3.
+\url{https://CRAN.R-project.org/package=igraph}.
 
-Rohmeyer, K., and Klinglmueller, K. (2024). \emph{gMCP}: Graph based
-multiple test procedures. R package version 0.8-17.
+Rohmeyer, K., and Klinglmueller, K. (2024). \emph{gMCP}: Graph based multiple
+test procedures. R package version 0.8-17.
 \url{https://cran.r-project.org/package=gMCP}.
 }
 \seealso{
-\code{\link[=graph_create]{graph_create()}} for the initial graph used in the \code{graphicalMCP} package.
+\code{\link[=graph_create]{graph_create()}} for the initial graph used in the \code{graphicalMCP}
+package.
 }

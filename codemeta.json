@@ -7,13 +7,19 @@
   "codeRepository": "https://github.com/openpharma/graphicalMCP",
   "issueTracker": "https://github.com/openpharma/graphicalMCP/issues",
   "license": "Apache License 2",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
   "runtimePlatform": "R version 4.1.2 (2021-11-01)",
+  "provider": {
+    "@id": "https://cran.r-project.org",
+    "@type": "Organization",
+    "name": "Comprehensive R Archive Network (CRAN)",
+    "url": "https://cran.r-project.org"
+  },
   "author": [
     {
       "@type": "Person",
@@ -312,7 +318,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "718.407KB",
+  "fileSize": "803.749KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -330,10 +336,11 @@
         }
       ],
       "name": "{graphicalMCP}: Graphical multiple comparison procedures",
-      "url": "https://github.com/openpharma/graphicalMCP"
+      "url": "https://CRAN.R-project.org/package=graphicalMCP"
     }
   ],
-  "relatedLink": "https://github.com/openpharma/graphicalMCP",
   "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/master/NEWS.md",
-  "readme": "https://github.com/openpharma/graphicalMCP/blob/main/README.md"
+  "readme": "https://github.com/openpharma/graphicalMCP/blob/main/README.md",
+  "developmentStatus": "https://www.repostatus.org/#active",
+  "relatedLink": "https://CRAN.R-project.org/package=graphicalMCP"
 }

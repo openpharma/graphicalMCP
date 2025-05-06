@@ -7,8 +7,8 @@
 #' procedure. By default, it calculate the local power, which is the probability
 #' to reject an individual hypothesis, the probability to reject at least one
 #' hypothesis, the probability to reject all hypotheses, the expected number of
-#' rejections, and the probability of user-defined success criteria. See
-#' `vignette("shortcut-testing")` and `vignette("closed-testing")` for more
+#' rejections, and the probability of user-defined success criteria.
+#' See `vignette("shortcut-testing")` and `vignette("closed-testing")` for more
 #' illustration of power calculation.
 #'
 #' @inheritParams graph_test_closure
@@ -30,7 +30,8 @@
 #'   body will be used as the name. Lambda functions also work starting with R
 #'   4.1, e.g. `sim_success = list(\(x) x[3] || x[4])`.
 #' @param verbose A logical scalar specifying whether the details of power
-#'   simulations should be included in results. The default is `verbose = FALSE`.
+#'   simulations should be included in results. The default is `verbose =
+#'   FALSE`.
 #'
 #' @return A `power_report` object with a list of 3 elements:
 #'   * `inputs` - Input parameters, which is a list of:
@@ -45,45 +46,44 @@
 #'     * `sim_success` - User-defined success criteria.
 #'   * `power` - A list of power values
 #'     * `power_local` - Local power of all hypotheses, which is the proportion
-#'       of simulations in which each hypothesis is rejected,
+#'   of simulations in which each hypothesis is rejected,
 #'     * `rejection_expected` - Expected (average) number of rejected hypotheses,
 #'     * `power_at_least_1` - Power to reject at least one hypothesis,
 #'     * `power_all` - Power to reject all hypotheses,
 #'     * `power_success` - Power of user-defined success, which is the
-#'       proportion of simulations in which the user-defined success criterion
+#'   proportion of simulations in which the user-defined success criterion
 #'     * `sim_success` is met.
 #'   * `details` - An optional list of datasets showing simulated p-values and
-#'     results for each simulation.
+#'   results for each simulation.
 #'
-#' @section Simulation details:
-#' The power calculation is based on simulations. The distribution to simulate
-#' from is determined as a multivariate normal distribution by `power_marginal`
-#' and `sim_corr`. In particular, `power_marginal` is a vector of marginal
-#' power values for all hypotheses. The marginal power is the power to reject
-#' the null hypothesis at the significance level `alpha`
-#' *without multiplicity adjustment*. This value could be readily available from
-#' standard software and other R packages. Then we can determine the mean of the
-#' multivariate normal distribution as
-#' \deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)},
-#' which is often called the non-centrality parameter or the drift parameter.
-#' Here \eqn{d_i} is the marginal power `power_marginal` of hypothesis \eqn{i}.
-#' Given the correlation matrix `sim_corr`, we can simulate from this
-#' multivariate normal distribution using the `mvtnorm` R package (Genz and
-#' Bretz, 2009).
+#' @section Simulation details: The power calculation is based on simulations.
+#'   The distribution to simulate from is determined as a multivariate normal
+#'   distribution by `power_marginal` and `sim_corr`. In particular,
+#'   `power_marginal` is a vector of marginal power values for all hypotheses.
+#'   The marginal power is the power to reject the null hypothesis at the
+#'   significance level `alpha` *without multiplicity adjustment*. This value could be readily available from
+#'   standard software and other R packages. Then we can determine the mean of
+#'   the multivariate normal distribution as
+#'   \deqn{\Phi^{-1}\left(1-\alpha\right)-\Phi^{-1}\left(1-d_i\right)}, which is
+#'   often called the non-centrality parameter or the drift parameter. Here
+#'   \eqn{d_i} is the marginal power `power_marginal` of hypothesis \eqn{i}.
+#'   Given the correlation matrix `sim_corr`, we can simulate from this
+#'   multivariate normal distribution using the `mvtnorm` R package (Genz and
+#'   Bretz, 2009).
 #'
-#' Each set simulated values can be used to calculate the corresponding
-#' one-sided p-values. Then this set of p-values are plugged into the graphical
-#' multiple comparison procedure to determine which hypotheses are rejected.
-#' This process is repeated `n_sim` times to produce the power values as the
-#' proportion of simulations in which a particular success criterion is met.
+#'   Each set simulated values can be used to calculate the corresponding
+#'   one-sided p-values. Then this set of p-values are plugged into the
+#'   graphical multiple comparison procedure to determine which hypotheses are
+#'   rejected. This process is repeated `n_sim` times to produce the power
+#'   values as the proportion of simulations in which a particular success
+#'   criterion is met.
 #'
 #' @rdname graph_calculate_power
 #'
 #' @export
 #'
-#' @references
-#'   Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
-#'   Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
+#' @references Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,
+#'   and Rohmeyer, K. (2011a). Graphical approaches for multiple comparison
 #'   procedures using weighted Bonferroni, Simes, or parametric tests.
 #'   \emph{Biometrical Journal}, 53(6), 894-913.
 #'
@@ -99,8 +99,8 @@
 #'   Simes tests. \emph{Statistics in Medicine}, 35(22), 4041-4055.
 #'
 #'   Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
-#'   for weighted parametric multiple test procedures.
-#'   \emph{Biometrical Journal}, 59(5), 918-931.
+#'   for weighted parametric multiple test procedures. \emph{Biometrical
+#'   Journal}, 59(5), 918-931.
 #'
 #' @examples
 #' # A graphical multiple comparison procedure with two primary hypotheses (H1
@@ -178,9 +178,11 @@ graph_calculate_power <- function(graph,
     bonferroni = "bonferroni",
     parametric = "parametric",
     simes = "simes",
+    hochberg = "hochberg",
     b = "bonferroni",
     p = "parametric",
-    s = "simes"
+    s = "simes",
+    h = "hochberg"
   )
   test_types <- test_opts[tolower(test_types)]
   names(test_types) <- test_types_names
@@ -233,9 +235,8 @@ graph_calculate_power <- function(graph,
   new_corr <- matrix(NA, num_hyps, num_hyps)
 
   for (group_num in seq_along(test_groups)) {
-    test_group <- test_groups[[group_num]]
-
-    new_corr[test_group, test_group] <- test_corr[[group_num]]
+    new_corr[test_groups[[group_num]], test_groups[[group_num]]] <-
+      test_corr[[group_num]]
   }
   diag(new_corr) <- 1
   test_corr <- if (any(test_types == "parametric")) new_corr else NULL
@@ -294,7 +295,7 @@ graph_calculate_power <- function(graph,
     # Parametric adjusted weights depend only on the joint distribution and
     # alpha. This allows adjusted weights to be calculated once, rather than
     # re-calculating for each simulation
-    adjusted_weights_parametric <- adjust_weights_parametric(
+    adjusted_weights_parametric <- adjust_weights_parametric_util(
       matrix_weights,
       matrix_intersections,
       test_corr,
@@ -330,6 +331,23 @@ graph_calculate_power <- function(graph,
     # for each test type
     p_sim_simes <- p_sim[, unlist(groups_simes), drop = FALSE]
 
+    # Separate Hochberg weighting strategy -------------------------------------
+    # All Simes comments apply to Hochberg
+    groups_hochberg <- test_groups[test_types == "hochberg", drop = FALSE]
+
+    matrix_weights_hochberg <-
+      matrix_weights[, unlist(groups_hochberg), drop = FALSE]
+
+    matrix_intersections_hochberg <-
+      matrix_intersections[, unlist(groups_hochberg), drop = FALSE]
+
+    groups_hochberg_reduce <- lapply(
+      groups_hochberg,
+      function(group) which(unlist(groups_hochberg) %in% group)
+    )
+
+    p_sim_hochberg <- p_sim[, unlist(groups_hochberg), drop = FALSE]
+
     # Apply closure testing to each simulation ---------------------------------
     for (row in seq_len(sim_n)) {
       # If there are no Simes groups, adjusted weights are the Simes weighting
@@ -353,6 +371,18 @@ graph_calculate_power <- function(graph,
         # testing
       }
 
+      # All Simes comments apply to similar lines for Hochberg
+      if (length(groups_hochberg) == 0) {
+        adjusted_weights_hochberg <- matrix_weights_hochberg
+      } else {
+        adjusted_weights_hochberg <- adjust_weights_hochberg(
+          matrix_weights_hochberg,
+          matrix_intersections_hochberg,
+          p_sim_hochberg[row, ],
+          groups_hochberg_reduce
+        )
+      }
+
       # `graph_test_closure_fast()` requires hypotheses, p-values, and the
       # intersections matrix to all have hypotheses/columns in the same order.
       # P-values and the intersections matrix are already in the original order,
@@ -360,12 +390,13 @@ graph_calculate_power <- function(graph,
       adjusted_weights_all <- cbind(
         adjusted_weights_bonferroni,
         adjusted_weights_simes,
+        adjusted_weights_hochberg,
         adjusted_weights_parametric
       )[, hyp_names, drop = FALSE]
 
       # Similar to Simes adjusted weights, the optimized testing function
       # requires missing values to be replaced by zero. This line also replaces
-      # the incorrect Simes adjusted weights with zero.
+      # the incorrect Simes and Hochberg adjusted weights with zero.
       adjusted_weights_all[!matrix_intersections] <- 0
 
       # Record test results for one simulation, all groups

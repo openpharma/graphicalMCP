@@ -1,9 +1,9 @@
 #' Convert between graphicalMCP, gMCP, and igraph graph classes
 #'
 #' @description
-#' Graph objects have different structures and attributes in `graphicalMCP`,
-#' `gMCP`, and `igraph` R packages. These functions convert between different
-#' classes to increase compatibility.
+#' Graph objects have different structures and attributes in
+#' `graphicalMCP`, `gMCP`, and `igraph` R packages. These functions convert
+#' between different classes to increase compatibility.
 #'
 #' Note that `igraph` and `gMCP` have additional attributes for vertices, edges,
 #' or a graph itself. These conversion functions only handle attributes related
@@ -18,23 +18,23 @@
 #'   * `as_graphMCP()` returns a `graphMCP` object for the `gMCP` package.
 #'   * `as_igraph()` returns an `igraph` object for the `igraph` package.
 #'   * `as_initial_graph()` returns an `initial_graph` object for the
-#'   `graphicalMCP` package.
+#' `graphicalMCP` package.
 #'
-#' @seealso
-#'   [graph_create()] for the initial graph used in the `graphicalMCP` package.
+#' @seealso [graph_create()] for the initial graph used in the `graphicalMCP`
+#' package.
 #'
 #' @rdname as_graph
 #'
 #' @export
 #'
-#' @references
-#'  Csardi, G., Nepusz, T., Traag, V., Horvat, S., Zanini, F., Noom, D.,
-#'  and Mueller, K. (2024). \emph{igraph}: Network analysis and visualization
-#'  in R. R package version 2.0.3. \url{https://CRAN.R-project.org/package=igraph}.
+#' @references Csardi, G., Nepusz, T., Traag, V., Horvat, S., Zanini, F., Noom,
+#' D., and Mueller, K. (2024). \emph{igraph}: Network analysis and visualization
+#' in R. R package version 2.0.3.
+#' \url{https://CRAN.R-project.org/package=igraph}.
 #'
-#'  Rohmeyer, K., and Klinglmueller, K. (2024). \emph{gMCP}: Graph based
-#'  multiple test procedures. R package version 0.8-17.
-#'  \url{https://cran.r-project.org/package=gMCP}.
+#' Rohmeyer, K., and Klinglmueller, K. (2024). \emph{gMCP}: Graph based multiple
+#' test procedures. R package version 0.8-17.
+#' \url{https://cran.r-project.org/package=gMCP}.
 #'
 #' @examples
 #' g_graphicalMCP <- random_graph(5)

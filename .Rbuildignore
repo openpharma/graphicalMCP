@@ -12,7 +12,13 @@
 ^doc$
 ^Meta$
 ^src/calcWeight.cpp$
-^vignettes/.*cache$
+^vignettes/comparisons_power_parametric.csv$
+^vignettes/comparisons_power_shortcut.csv$
+^vignettes/generate-closure_gw_benchmarks.csv$
+^vignettes/generate-closure_power_benchmarks_fixed_sequence.csv$
+^vignettes/generate-closure_power_benchmarks_holm.csv$
+^vignettes/comparisons.Rmd$
+^vignettes/generate-closure.Rmd$
 ^vignettes/knitted$
 ^vignettes/.*files$
 ^vignettes/.*\.html$

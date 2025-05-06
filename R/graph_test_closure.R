@@ -173,9 +173,11 @@ graph_test_closure <- function(graph,
     bonferroni = "bonferroni",
     parametric = "parametric",
     simes = "simes",
+    hochberg = "hochberg",
     b = "bonferroni",
     p = "parametric",
-    s = "simes"
+    s = "simes",
+    h = "hochberg"
   )
   test_types <- test_opts[tolower(test_types)]
   names(test_types) <- test_types_names
@@ -198,7 +200,7 @@ graph_test_closure <- function(graph,
   # `test_groups` is named, all of them must be named. The other two are
   # re-ordered to match `test_groups`
   if (!is.null(names(test_groups))) {
-    if (!all(names(c(test_types, test_corr)) %in% names(test_groups))) {
+    if (!all(c(names(test_types), names(test_corr)) %in% names(test_groups))) {
       stop("If `test_groups` is named, `test_types` and `test_corr` must use the
            same names")
     } else {
@@ -280,6 +282,11 @@ graph_test_closure <- function(graph,
         )
       } else if (test == "simes") {
         adjusted_p[[intersection_index, group_index]] <- adjust_p_simes(
+          p[group_by_intersection],
+          vec_weights[group_by_intersection]
+        )
+      } else if (test == "hochberg") {
+        adjusted_p[[intersection_index, group_index]] <- adjust_p_hochberg(
           p[group_by_intersection],
           vec_weights[group_by_intersection]
         )
@@ -367,6 +374,13 @@ graph_test_closure <- function(graph,
             alpha,
             str_intersection
           )
+        } else if (test == "hochberg") {
+          test_values_list[[test_values_index]] <- test_values_hochberg(
+            p[group_by_intersection],
+            vec_weights[group_by_intersection],
+            alpha,
+            str_intersection
+          )
         } else if (test == "parametric") {
           test_values_list[[test_values_index]] <- test_values_parametric(
             p[group_by_intersection],
@@ -388,6 +402,13 @@ graph_test_closure <- function(graph,
 
     df_test_values <- do.call(rbind, test_values_list)
     rownames(df_test_values) <- NULL
+
+    # sort by hypothesis natural order
+    df_test_values$Hypothesis <-
+      factor(df_test_values$Hypothesis, levels = hyp_names, ordered = TRUE)
+
+    df_test_values <-
+      df_test_values[with(df_test_values, order(-as.numeric(Intersection), Hypothesis)), ]
 
     # "c" value is only used in parametric testing, so there's no need to
     # include this column when there are no parametric groups

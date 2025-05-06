@@ -2,22 +2,44 @@
 % Please edit documentation in R/example_graphs.R
 \name{bonferroni}
 \alias{bonferroni}
+\alias{bonferroni_weighted}
 \alias{bonferroni_holm}
+\alias{bonferroni_holm_weighted}
+\alias{dunnett_single_step}
+\alias{dunnett_single_step_weighted}
+\alias{dunnett_closure_weighted}
+\alias{hochberg}
+\alias{hommel}
 \alias{huque_etal}
 \alias{fallback}
 \alias{fallback_improved_1}
 \alias{fallback_improved_2}
 \alias{fixed_sequence}
+\alias{sidak}
 \alias{simple_successive_1}
 \alias{simple_successive_2}
-\alias{random_graph}
 \alias{two_doses_two_primary_two_secondary}
 \alias{three_doses_two_primary_two_secondary}
+\alias{random_graph}
 \title{Example graphs of commonly used multiple comparison procedures}
 \usage{
-bonferroni(hypotheses, hyp_names = NULL)
+bonferroni(num_hyps, hyp_names = NULL)
 
-bonferroni_holm(hypotheses, hyp_names = NULL)
+bonferroni_weighted(hypotheses, hyp_names = NULL)
+
+bonferroni_holm(num_hyps, hyp_names = NULL)
+
+bonferroni_holm_weighted(hypotheses, hyp_names = NULL)
+
+dunnett_single_step(num_hyps, hyp_names = NULL)
+
+dunnett_single_step_weighted(hypotheses, hyp_names = NULL)
+
+dunnett_closure_weighted(hypotheses, hyp_names = NULL)
+
+hochberg(num_hyps, hyp_names = NULL)
+
+hommel(num_hyps, hyp_names = NULL)
 
 huque_etal(hyp_names = NULL)
 
@@ -29,33 +51,35 @@ fallback_improved_2(hypotheses, epsilon = 1e-04, hyp_names = NULL)
 
 fixed_sequence(num_hyps, hyp_names = NULL)
 
+sidak(num_hyps, hyp_names = NULL)
+
 simple_successive_1(hyp_names = NULL)
 
 simple_successive_2(hyp_names = NULL)
 
-random_graph(num_hyps, hyp_names = NULL)
-
 two_doses_two_primary_two_secondary(hyp_names = NULL)
 
 three_doses_two_primary_two_secondary(hyp_names = NULL)
+
+random_graph(num_hyps, hyp_names = NULL)
 }
 \arguments{
-\item{hypotheses}{(Optional) A numeric vector of hypothesis weights in a
-graphical multiple comparison procedure. Must be a vector of values
-between 0 & 1 (inclusive). The length should match \code{num_hyps} and the
-length of \code{hyp_names}. The sum of hypothesis weights should not exceed 1.}
+\item{num_hyps}{(Optional) Number of hypotheses in a graphical multiple
+comparison procedure.}
 
 \item{hyp_names}{(Optional) A character vector of hypothesis names. The
 length should match \code{num_hyps} and the length of \code{hypotheses}. If
 \code{hyp_names} are not specified, hypotheses will be named sequentially as
 H1, H2, .......}
 
+\item{hypotheses}{(Optional) A numeric vector of hypothesis weights in a
+graphical multiple comparison procedure. Must be a vector of values
+between 0 & 1 (inclusive). The length should match \code{num_hyps} and the
+length of \code{hyp_names}. The sum of hypothesis weights should not exceed 1.}
+
 \item{epsilon}{(Optional) A numeric scalar indicating the value of the
 \eqn{\epsilon} edge. This should be a much smaller value than hypothesis
 and transition weights. The default is 1e-4.}
-
-\item{num_hyps}{(Optional) Number of hypotheses in a graphical multiple
-comparison procedure.}
 }
 \value{
 An S3 object as returned by \code{\link[=graph_create]{graph_create()}}.
@@ -66,29 +90,52 @@ procedures.
 }
 \examples{
 # Bretz et al. (2009)
-bonferroni(hypotheses = rep(1 / 3, 3))
+bonferroni(num_hyps = 3)
 # Bretz et al. (2009)
-bonferroni_holm(hypotheses = rep(1 / 3, 3))
+hypotheses <- c(0.5, 0.3, 0.2)
+bonferroni_weighted(hypotheses)
+# Bretz et al. (2009)
+bonferroni_holm(num_hyps = 3)
+# Bretz et al. (2009)
+hypotheses <- c(0.5, 0.3, 0.2)
+bonferroni_holm_weighted(hypotheses)
+# Xi et al. (2017)
+dunnett_single_step(num_hyps = 3)
+# Xi et al. (2017)
+hypotheses <- c(0.5, 0.3, 0.2)
+dunnett_single_step_weighted(hypotheses)
+# Xi et al. (2009)
+hypotheses <- c(0.5, 0.3, 0.2)
+dunnett_closure_weighted(hypotheses)
+# Hochberg (1988)
+hochberg(num_hyps = 3)
+# Hommel (1988)
+hommel(num_hyps = 3)
 # Huque et al. (2011)
 huque_etal()
 # Wiens (2003)
-fallback(hypotheses = rep(1 / 3, 3))
+hypotheses <- c(0.5, 0.3, 0.2)
+fallback(hypotheses)
 # Wiens and Dmitrienko (2005)
-fallback_improved_1(hypotheses = rep(1 / 3, 3))
+hypotheses <- c(0.5, 0.3, 0.2)
+fallback_improved_1(hypotheses)
 # Bretz et al. (2009)
-fallback_improved_2(hypotheses = rep(1 / 3, 3))
+hypotheses <- c(0.5, 0.3, 0.2)
+fallback_improved_2(hypotheses)
 # Maurer et al. (1995); Westfall and Krishen (2001)
 fixed_sequence(num_hyps = 3)
+# sidak (1967)
+sidak(num_hyps = 3)
 # Figure 1 in Bretz et al. (2011)
 simple_successive_1()
 # Figure 4 in Bretz et al. (2011)
 simple_successive_2()
-# Create a random graph with three hypotheses
-random_graph(num_hyps = 3)
 # Figure 6 in Xi and Bretz et al. (2019)
 two_doses_two_primary_two_secondary()
 # Add another dose to Figure 6 in Xi and Bretz et al. (2019)
 three_doses_two_primary_two_secondary()
+# Create a random graph with three hypotheses
+random_graph(num_hyps = 3)
 }
 \references{
 Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
@@ -100,6 +147,12 @@ Rohmeyer, K. (2011). Graphical approaches for multiple comparison
 procedures using weighted Bonferroni, Simes, or parametric tests.
 \emph{Biometrical Journal}, 53(6), 894-913.
 
+Hochberg, Y. (1988). A sharper Bonferroni procedure for multiple tests of
+significance. \emph{Biometrika}, 75(4), 800-802.
+
+Hommel, G. (1988). A stagewise rejective multiple test procedure based on a
+modified Bonferroni test. \emph{Biometrika}, 75(2), 383-386.
+
 Huque, M. F., Alosh, M., and Bhore, R. (2011). Addressing multiplicity
 issues of a composite endpoint and its components in clinical trials.
 \emph{Journal of Biopharmaceutical Statistics}, 21(4), 610-634.
@@ -107,6 +160,10 @@ issues of a composite endpoint and its components in clinical trials.
 Maurer, W., Hothorn, L., and Lehmacher, W. (1995). Multiple comparisons in
 drug clinical trials and preclinical assays: a-priori ordered hypotheses.
 \emph{Biometrie in der chemisch-pharmazeutischen Industrie}, 6, 3-18.
+
+Šidák, Z. (1967). Rectangular confidence regions for the means of
+multivariate normal distributions. \emph{Journal of the American Statistical
+Association}, 62(318), 626-633.
 
 Westfall, P. H., and Krishen, A. (2001). Optimally weighted, fixed sequence
 and gatekeeper multiple testing procedures.

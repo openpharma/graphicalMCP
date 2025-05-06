@@ -126,3 +126,36 @@ test_values_simes <- function(p, hypotheses, alpha, intersection = NA) {
     )
   }
 }
+
+#' @rdname test_values
+#' @keywords internal
+test_values_hochberg <- function(p, hypotheses, alpha, intersection = NA) {
+  if (length(p) == 0) {
+    NULL
+  } else {
+    vec_res <- vector(length = length(hypotheses))
+    w_quo <- vector("numeric", length = length(hypotheses))
+    total_weight <- sum(hypotheses)
+
+    for (i in seq_along(hypotheses)) {
+      w_quo[[i]] <- total_weight / (length(hypotheses) - sum(p <= p[[i]]) + 1)
+      vec_res[[i]] <- p[[i]] <= alpha * w_quo[[i]]
+    }
+
+    data.frame(
+      Intersection = intersection,
+      Hypothesis = names(hypotheses),
+      Test = "hochberg",
+      p = p,
+      "c_value" = "",
+      "Weight" = w_quo,
+      Alpha = alpha,
+      Inequality_holds = ifelse(
+        p == 0 & w_quo == 0,
+        NA,
+        vec_res
+      ),
+      check.names = FALSE
+    )
+  }
+}

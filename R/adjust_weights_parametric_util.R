@@ -112,3 +112,46 @@ solve_c_parametric <- function(hypotheses,
   # Occasionally has floating point differences
   round(c_value, 10)
 }
+
+#' @rdname adjust_weights_parametric_util
+#' @keywords internal
+#' This function only allows `test_corr` to be a single correlation matrix. This
+#' is different from `adjust_weights_parametric()` which allows a list of
+#' correlation matrices.
+adjust_weights_parametric_util <- function(matrix_weights,
+                                           matrix_intersections,
+                                           test_corr,
+                                           alpha,
+                                           test_groups,
+                                           maxpts = 25000,
+                                           abseps = 1e-6,
+                                           releps = 0) {
+  c_values <- matrix(
+    nrow = nrow(matrix_weights),
+    ncol = ncol(matrix_weights),
+    dimnames = dimnames(matrix_weights)
+  )
+
+  for (group in test_groups) {
+    for (row in seq_len(nrow(matrix_weights))) {
+      group_by_intersection <-
+        group[as.logical(matrix_intersections[row, , drop = TRUE][group])]
+
+      group_c_value <- solve_c_parametric(
+        matrix_weights[row, group_by_intersection, drop = TRUE],
+        test_corr[group_by_intersection, group_by_intersection, drop = FALSE],
+        alpha,
+        maxpts,
+        abseps,
+        releps
+      )
+
+      c_values[row, group] <-
+        group_c_value * matrix_intersections[row, group, drop = TRUE]
+    }
+  }
+
+  adjusted_weights <- c_values * matrix_weights
+
+  adjusted_weights[, unlist(test_groups), drop = FALSE]
+}
