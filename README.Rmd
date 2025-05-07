@@ -58,6 +58,7 @@ pak::pak("openpharma/graphicalMCP")
   - see `vignette("shortcut-testing")` for sequentially rejective graphical multiple comparison procedures based on Bonferroni tests
   - see `vignette("closed-testing")` for graphical multiple comparison procedures based on the closure principle using Bonferroni, Hochberg, parametric and Simes tests
   - see `vignette("graph-examples")` for common multiple comparison procedures illustrated using `graphicalMCP`
+  - see `vignette("internal-validation")` for internal validation via power simulations for methods used in `graphicalMCP`
   - see `vignette("generate-closure")` for rationales to generate the closure and the weighting strategy of a graph
   - see `vignette("comparisons")` for comparisons to other R packages
 - To view vignettes in R after properly installing `graphicalMCP`, we can build vignettes by `devtools::install(build_vignettes = TRUE)`, and then use `browseVignettes("graphicalMCP")` to view the full list of vignettes
