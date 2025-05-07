@@ -54,3 +54,8 @@
 * Expanded example graphs
 * Updated vignettes
 * Submission for CRAN release
+
+# graphicalMCP 0.2.8
+
+* Corrected urls for references
+* Submission for CRAN release

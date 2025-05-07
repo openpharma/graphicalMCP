@@ -1,7 +1,7 @@
 Type: Package
 Package: graphicalMCP
 Title: Graphical Multiple Comparison Procedures
-Version: 0.2.7
+Version: 0.2.8
 Authors@R: c(
     person("Dong", "Xi", , "dong.xi1@gilead.com", role = c("aut", "cre")),
     person("Ethan", "Brockmann", , "ethan.brockmann@atorusresearch.com", role = "aut"),

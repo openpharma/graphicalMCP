@@ -1,3 +1,12 @@
+# Version 0.2.8
+
+- This is the eighth submission to CRAN.
+- Corrected urls of references
+
+## R CMD check results
+
+0 errors | 0 warnings | 0 notes
+
 # Version 0.2.7
 
 - This is the seventh submission to CRAN.

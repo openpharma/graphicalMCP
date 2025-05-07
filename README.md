@@ -56,9 +56,12 @@ pak::pak("openpharma/graphicalMCP")
         graphical multiple comparison procedures based on Bonferroni
         tests
     -   see `vignette("closed-testing")` for graphical multiple
-        comparison procedures based on the closure principle
+        comparison procedures based on the closure principle using
+        Bonferroni, Hochberg, parametric and Simes tests
     -   see `vignette("graph-examples")` for common multiple comparison
         procedures illustrated using `graphicalMCP`
+    -   see `vignette("internal-validation")` for internal validation
+        via power simulations for methods used in `graphicalMCP`
     -   see `vignette("generate-closure")` for rationales to generate
         the closure and the weighting strategy of a graph
     -   see `vignette("comparisons")` for comparisons to other R
