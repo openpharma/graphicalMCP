@@ -103,7 +103,7 @@ adjust_p_parametric <- function(p,
   prob_less_than_z <- ifelse(
     length(z) == 1,
     stats::pnorm(z, lower.tail = FALSE)[[1]],
-    1 - mvtnorm::pmvnorm(
+    1 - round(mvtnorm::pmvnorm(
       lower = -Inf,
       upper = z,
       corr = test_corr[w_nonzero, w_nonzero, drop = FALSE],
@@ -112,7 +112,7 @@ adjust_p_parametric <- function(p,
         abseps = abseps,
         releps = releps
       )
-    )[[1]]
+    )[[1]], 8)
   )
 
   # Occasionally off by floating point differences, so round at some high detail

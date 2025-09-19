@@ -65,7 +65,7 @@ c_value_function <- function(x,
   y <- ifelse(
     length(z) == 1,
     stats::pnorm(z, lower.tail = FALSE)[[1]],
-    1 - mvtnorm::pmvnorm(
+    1 - round(mvtnorm::pmvnorm(
       lower = -Inf,
       upper = z,
       corr = test_corr[hyps_nonzero, hyps_nonzero, drop = FALSE],
@@ -74,7 +74,7 @@ c_value_function <- function(x,
         abseps = abseps,
         releps = releps
       )
-    )[[1]]
+    )[[1]], 8)
   )
 
   y - alpha * sum(hypotheses)
