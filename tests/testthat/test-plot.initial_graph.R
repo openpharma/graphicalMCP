@@ -1,4 +1,6 @@
 test_that("plotting throws no error", {
+  skip_if_not_installed("igraph")
+
   graph <- graph_create(
     c(pi / 10, 1 - pi / 10, 0, 0),
     rbind(

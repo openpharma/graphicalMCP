@@ -36,7 +36,7 @@ In addition, there are some statistical considerations to complete the graph. Th
 
 # Create the graph
 
-```{r create-graph, fig.dim=c(3, 3)}
+```{r create-graph}
 hypotheses <- c(0.5, 0.5, 0, 0)
 transitions <- rbind(
   c(0, 0.5, 0.5, 0),
@@ -47,7 +47,9 @@ transitions <- rbind(
 hyp_names <- c("H1", "H2", "H3", "H4")
 
 g <- graph_create(hypotheses, transitions, hyp_names)
+```
 
+```{r plot-create-graph, fig.dim=c(3, 3), eval = requireNamespace("igraph", quietly = TRUE)}
 plot(g, vertex.size = 60)
 ```
 

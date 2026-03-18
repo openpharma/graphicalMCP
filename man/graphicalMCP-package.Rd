@@ -13,6 +13,7 @@ Multiple comparison procedures (MCPs) control the familywise error rate in clini
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://openpharma.github.io/graphicalMCP/}
   \item \url{https://github.com/openpharma/graphicalMCP}
   \item Report bugs at \url{https://github.com/openpharma/graphicalMCP/issues}
 }

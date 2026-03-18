@@ -76,7 +76,7 @@
 #' with application to the Hochberg procedure. \emph{Statistics in Medicine},
 #' 38(27), 5268-5282.
 #'
-#' @examples
+#' @examplesIf requireNamespace("igraph", quietly = TRUE)
 #' # A graphical multiple comparison procedure with two primary hypotheses (H1
 #' # and H2) and two secondary hypotheses (H3 and H4)
 #' # See Figure 4 in Bretz et al. (2011).

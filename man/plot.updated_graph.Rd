@@ -52,6 +52,7 @@ Plotting an updated graph is a \emph{very} light wrapper around
 for deleted hypotheses.
 }
 \examples{
+\dontshow{if (requireNamespace("igraph", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # A graphical multiple comparison procedure with two primary hypotheses (H1
 # and H2) and two secondary hypotheses (H3 and H4)
 # See Figure 1 in Bretz et al. (2011).
@@ -72,6 +73,7 @@ plot(
   ),
   layout = "grid"
 )
+\dontshow{\}) # examplesIf}
 }
 \references{
 Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and

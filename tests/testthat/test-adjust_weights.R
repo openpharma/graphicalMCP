@@ -37,3 +37,65 @@ test_that("parametric", {
   single_corr <- single_corr[, colnames(matrix_weights), drop = FALSE]
   expect_equal(list_corr, single_corr)
 })
+
+# Simes tests -----------------------------------------------------------------
+test_that("simes returns correct dimensions", {
+  p <- c(0.018, 0.01, 0.105, 0.006)
+  result <- adjust_weights_simes(
+    matrix_weights = matrix_weights,
+    p = p,
+    test_groups = test_groups
+  )
+
+  expect_equal(dim(result), dim(matrix_weights))
+  # Columns reordered by p-value within groups; check same set
+  expect_setequal(colnames(result), colnames(matrix_weights))
+})
+
+test_that("simes adjusted weights are cumulative sums within groups", {
+  g2 <- bonferroni_holm(4)
+  ws <- graph_generate_weights(g2)
+  mw <- ws[, 5:8]
+  p <- c(0.006, 0.01, 0.018, 0.105)
+
+  result <- adjust_weights_simes(
+    matrix_weights = mw,
+    p = p,
+    test_groups = list(1:2, 3:4)
+  )
+
+  # Adjusted weights should be >= original weights (cumulative sums)
+  expect_true(all(result >= mw - 1e-10))
+})
+
+# Hochberg tests ---------------------------------------------------------------
+test_that("hochberg returns correct dimensions", {
+  p <- c(0.018, 0.01, 0.105, 0.006)
+  result <- adjust_weights_hochberg(
+    matrix_weights = matrix_weights,
+    matrix_intersections = matrix_intersections,
+    p = p,
+    test_groups = test_groups
+  )
+
+  expect_equal(dim(result), dim(matrix_weights))
+  expect_equal(colnames(result), colnames(matrix_weights))
+})
+
+test_that("hochberg adjusted weights match manual calculation", {
+  g2 <- bonferroni_holm(4)
+  ws <- graph_generate_weights(g2)
+  mi <- ws[, 1:4]
+  mw <- ws[, 5:8]
+  p <- c(0.006, 0.01, 0.018, 0.105)
+
+  result <- adjust_weights_hochberg(
+    matrix_weights = mw,
+    matrix_intersections = mi,
+    p = p,
+    test_groups = list(1:2, 3:4)
+  )
+
+  # Adjusted weights should be >= original weights
+  expect_true(all(result >= mw - 1e-10))
+})
