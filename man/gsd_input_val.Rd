@@ -19,7 +19,10 @@ gsd_input_val(
 \item{graph}{An initial graph as returned by \code{\link[=graph_create]{graph_create()}}.}
 
 \item{p}{A numeric matrix of p-values with \eqn{m} rows (hypotheses) and
-\eqn{K} columns (analyses).}
+\eqn{K} columns (analyses), where \eqn{K} is the maximum number of
+analyses across all hypotheses. For hypotheses not tested at every
+analysis, use \code{NA} for the columns without data. Each hypothesis
+must have at least one non-\code{NA} value.}
 
 \item{alpha}{A numeric scalar of the overall significance level, which should
 be between 0 & 1. The default is 0.025 for one-sided hypothesis testing
@@ -29,14 +32,17 @@ problems.}
 \item{info_frac}{Information fractions at each analysis. Can be:
 \itemize{
 \item A numeric vector of length \eqn{K} — same fractions for all hypotheses.
+Only allowed when \code{p} contains no \code{NA} values (i.e., all hypotheses
+have the same number of analyses).
 \item A numeric matrix with \eqn{m} rows (hypotheses) and \eqn{K} columns
-(analyses) — different fractions per hypothesis.
+(analyses) — different fractions per hypothesis. When \code{p} contains
+\code{NA} padding, \code{info_frac} must be a matrix with \code{NA} in the same
+positions as \code{p}.
 }
 
-All hypotheses must have the same number of analyses (\eqn{K}). Values
-must be in (0, 1] and monotonically non-decreasing per hypothesis. The
-last value does not need to be 1, allowing the procedure to be applied
-up to an interim analysis.}
+Non-\code{NA} values must be in (0, 1] and monotonically non-decreasing per
+hypothesis. The last non-\code{NA} value does not need to be 1, allowing
+the procedure to be applied up to an interim analysis.}
 
 \item{spending_fn}{Spending function(s) for computing group sequential
 boundaries. Can be:

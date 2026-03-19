@@ -13,7 +13,8 @@ gsd_test_values_no_look_back(
   spending_fn,
   rejection_seq_k,
   hyp_names,
-  rejected_after
+  rejected_after,
+  has_data_k = rep(TRUE, length(hyp_names))
 )
 }
 \description{

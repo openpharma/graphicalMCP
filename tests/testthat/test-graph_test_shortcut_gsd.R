@@ -397,3 +397,212 @@ test_that("info_frac not ending at 1 works (interim-only)", {
 
   expect_s3_class(result, "gsd_graph_report")
 })
+
+# NA padding tests (different K per hypothesis)
+test_that("NA padding: H1 has 2 analyses, H2 has 3", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, 1, NA),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  )
+
+  expect_s3_class(result, "gsd_graph_report")
+  expect_equal(dim(result$outputs$repeated_p), c(2, 3))
+  expect_equal(dim(result$outputs$sequential_p), c(2, 3))
+
+  # H1's third column should be NA in repeated_p and sequential_p
+  expect_true(is.na(result$outputs$repeated_p["H1", 3]))
+  expect_true(is.na(result$outputs$sequential_p["H1", 3]))
+
+  # H2's columns should all be non-NA
+  expect_false(any(is.na(result$outputs$repeated_p["H2", ])))
+  expect_false(any(is.na(result$outputs$sequential_p["H2", ])))
+})
+
+test_that("NA padding: vector info_frac with NA in p errors", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+
+  expect_error(
+    graph_test_shortcut_gsd(
+      g, p, alpha = 0.025,
+      info_frac = c(1/3, 2/3, 1),
+      spending_fn = spending_of
+    ),
+    "info_frac must be a matrix"
+  )
+})
+
+test_that("NA padding: info_frac as matrix with matching NAs", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, 1, NA),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  )
+
+  expect_s3_class(result, "gsd_graph_report")
+})
+
+test_that("NA padding: mismatched NAs in p and info_frac matrix errors", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, 1, 0.9),   # not NA where p is NA
+    c(1/3, 2/3, 1)
+  )
+
+  expect_error(graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  ))
+})
+
+test_that("NA padding: non-contiguous NAs work (tested at analyses 1 and 3)", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, NA, 0.01),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, NA, 1),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  )
+
+  expect_s3_class(result, "gsd_graph_report")
+  expect_true(is.na(result$outputs$repeated_p["H1", 2]))
+  expect_false(is.na(result$outputs$repeated_p["H1", 1]))
+  expect_false(is.na(result$outputs$repeated_p["H1", 3]))
+})
+
+test_that("NA padding: leading NA works (H tested at later analyses)", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(NA, 0.01, 0.005),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(NA, 0.5, 1),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  )
+
+  expect_s3_class(result, "gsd_graph_report")
+  expect_true(is.na(result$outputs$repeated_p["H1", 1]))
+  expect_false(is.na(result$outputs$repeated_p["H1", 2]))
+})
+
+test_that("NA padding: all-NA row errors", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(NA, NA),
+    H2 = c(0.015, 0.005)
+  )
+  info_frac <- rbind(
+    c(NA, NA),
+    c(0.5, 1)
+  )
+
+  expect_error(graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of
+  ))
+})
+
+test_that("NA padding: look_back = TRUE works with different K", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, 1, NA),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of,
+    look_back = TRUE
+  )
+
+  expect_s3_class(result, "gsd_graph_report")
+  expect_true(is.na(result$outputs$repeated_p["H1", 3]))
+  expect_true(is.na(result$outputs$sequential_p["H1", 3]))
+})
+
+test_that("NA padding: test_values works with different K", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(
+    H1 = c(0.024, 0.01, NA),
+    H2 = c(0.015, 0.005, 0.001)
+  )
+  info_frac <- rbind(
+    c(0.5, 1, NA),
+    c(1/3, 2/3, 1)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = info_frac,
+    spending_fn = spending_of,
+    test_values = TRUE
+  )
+
+  expect_type(result$test_values, "list")
+  expect_length(result$test_values, 3)
+})
+
+test_that("NA padding: no NA gives same results as before", {
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025,
+    info_frac = c(0.5, 1),
+    spending_fn = spending_of
+  )
+
+  # No NAs should appear in output
+  expect_false(anyNA(result$outputs$repeated_p))
+  expect_false(anyNA(result$outputs$sequential_p))
+})

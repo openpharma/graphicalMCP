@@ -115,17 +115,31 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     as.character(x$outputs$rejected_at)
   )
 
-  # Choose which p-values to display based on look_back mode
+  # Choose which p-values to display based on look_back mode.
+  # For rejected hypotheses, show the p-value at the analysis where rejection
+  # occurred. For non-rejected hypotheses, show the last non-NA value.
+  p_at_decision <- function(mat, rejected_at) {
+    vapply(seq_len(nrow(mat)), function(j) {
+      if (!is.na(rejected_at[j])) {
+        mat[j, rejected_at[j]]
+      } else {
+        non_na <- which(!is.na(mat[j, ]))
+        if (length(non_na) == 0) NA_real_ else mat[j, max(non_na)]
+      }
+    }, numeric(1))
+  }
   if (look_back) {
     p_col_name <- "Seq. P"
     p_col_values <- format(
-      x$outputs$sequential_p[, num_analyses], digits = precision
+      p_at_decision(x$outputs$sequential_p, x$outputs$rejected_at),
+      digits = precision
     )
     adj_col_name <- "Adj. Seq. P"
   } else {
     p_col_name <- "Rep. P"
     p_col_values <- format(
-      x$outputs$repeated_p[, num_analyses], digits = precision
+      p_at_decision(x$outputs$repeated_p, x$outputs$rejected_at),
+      digits = precision
     )
     adj_col_name <- "Adj. Rep. P"
   }

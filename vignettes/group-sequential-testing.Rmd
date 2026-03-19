@@ -24,8 +24,10 @@ structured and transparent way.
 
 The `graph_test_shortcut_gsd()` function extends the shortcut graphical testing
 procedure to group sequential designs. This vignette illustrates the
-methodology by replicating the case study from Section 4 of
-Maurer and Bretz (2013).
+methodology through two case studies: a diabetes trial from Section 4 of
+Maurer and Bretz (2013), and an oncology trial adapted from the
+[gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
+different endpoints have different numbers of analyses.
 
 ```{r setup}
 library(graphicalMCP)
@@ -171,7 +173,7 @@ g <- graph_create(hypotheses, transitions)
 ```
 
 ```{r graph-plot, eval = requireNamespace("igraph", quietly = TRUE)}
-plot(g)
+plot(g, vertex.size = 60)
 ```
 
 ### Observed P-values
@@ -668,6 +670,270 @@ result3 <- graph_test_shortcut_gsd(
 print(result3)
 ```
 
+## Case Study: Oncology Trial with Different Numbers of Analyses
+
+This example is adapted from the
+[gMCPLite vignette](https://cran.r-project.org/package=gMCPLite/vignettes/GraphicalMultiplicity.html)
+and demonstrates a more complex scenario where hypotheses have different numbers
+of analyses. This is common in oncology trials where different endpoints mature
+at different rates.
+
+### Trial Setup
+
+An oncology trial tests three endpoints — overall survival (OS), progression-free
+survival (PFS), and objective response rate (ORR) — each in a biomarker
+subgroup (S) and in the overall population (A, for all subjects). This gives
+six hypotheses with different numbers of analyses:
+
+- $H_{1}$ (OS, S): OS in the subgroup (3 analyses)
+- $H_{2}$ (OS, A): OS in all subjects (3 analyses)
+- $H_{3}$ (PFS, S): PFS in the subgroup (2 analyses)
+- $H_{4}$ (PFS, A): PFS in all subjects (2 analyses)
+- $H_{5}$ (ORR, S): ORR in the subgroup (1 analysis)
+- $H_{6}$ (ORR, A): ORR in all subjects (1 analysis)
+
+OS endpoints require longer follow-up and have three planned analyses. PFS
+endpoints mature faster and have two analyses. ORR is assessed at a single
+analysis. Each hypothesis has its own event-driven information fractions.
+
+### Graph and Alpha Allocation
+
+The initial alpha is split as: $H_1$ and $H_2$ each receive 0.01, $H_3$
+receives 0.004, $H_4$ receives 0, $H_5$ and $H_6$ each receive 0.0005. This
+totals $\alpha = 0.025$. The hypothesis weights are obtained by dividing each
+allocation by $\alpha$:
+
+```{r oncology-graph}
+alpha_onc <- 0.025
+alpha_allocation <- c(0.01, 0.01, 0.004, 0, 0.0005, 0.0005)
+hypotheses_onc <- alpha_allocation / alpha_onc
+
+hyp_names_onc <- c(
+  "H1_OS_S", "H2_OS_A", "H3_PFS_S", "H4_PFS_A", "H5_ORR_S", "H6_ORR_A"
+)
+names(hypotheses_onc) <- hyp_names_onc
+
+transitions_onc <- rbind(
+  c(0, 1, 0, 0, 0, 0),       # H1_OS_S  -> H2_OS_A
+  c(0, 0, 0.5, 0.5, 0, 0),   # H2_OS_A  -> H3_PFS_S (1/2), H4_PFS_A (1/2)
+  c(0, 0, 0, 1, 0, 0),       # H3_PFS_S -> H4_PFS_A
+  c(0, 0, 0, 0, 0.5, 0.5),   # H4_PFS_A -> H5_ORR_S (1/2), H6_ORR_A (1/2)
+  c(0, 0, 0, 0, 0, 1),       # H5_ORR_S -> H6_ORR_A
+  c(0.5, 0.5, 0, 0, 0, 0)    # H6_ORR_A -> H1_OS_S (1/2), H2_OS_A (1/2)
+)
+
+g_onc <- graph_create(hypotheses_onc, transitions_onc)
+```
+
+The transition structure follows the hierarchy: within each population, alpha
+flows from OS to PFS to ORR, and ORR recycles to OS. Between populations,
+the all-subjects hypotheses share alpha with the subgroup hypotheses.
+
+```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=8, fig.width=6}
+onc_layout <- rbind(
+  c(1, 3),   # H1_OS_S
+  c(2, 3),   # H2_OS_A
+  c(1, 2),   # H3_PFS_S
+  c(2.5, 2), # H4_PFS_A (shifted right)
+  c(1, 1),   # H5_ORR_S
+  c(2, 1)    # H6_ORR_A
+)
+plot(g_onc, layout = onc_layout, vertex.size = 60,
+     edge_curves = c("H6_ORR_A|H2_OS_A" = 0.01,
+                      "H4_PFS_A|H5_ORR_S" = 0.01,
+                      "H3_PFS_S|H4_PFS_A" = 0))
+```
+
+### P-values and Information Fractions
+
+Since hypotheses have different numbers of analyses, we use `NA` padding.
+The p-value and information fraction matrices have $K = 3$ columns (the
+maximum number of analyses), with `NA` for analyses that do not apply.
+
+When `p` contains `NA` values, `info_frac` must be a matrix with `NA` in the
+same positions. This ensures users explicitly specify the correct information
+fractions for each hypothesis, since different endpoints may have very
+different event accrual schedules.
+
+```{r oncology-p-values}
+p_onc <- rbind(
+  H1_OS_S  = c(0.03,    0.0001, 0.000001),
+  H2_OS_A  = c(0.2,     0.15,   0.1),
+  H3_PFS_S = c(0.2,     0.001,  NA),
+  H4_PFS_A = c(0.3,     0.2,    NA),
+  H5_ORR_S = c(0.00001, NA,     NA),
+  H6_ORR_A = c(0.1,     NA,     NA)
+)
+
+# Event-driven information fractions (events / max events per endpoint)
+info_frac_onc <- rbind(
+  H1_OS_S  = c(185 / 295, 245 / 295, 1),
+  H2_OS_A  = c(529 / 800, 700 / 800, 1),
+  H3_PFS_S = c(265 / 310, 1,         NA),
+  H4_PFS_A = c(675 / 750, 1,         NA),
+  H5_ORR_S = c(1,         NA,        NA),
+  H6_ORR_A = c(1,         NA,        NA)
+)
+
+knitr::kable(
+  data.frame(
+    Hypothesis = rownames(p_onc),
+    `No. of Analyses` = rowSums(!is.na(p_onc)),
+    `Info Frac` = apply(info_frac_onc, 1, function(x) {
+      paste(round(x[!is.na(x)], 3), collapse = ", ")
+    }),
+    check.names = FALSE
+  ),
+  row.names = FALSE,
+  caption = "Number of analyses and information fractions per hypothesis"
+)
+```
+
+```{r oncology-p-table}
+p_display <- p_onc
+p_display[] <- ifelse(
+  is.na(p_display), "—",
+  formatC(as.numeric(p_display), format = "f", digits = 6)
+)
+knitr::kable(
+  as.data.frame(p_display),
+  col.names = paste("Analysis", 1:3),
+  caption = "Observed nominal p-values (— indicates no data at that analysis)"
+)
+```
+
+### Sequential P-values (look_back = TRUE)
+
+The gMCPLite vignette uses sequential p-values for its analysis. We replicate
+this by running `graph_test_shortcut_gsd()` with `look_back = TRUE`, which
+uses sequential p-values for rejection decisions. All hypotheses use the
+O'Brien-Fleming spending function:
+
+```{r oncology-run-lb}
+result_onc_lb <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  spending_fn = spending_of,
+  look_back = TRUE,
+  test_values = TRUE
+)
+print(result_onc_lb)
+```
+
+The sequential p-value matrices show the full picture across analyses, with
+`NA` for hypothesis–analysis combinations that do not exist:
+
+```{r oncology-seq-p}
+seq_p_display <- result_onc_lb$outputs$sequential_p
+seq_p_display[] <- ifelse(
+  is.na(seq_p_display), NA,
+  formatC(as.numeric(seq_p_display), format = "f", digits = 6)
+)
+knitr::kable(
+  as.data.frame(seq_p_display),
+  caption = "Sequential p-values (NA = hypothesis not tested at that analysis)"
+)
+```
+
+The procedure processes three analyses sequentially:
+
+**Analysis 1.** Hypotheses $H_1$–$H_4$ are tested at their first interim
+analysis. $H_5$ and $H_6$ undergo their only analysis. The ORR subgroup
+hypothesis $H_5$ has a very small p-value ($p = 0.00001$) and is rejected.
+Its alpha is propagated to $H_6$ through the graph.
+
+**Analysis 2.** Hypotheses $H_1$ and $H_2$ are at their second interim.
+$H_3$ and $H_4$ are at their final analysis. $H_5$ and $H_6$ have no further
+analyses (their columns are `NA`). $H_1$ (OS subgroup) and $H_3$ (PFS
+subgroup) cross their boundaries and are rejected.
+
+**Analysis 3.** Only $H_1$ and $H_2$ have data at the final analysis, but
+$H_1$ was already rejected. $H_2$'s p-values remain too large throughout.
+
+```{r oncology-results-lb}
+# Extract the p-value and boundary at the decision point for each hypothesis.
+# For rejected hypotheses, this is the analysis where rejection occurred.
+# For non-rejected hypotheses, this is the last analysis where it was tested.
+tv_all <- do.call(rbind, result_onc_lb$test_values)
+decision_p <- numeric(length(hyp_names_onc))
+decision_bound <- numeric(length(hyp_names_onc))
+for (i in seq_along(hyp_names_onc)) {
+  h <- hyp_names_onc[i]
+  rows <- tv_all[tv_all$Hypothesis == h, ]
+  if (nrow(rows) == 0) next
+  # Use the last row for this hypothesis (final decision point)
+  decision_p[i] <- rows$p[nrow(rows)]
+  decision_bound[i] <- rows$Boundary[nrow(rows)]
+}
+
+# For non-rejected hypotheses, find the last analysis where they were tested
+last_tested <- rowSums(!is.na(p_onc))
+
+onc_summary_lb <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `p` = formatC(decision_p, format = "f", digits = 6),
+  Boundary = formatC(decision_bound, format = "f", digits = 6),
+  Rejected = result_onc_lb$outputs$rejected,
+  `Rejected at` = ifelse(
+    is.na(result_onc_lb$outputs$rejected_at), "—",
+    as.character(result_onc_lb$outputs$rejected_at)
+  ),
+  `Not rejected at` = ifelse(
+    result_onc_lb$outputs$rejected, "—",
+    as.character(last_tested)
+  ),
+  check.names = FALSE
+)
+knitr::kable(onc_summary_lb, row.names = FALSE,
+             caption = "Oncology case study (look_back = TRUE): rejection decisions")
+```
+
+### Repeated P-values (look_back = FALSE)
+
+For comparison, we also run the procedure with `look_back = FALSE`, which
+uses repeated p-values at each analysis. This is the default mode and does
+not look back at evidence from prior analyses:
+
+```{r oncology-run-no-lb}
+result_onc <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  spending_fn = spending_of,
+  look_back = FALSE
+)
+```
+
+```{r oncology-compare}
+onc_comparison <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (LB)` = result_onc_lb$outputs$rejected,
+  `At (LB)` = ifelse(
+    is.na(result_onc_lb$outputs$rejected_at), "—",
+    as.character(result_onc_lb$outputs$rejected_at)
+  ),
+  `Rejected (no LB)` = result_onc$outputs$rejected,
+  `At (no LB)` = ifelse(
+    is.na(result_onc$outputs$rejected_at), "—",
+    as.character(result_onc$outputs$rejected_at)
+  ),
+  check.names = FALSE
+)
+knitr::kable(onc_comparison, row.names = FALSE,
+             caption = "Comparison: look_back = TRUE vs. FALSE (oncology case study)")
+```
+
+For this example, both modes produce the same rejection decisions. This is
+because the evidence at the rejection analyses is strong enough that looking
+back at earlier analyses does not change the outcome.
+
+This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
+where different endpoints have different numbers of analyses — a common
+situation in oncology trials with OS, PFS, and ORR endpoints.
+
 ## Summary
 
 The `graph_test_shortcut_gsd()` function performs multiple testing in group
@@ -692,8 +958,9 @@ sequential trials using graphical approaches. Key features include:
    sequential p-values, which can lead to additional rejections when evidence
    from earlier analyses is relevant.
 
-5. **Flexibility**: Different hypotheses can use different spending functions and
-   different information fractions, and the number of analyses is flexible.
+5. **Flexibility**: Different hypotheses can use different spending functions,
+   different information fractions, and different numbers of analyses (via `NA`
+   padding in the p-value and information fraction matrices).
 
 ## References
 

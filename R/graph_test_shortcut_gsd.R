@@ -30,16 +30,22 @@
 #'
 #' @inheritParams graph_test_shortcut
 #' @param p A numeric matrix of p-values with \eqn{m} rows (hypotheses) and
-#'   \eqn{K} columns (analyses).
+#'   \eqn{K} columns (analyses), where \eqn{K} is the maximum number of
+#'   analyses across all hypotheses. For hypotheses not tested at every
+#'   analysis, use `NA` for the columns without data. Each hypothesis
+#'   must have at least one non-`NA` value.
 #' @param info_frac Information fractions at each analysis. Can be:
 #'   * A numeric vector of length \eqn{K} — same fractions for all hypotheses.
+#'     Only allowed when `p` contains no `NA` values (i.e., all hypotheses
+#'     have the same number of analyses).
 #'   * A numeric matrix with \eqn{m} rows (hypotheses) and \eqn{K} columns
-#'     (analyses) — different fractions per hypothesis.
+#'     (analyses) — different fractions per hypothesis. When `p` contains
+#'     `NA` padding, `info_frac` must be a matrix with `NA` in the same
+#'     positions as `p`.
 #'
-#'   All hypotheses must have the same number of analyses (\eqn{K}). Values
-#'   must be in (0, 1] and monotonically non-decreasing per hypothesis. The
-#'   last value does not need to be 1, allowing the procedure to be applied
-#'   up to an interim analysis.
+#'   Non-`NA` values must be in (0, 1] and monotonically non-decreasing per
+#'   hypothesis. The last non-`NA` value does not need to be 1, allowing
+#'   the procedure to be applied up to an interim analysis.
 #' @param spending_fn Spending function(s) for computing group sequential
 #'   boundaries. Can be:
 #'   * A single function — applied to all hypotheses.
@@ -154,6 +160,38 @@
 #'   info_frac = rbind(c(0.5, 1), c(0.6, 1)),
 #'   spending_fn = spending_of
 #' )
+#'
+#' # Different numbers of analyses per hypothesis (NA padding)
+#' # H1 at analyses 1-2, H2 at 1-3, H3 at 2-3, H4 at 1 and 3
+#' g4 <- graph_create(
+#'   rep(0.25, 4),
+#'   rbind(
+#'     c(0, 1/3, 1/3, 1/3),
+#'     c(1/3, 0, 1/3, 1/3),
+#'     c(1/3, 1/3, 0, 1/3),
+#'     c(1/3, 1/3, 1/3, 0)
+#'   )
+#' )
+#' p4 <- rbind(
+#'   H1 = c(0.024, 0.01, NA),
+#'   H2 = c(0.015, 0.005, 0.001),
+#'   H3 = c(NA, 0.012, 0.004),
+#'   H4 = c(0.05, NA, 0.015)
+#' )
+#' # info_frac must be a matrix with NA matching p
+#' info_frac4 <- rbind(
+#'   H1 = c(0.5, 1, NA),
+#'   H2 = c(1/3, 2/3, 1),
+#'   H3 = c(NA, 0.5, 1),
+#'   H4 = c(0.4, NA, 1)
+#' )
+#' graph_test_shortcut_gsd(
+#'   graph = g4,
+#'   p = p4,
+#'   alpha = 0.025,
+#'   info_frac = info_frac4,
+#'   spending_fn = spending_of
+#' )
 graph_test_shortcut_gsd <- function(graph,
                                     p,
                                     alpha = 0.025,
@@ -177,6 +215,12 @@ graph_test_shortcut_gsd <- function(graph,
   # info_frac[j, ] gives the information fractions for hypothesis j. When a
   # vector is provided, each hypothesis gets the same fractions.
   if (is.vector(info_frac)) {
+    if (anyNA(p)) {
+      stop(
+        "When p contains NA (different numbers of analyses per hypothesis), ",
+        "info_frac must be a matrix with NA in the same positions as p."
+      )
+    }
     info_frac <- matrix(
       rep(info_frac, each = num_hyps),
       nrow = num_hyps,
@@ -290,16 +334,21 @@ graph_test_shortcut_gsd <- function(graph,
 gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
                           num_analyses, num_hyps, hyp_names, analysis_names,
                           test_values, verbose) {
+  # Indices of non-NA analyses per hypothesis
+  non_na_indices <- lapply(seq_len(num_hyps), function(j) which(!is.na(p[j, ])))
+
   # Compute repeated p-values at each analysis (m × K matrix)
   rep_p_matrix <- matrix(
     NA_real_, num_hyps, num_analyses,
     dimnames = list(hyp_names, analysis_names)
   )
   for (j in seq_len(num_hyps)) {
-    for (k in seq_len(num_analyses)) {
-      rep_p_matrix[j, k] <- suppressMessages(repeated_p(
-        p = p[j, 1:k],
-        info_frac = info_frac[j, 1:k],
+    idx_j <- non_na_indices[[j]]
+    for (kk in seq_along(idx_j)) {
+      cols <- idx_j[1:kk]
+      rep_p_matrix[j, idx_j[kk]] <- suppressMessages(repeated_p(
+        p = p[j, cols],
+        info_frac = info_frac[j, cols],
         spending_fn = spending_fn[[j]]
       ))
     }
@@ -308,7 +357,10 @@ gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
   # Derive sequential p-values as cumulative minimum of repeated p-values
   seq_p_matrix <- rep_p_matrix
   for (j in seq_len(num_hyps)) {
-    seq_p_matrix[j, ] <- cummin(rep_p_matrix[j, ])
+    non_na <- !is.na(rep_p_matrix[j, ])
+    if (any(non_na)) {
+      seq_p_matrix[j, non_na] <- cummin(rep_p_matrix[j, non_na])
+    }
   }
 
   # Process analyses sequentially using sequential p-values
@@ -321,15 +373,17 @@ gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
   tv_details <- if (test_values) vector("list", num_analyses)
 
   for (k in seq_len(num_analyses)) {
-    active <- !rejected
+    # Get active hypotheses: not rejected AND has data at analysis k
+    has_data_k <- !is.na(p[, k])
+    active <- !rejected & has_data_k
 
-    if (!any(active)) break
+    if (!any(active)) next
 
     # Sequential p-values at analysis k for active hypotheses
     seq_p_k <- seq_p_matrix[, k]
 
-    # For already-rejected hypotheses, set seq_p to 1 so they are never
-    # selected by graph_test_shortcut(). With w=0 and p=1, p/w = Inf.
+    # For hypotheses without data at analysis k or already rejected,
+    # set seq_p to 1 so they are never selected by graph_test_shortcut().
     seq_p_k[!active] <- 1
 
     # Apply shortcut to the current graph with sequential p-values
@@ -371,9 +425,8 @@ gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
       rejected_at[hyp_name] <- if (!is.na(earliest)) earliest else k
     }
 
-    # For non-rejected active hypotheses, update adjusted p-values from the
-    # shortcut. These are overwritten at each analysis, so at the end of the
-    # loop the values reflect the final analysis.
+    # For non-rejected active hypotheses (with data at analysis k), update
+    # adjusted p-values from the shortcut.
     not_rejected_active <- active & !shortcut_k$outputs$rejected
     adjusted_p[not_rejected_active] <-
       shortcut_k$outputs$adjusted_p[not_rejected_active]
@@ -384,7 +437,7 @@ gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
     if (test_values) {
       tv_details[[k]] <- gsd_test_values_no_look_back(
         step_graph, p, k, alpha, info_frac, spending_fn,
-        newly_in_order, hyp_names, rejected
+        newly_in_order, hyp_names, rejected, has_data_k
       )
     }
 
@@ -417,17 +470,24 @@ gsd_look_back <- function(graph, p, alpha, info_frac, spending_fn,
 gsd_no_look_back <- function(graph, p, alpha, info_frac, spending_fn,
                              num_analyses, num_hyps, hyp_names, analysis_names,
                              test_values, verbose) {
+  # Indices of non-NA analyses per hypothesis
+  non_na_indices <- lapply(seq_len(num_hyps), function(j) which(!is.na(p[j, ])))
+
   # Compute repeated p-values at each analysis (m × K matrix)
   # rep_p[j, k] = min alpha such that boundary at analysis k is crossed
+  # NA entries in p remain NA in rep_p_matrix
   rep_p_matrix <- matrix(
     NA_real_, num_hyps, num_analyses,
     dimnames = list(hyp_names, analysis_names)
   )
   for (j in seq_len(num_hyps)) {
-    for (k in seq_len(num_analyses)) {
-      rep_p_matrix[j, k] <- suppressMessages(repeated_p(
-        p = p[j, 1:k],
-        info_frac = info_frac[j, 1:k],
+    idx_j <- non_na_indices[[j]]
+    for (kk in seq_along(idx_j)) {
+      # Use the first kk non-NA entries for this hypothesis
+      cols <- idx_j[1:kk]
+      rep_p_matrix[j, idx_j[kk]] <- suppressMessages(repeated_p(
+        p = p[j, cols],
+        info_frac = info_frac[j, cols],
         spending_fn = spending_fn[[j]]
       ))
     }
@@ -442,18 +502,17 @@ gsd_no_look_back <- function(graph, p, alpha, info_frac, spending_fn,
   tv_details <- if (test_values) vector("list", num_analyses)
 
   for (k in seq_len(num_analyses)) {
-    # Get active (non-rejected) hypotheses
-    active <- !rejected
+    # Get active hypotheses: not rejected AND has data at analysis k
+    has_data_k <- !is.na(p[, k])
+    active <- !rejected & has_data_k
 
-    if (!any(active)) break
+    if (!any(active)) next
 
     # Repeated p-values at analysis k for active hypotheses
     rep_p_k <- rep_p_matrix[, k]
 
-    # For already-rejected hypotheses, set rep_p to 1 so they are never
-    # selected by graph_test_shortcut(). With w=0 (from the updated graph)
-    # and p=1, adjusted_p = 1/0 = Inf, which is safely skipped. Using p=0
-    # would give 0/0 = NaN, which is fragile.
+    # For hypotheses without data at analysis k or already rejected,
+    # set rep_p to 1 so they are never selected by graph_test_shortcut().
     rep_p_k[!active] <- 1
 
     # Apply shortcut to the current graph with repeated p-values at analysis k
@@ -493,7 +552,7 @@ gsd_no_look_back <- function(graph, p, alpha, info_frac, spending_fn,
     if (test_values) {
       tv_details[[k]] <- gsd_test_values_no_look_back(
         step_graph, p, k, alpha, info_frac, spending_fn,
-        newly_in_order, hyp_names, rejected
+        newly_in_order, hyp_names, rejected, has_data_k
       )
     }
 
@@ -503,10 +562,13 @@ gsd_no_look_back <- function(graph, p, alpha, info_frac, spending_fn,
     }
   }
 
-  # Derive sequential p-values for the report
+  # Derive sequential p-values for the report (cummin over non-NA entries)
   seq_p_matrix <- rep_p_matrix
   for (j in seq_len(num_hyps)) {
-    seq_p_matrix[j, ] <- cummin(rep_p_matrix[j, ])
+    non_na <- !is.na(rep_p_matrix[j, ])
+    if (any(non_na)) {
+      seq_p_matrix[j, non_na] <- cummin(rep_p_matrix[j, non_na])
+    }
   }
 
   list(
@@ -531,11 +593,13 @@ gsd_no_look_back <- function(graph, p, alpha, info_frac, spending_fn,
 #' @keywords internal
 gsd_test_values_no_look_back <- function(step_graph, p, k, alpha, info_frac,
                                   spending_fn, rejection_seq_k,
-                                  hyp_names, rejected_after) {
+                                  hyp_names, rejected_after,
+                                  has_data_k = rep(TRUE, length(hyp_names))) {
   num_hyps <- length(hyp_names)
-  # Active hypotheses at the start of this analysis: either not yet rejected,
-  # or rejected at this analysis (included in rejection_seq_k)
-  active_before <- !rejected_after | (hyp_names %in% rejection_seq_k)
+  # Active hypotheses at the start of this analysis: have data at analysis k,
+  # and either not yet rejected or rejected at this analysis
+  active_before <- has_data_k &
+    (!rejected_after | (hyp_names %in% rejection_seq_k))
 
   # Early return if no hypotheses are active (e.g., all rejected at earlier
   # analyses) or if rejection_seq_k is empty and no active hypotheses remain
@@ -546,12 +610,16 @@ gsd_test_values_no_look_back <- function(step_graph, p, k, alpha, info_frac,
   compute_boundary <- function(j, current_graph) {
     total_alpha_j <- current_graph$hypotheses[j] * alpha
     if (total_alpha_j <= 0) return(0)
+    # Use non-NA entries up to and including analysis k
+    non_na_up_to_k <- which(!is.na(info_frac[j, ]) & seq_len(ncol(info_frac)) <= k)
+    if_j <- info_frac[j, non_na_up_to_k]
+    k_eff <- length(if_j)
     bounds_result <- gs_boundaries(
       alpha = total_alpha_j,
-      info_frac = info_frac[j, 1:k],
+      info_frac = if_j,
       spending_fn = spending_fn[[j]]
     )
-    bounds_result$bounds_nominal[k]
+    bounds_result$bounds_nominal[k_eff]
   }
 
   detail_rows <- list()
@@ -618,14 +686,19 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
   num_hyps <- length(graph$hypotheses)
   num_analyses <- ncol(p)
 
+  p_non_na <- p[!is.na(p)]
+  if_non_na <- info_frac[!is.na(info_frac)]
+
   stopifnot(
     "Please test an `initial_graph` object" =
       inherits(graph, "initial_graph"),
     "P-values must be a matrix with rows matching the number of hypotheses" =
       is.matrix(p) && nrow(p) == num_hyps,
     "P-values must be numeric" = is.numeric(p),
-    "P-values must not contain NA" = !anyNA(p),
-    "P-values must be between 0 and 1" = all(p >= 0 & p <= 1),
+    "Non-NA p-values must be between 0 and 1" =
+      length(p_non_na) == 0 || all(p_non_na >= 0 & p_non_na <= 1),
+    "NA positions in p and info_frac must match" =
+      identical(is.na(p), is.na(info_frac)),
     "Alpha must be numeric" = is.numeric(alpha),
     "Please choose a single alpha level" = length(alpha) == 1,
     "Alpha must be between 0 and 1" = alpha >= 0 && alpha <= 1,
@@ -634,8 +707,8 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     "Information fractions must have the same number of columns as p" =
       ncol(info_frac) == num_analyses,
     "Information fractions must be numeric" = is.numeric(info_frac),
-    "Information fractions must be in (0, 1]" =
-      all(info_frac > 0 & info_frac <= 1),
+    "Non-NA information fractions must be in (0, 1]" =
+      length(if_non_na) == 0 || all(if_non_na > 0 & if_non_na <= 1),
     "Spending functions must be a list of functions" =
       is.list(spending_fn) &&
       all(vapply(spending_fn, is.function, logical(1))),
@@ -649,9 +722,17 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
       is.logical(test_values) && length(test_values) == 1
   )
 
-  # Check info_frac is non-decreasing per hypothesis
+  # Each hypothesis must have at least one non-NA analysis
   for (j in seq_len(num_hyps)) {
-    t_j <- info_frac[j, ]
+    stopifnot(
+      "Each hypothesis must have at least one non-NA analysis" =
+        any(!is.na(p[j, ]))
+    )
+  }
+
+  # Check info_frac is non-decreasing per hypothesis (non-NA values only)
+  for (j in seq_len(num_hyps)) {
+    t_j <- info_frac[j, !is.na(info_frac[j, ])]
     if (length(t_j) > 1) {
       stopifnot(
         "Information fractions must be non-decreasing for each hypothesis" =

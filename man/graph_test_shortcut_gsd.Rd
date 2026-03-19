@@ -20,7 +20,10 @@ graph_test_shortcut_gsd(
 \item{graph}{An initial graph as returned by \code{\link[=graph_create]{graph_create()}}.}
 
 \item{p}{A numeric matrix of p-values with \eqn{m} rows (hypotheses) and
-\eqn{K} columns (analyses).}
+\eqn{K} columns (analyses), where \eqn{K} is the maximum number of
+analyses across all hypotheses. For hypotheses not tested at every
+analysis, use \code{NA} for the columns without data. Each hypothesis
+must have at least one non-\code{NA} value.}
 
 \item{alpha}{A numeric scalar of the overall significance level, which should
 be between 0 & 1. The default is 0.025 for one-sided hypothesis testing
@@ -30,14 +33,17 @@ problems.}
 \item{info_frac}{Information fractions at each analysis. Can be:
 \itemize{
 \item A numeric vector of length \eqn{K} — same fractions for all hypotheses.
+Only allowed when \code{p} contains no \code{NA} values (i.e., all hypotheses
+have the same number of analyses).
 \item A numeric matrix with \eqn{m} rows (hypotheses) and \eqn{K} columns
-(analyses) — different fractions per hypothesis.
+(analyses) — different fractions per hypothesis. When \code{p} contains
+\code{NA} padding, \code{info_frac} must be a matrix with \code{NA} in the same
+positions as \code{p}.
 }
 
-All hypotheses must have the same number of analyses (\eqn{K}). Values
-must be in (0, 1] and monotonically non-decreasing per hypothesis. The
-last value does not need to be 1, allowing the procedure to be applied
-up to an interim analysis.}
+Non-\code{NA} values must be in (0, 1] and monotonically non-decreasing per
+hypothesis. The last non-\code{NA} value does not need to be 1, allowing
+the procedure to be applied up to an interim analysis.}
 
 \item{spending_fn}{Spending function(s) for computing group sequential
 boundaries. Can be:
@@ -173,6 +179,38 @@ graph_test_shortcut_gsd(
   p = p,
   alpha = 0.025,
   info_frac = rbind(c(0.5, 1), c(0.6, 1)),
+  spending_fn = spending_of
+)
+
+# Different numbers of analyses per hypothesis (NA padding)
+# H1 at analyses 1-2, H2 at 1-3, H3 at 2-3, H4 at 1 and 3
+g4 <- graph_create(
+  rep(0.25, 4),
+  rbind(
+    c(0, 1/3, 1/3, 1/3),
+    c(1/3, 0, 1/3, 1/3),
+    c(1/3, 1/3, 0, 1/3),
+    c(1/3, 1/3, 1/3, 0)
+  )
+)
+p4 <- rbind(
+  H1 = c(0.024, 0.01, NA),
+  H2 = c(0.015, 0.005, 0.001),
+  H3 = c(NA, 0.012, 0.004),
+  H4 = c(0.05, NA, 0.015)
+)
+# info_frac must be a matrix with NA matching p
+info_frac4 <- rbind(
+  H1 = c(0.5, 1, NA),
+  H2 = c(1/3, 2/3, 1),
+  H3 = c(NA, 0.5, 1),
+  H4 = c(0.4, NA, 1)
+)
+graph_test_shortcut_gsd(
+  graph = g4,
+  p = p4,
+  alpha = 0.025,
+  info_frac = info_frac4,
   spending_fn = spending_of
 )
 }
