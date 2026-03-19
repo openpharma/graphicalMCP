@@ -640,13 +640,22 @@ parameter in the wrapper as shown above.
 
 **rpact.** The `rpact` package computes group sequential designs via
 `getDesignGroupSequential()` but does not expose standalone spending
-functions. Its design computation requires that `alpha` be a valid
-significance level, whereas `graph_test_shortcut_gsd()` internally evaluates
-spending functions at arbitrary alpha values during boundary computation.
-For this reason, `rpact` spending functions cannot be directly wrapped for
-use with `graph_test_shortcut_gsd()`. However, `gsDesign` and `rpact`
-implement the same standard spending function formulas, so `gsDesign`
-wrappers can be used to achieve equivalent results.
+functions that can be called with arbitrary `alpha` and information fraction
+inputs. During the graphical testing procedure, `graph_test_shortcut_gsd()`
+internally evaluates spending functions at the current local significance
+level for each hypothesis (i.e., hypothesis weight $\times$ overall
+$\alpha$), which can be very small as weights shift during the procedure.
+While `rpact::getDesignGroupSequential()` accepts small alpha values, it
+issues warnings for alpha below $10^{-6}$ ("out of validated bounds") and
+throws an error when alpha is exactly 0 — which occurs when a hypothesis
+has zero weight. The internal function
+`rpact:::.getDesignGroupSequentialAlphaSpending()` is also not suitable,
+as it takes a design object rather than raw alpha and information fraction
+inputs, and is not part of the public API. Since `rpact` does not provide a
+standalone spending function interface, its spending functions cannot be
+directly wrapped for use with `graph_test_shortcut_gsd()`. However,
+`gsDesign` and `rpact` implement the same standard spending function
+formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
 
 ### Different Information Fractions per Hypothesis
 
