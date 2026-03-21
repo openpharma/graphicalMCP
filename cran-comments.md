@@ -3,6 +3,10 @@
 - This is the ninth submission to CRAN.
 - Closed Issue #90 by changing the precision for parametric tests
 
+## R CMD check results
+
+0 errors | 0 warnings | 0 notes
+
 # Version 0.2.8
 
 - This is the eighth submission to CRAN.
