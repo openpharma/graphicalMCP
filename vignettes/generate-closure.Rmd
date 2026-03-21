@@ -271,13 +271,14 @@ write.csv(
 
 ```{r power-conventional, include = FALSE, eval = FALSE}
 gcp_conventional <- function(
-    graph,
-    alpha = 0.025,
-    power_marginal = rep(alpha, length(graph$hypotheses)),
-    sim_n = 100,
-    sim_corr = diag(length(graph$hypotheses)),
-    sim_success = NULL,
-    verbose = FALSE) {
+  graph,
+  alpha = 0.025,
+  power_marginal = rep(alpha, length(graph$hypotheses)),
+  sim_n = 100,
+  sim_corr = diag(length(graph$hypotheses)),
+  sim_success = NULL,
+  verbose = FALSE
+) {
   hyp_names <- names(graph$hypotheses)
   num_hyps <- length(graph$hypotheses)
 

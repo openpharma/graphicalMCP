@@ -1,3 +1,8 @@
+# Version 0.2.9
+
+- This is the ninth submission to CRAN.
+- Closed Issue #90 by changing the precision for parametric tests
+
 # Version 0.2.8
 
 - This is the eighth submission to CRAN.
