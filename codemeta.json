@@ -7,13 +7,13 @@
   "codeRepository": "https://github.com/openpharma/graphicalMCP",
   "issueTracker": "https://github.com/openpharma/graphicalMCP/issues",
   "license": "Apache License 2",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.1.2 (2021-11-01)",
+  "runtimePlatform": "R version 4.4.3 (2025-02-28)",
   "provider": {
     "@id": "https://cran.r-project.org",
     "@type": "Organization",
@@ -318,7 +318,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "803.544KB",
+  "fileSize": "775.434KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -339,7 +339,7 @@
       "url": "https://CRAN.R-project.org/package=graphicalMCP"
     }
   ],
-  "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/master/NEWS.md",
+  "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/main/NEWS.md",
   "readme": "https://github.com/openpharma/graphicalMCP/blob/main/README.md",
   "developmentStatus": "https://www.repostatus.org/#active",
   "relatedLink": "https://CRAN.R-project.org/package=graphicalMCP"

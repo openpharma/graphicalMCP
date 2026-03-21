@@ -59,3 +59,8 @@
 
 * Corrected urls for references
 * Submission for CRAN release
+
+# graphicalMCP 0.2.9
+
+* Closed Issue #90 by changing the precision for parametric tests
+* Submission for CRAN release
