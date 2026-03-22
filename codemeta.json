@@ -4,16 +4,17 @@
   "identifier": "graphicalMCP",
   "description": "Multiple comparison procedures (MCPs) control the familywise error rate in clinical trials. Graphical MCPs include many commonly used procedures as special cases; see Bretz et al. (2011) <doi:10.1002/bimj.201000239>, Lu (2016) <doi:10.1002/sim.6985>, and Xi et al. (2017) <doi:10.1002/bimj.201600233>. This package is a low-dependency implementation of graphical MCPs which allow mixed types of tests. It also includes power simulations and visualization of graphical MCPs.",
   "name": "graphicalMCP: Graphical Multiple Comparison Procedures",
+  "relatedLink": ["https://openpharma.github.io/graphicalMCP/", "https://CRAN.R-project.org/package=graphicalMCP"],
   "codeRepository": "https://github.com/openpharma/graphicalMCP",
   "issueTracker": "https://github.com/openpharma/graphicalMCP/issues",
   "license": "Apache License 2",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "programmingLanguage": {
     "@type": "ComputerLanguage",
     "name": "R",
     "url": "https://r-project.org"
   },
-  "runtimePlatform": "R version 4.1.2 (2021-11-01)",
+  "runtimePlatform": "R version 4.4.3 (2025-02-28)",
   "provider": {
     "@id": "https://cran.r-project.org",
     "@type": "Organization",
@@ -117,6 +118,18 @@
     },
     {
       "@type": "SoftwareApplication",
+      "identifier": "gsDesign",
+      "name": "gsDesign",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=gsDesign"
+    },
+    {
+      "@type": "SoftwareApplication",
       "identifier": "gt",
       "name": "gt",
       "provider": {
@@ -210,6 +223,18 @@
         "url": "https://cran.r-project.org"
       },
       "sameAs": "https://CRAN.R-project.org/package=rmarkdown"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "rpact",
+      "name": "rpact",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=rpact"
     },
     {
       "@type": "SoftwareApplication",
@@ -318,7 +343,7 @@
     },
     "SystemRequirements": null
   },
-  "fileSize": "803.544KB",
+  "fileSize": "960.639KB",
   "citation": [
     {
       "@type": "SoftwareSourceCode",
@@ -339,8 +364,7 @@
       "url": "https://CRAN.R-project.org/package=graphicalMCP"
     }
   ],
-  "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/master/NEWS.md",
+  "releaseNotes": "https://github.com/openpharma/graphicalMCP/blob/main/NEWS.md",
   "readme": "https://github.com/openpharma/graphicalMCP/blob/main/README.md",
-  "developmentStatus": "https://www.repostatus.org/#active",
-  "relatedLink": "https://CRAN.R-project.org/package=graphicalMCP"
+  "developmentStatus": "https://www.repostatus.org/#active"
 }

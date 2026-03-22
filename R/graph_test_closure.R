@@ -306,14 +306,19 @@ graph_test_closure <- function(graph,
   # The adjusted p-value for an *intersection* is the smallest adjusted p-value
   # for the groups it contains
   adjusted_p_intersection <- apply(adjusted_p, 1, min)
-  reject_intersection <-
-    adjusted_p_intersection <= (alpha + .Machine$double.eps)
+
+  # When parametric tests are used, mvtnorm::pmvnorm introduces Monte Carlo
+  # error (controlled by abseps, default 1e-6). A small tolerance is added to
+  # rejection comparisons to avoid false non-rejections at the boundary.
+  tol <- if (any(test_types == "parametric")) 1e-6 else .Machine$double.eps
+
+  reject_intersection <- adjusted_p_intersection <= (alpha + tol)
 
   # The adjusted p-value for a *hypothesis* is the largest adjusted p-value for
   # the intersections containing that hypothesis
   adjusted_p_hypothesis <-
     apply(adjusted_p_intersection * matrix_intersections, 2, max, na.rm = TRUE)
-  reject_hypothesis <- adjusted_p_hypothesis <= alpha # Hypothesis test results
+  reject_hypothesis <- adjusted_p_hypothesis <= (alpha + tol)
 
   # Adjusted p-value details ---------------------------------------------------
   # Reported adjusted p-values shouldn't exceed 1
