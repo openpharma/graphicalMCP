@@ -73,6 +73,8 @@ CRAN release: 2025-05-07
 
 ## graphicalMCP 0.2.9
 
+CRAN release: 2026-03-21
+
 - Closed Issue
   [\#90](https://github.com/openpharma/graphicalMCP/issues/90) by
   changing the precision for parametric tests
