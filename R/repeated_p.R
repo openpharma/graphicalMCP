@@ -142,8 +142,11 @@ repeated_p <- function(p,
 
   # If boundary at analysis K is crossed even at alpha ~ 0,
   # the p-value is extremely small. Return the lower bound.
+  # Use >= 0 to also handle the edge case where the exceedance is exactly 0
+  # (boundary exactly crossed), which would cause uniroot to fail because
+  # f(lower) and f(upper) would have the same sign.
   exc_lower <- exceedance_K(lower)
-  if (exc_lower > 0) {
+  if (exc_lower >= 0) {
     message(
       "Boundary crossed at alpha = ", lower,
       "; returning ", lower, " as a lower bound."
