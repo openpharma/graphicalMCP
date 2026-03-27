@@ -660,7 +660,11 @@ if (requireNamespace("gsDesign", quietly = TRUE)) {
 
 Any of `gsDesign`'s spending functions can be wrapped this way. For spending
 functions with additional parameters (like `sfHSD`), simply bind the
-parameter in the wrapper as shown above.
+parameter in the wrapper as shown above. A more advanced use of custom
+spending functions — including the separation of *spending time* from
+*information fraction* — is illustrated in the
+[Customizing Spending Functions: Spending Time] section of the oncology
+case study below.
 
 **rpact.** The `rpact` package computes group sequential designs via
 `getDesignGroupSequential()` but does not expose standalone spending
@@ -762,12 +766,12 @@ The transition structure follows the hierarchy: within each population, alpha
 flows from OS to PFS to ORR, and ORR recycles to OS. Between populations,
 the all-subjects hypotheses share alpha with the subgroup hypotheses.
 
-```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=6, fig.width=6}
+```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=6, fig.width=7}
 onc_layout <- rbind(
   c(0, 3),     # H1_OS_S
   c(2, 3),     # H2_OS_A
   c(0, 1.8),   # H3_PFS_S
-  c(1.3, 1.8), # H4_PFS_A
+  c(3, 1.8),   # H4_PFS_A
   c(0, 0.5),   # H5_ORR_S
   c(2, 0.5)    # H6_ORR_A
 )
@@ -776,21 +780,20 @@ onc_layout <- rbind(
 #             6=H3->H4, 7=H4->H5, 8=H4->H6, 9=H5->H6
 label_x <- rep(NA, 9)
 label_y <- rep(NA, 9)
-label_x[1] <- 1.35; label_y[1] <- 1.1   # H6->H1: on the curved edge
-label_x[7] <- 0.65; label_y[7] <- 1.1   # H4->H5: between nodes, near arrow
+label_x[1] <- 0.4;  label_y[1] <- 2.5    # H6->H1: toward arrow (H1)
+label_x[3] <- 2.0;  label_y[3] <- 2.375  # H6->H2: on the edge, toward arrow
+label_x[4] <- 1.5;  label_y[4] <- 2.7    # H2->H3: toward tail (H2)
+label_x[6] <- 0.75; label_y[6] <- 1.8    # H3->H4: toward tail (H3)
+label_x[7] <- 0.9;  label_y[7] <- 0.89   # H4->H5: toward arrow (H5)
+label_x[8] <- 2.5;  label_y[8] <- 1.15   # H4->H6: on the edge, midway
 
 plot(g_onc, layout = onc_layout, vertex.size = 60, asp = 1,
      vertex.label.cex = 0.7,
      rescale = FALSE,
-     xlim = c(-1.2, 3.5),
+     xlim = c(-0.8, 4.0),
      ylim = c(-0.2, 3.8),
      edge.label.x = label_x,
-     edge.label.y = label_y,
-     edge_curves = c("H6_ORR_A|H2_OS_A" = 0,
-                      "H6_ORR_A|H1_OS_S" = 0.2,
-                      "H4_PFS_A|H6_ORR_A" = 0,
-                      "H4_PFS_A|H5_ORR_S" = 0,
-                      "H3_PFS_S|H4_PFS_A" = 0))
+     edge.label.y = label_y)
 ```
 
 ### P-values and Information Fractions
@@ -939,62 +942,120 @@ knitr::kable(onc_summary_lb, row.names = FALSE,
              caption = "Oncology case study (look_back = TRUE): rejection decisions")
 ```
 
-### Repeated P-values (look_back = FALSE)
+This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
+where different endpoints have different numbers of analyses — a common
+situation in oncology trials with OS, PFS, and ORR endpoints.
 
-For comparison, we also run the procedure with `look_back = FALSE`, which
-uses repeated p-values at each analysis. This is the default mode and does
-not look back at evidence from prior analyses:
+### Customizing Spending Functions: Spending Time
 
-```{r oncology-run-no-lb}
-result_onc <- graph_test_shortcut_gsd(
+Some group sequential frameworks (e.g., gMCPLite via gsDesign) separate
+*spending time* from *information fraction*. The information fraction
+determines the correlation structure of the test statistics, while the
+spending time determines how alpha is allocated across analyses via the
+spending function. The two can differ when, for example, all-subjects
+hypotheses use all-subjects event counts for the correlation but subgroup
+event counts for spending.
+
+In `graphicalMCP`, the `info_frac` argument is used for both purposes by
+default. However, the spending time behavior can be achieved without any
+API changes by defining a custom spending function that internally maps
+the information fractions to spending times.
+
+Consider the oncology trial above. The all-subjects hypotheses ($H_2$ and
+$H_4$) use all-subjects event counts for their information fractions (which
+determine the correlation structure), but one might want to use the
+corresponding subgroup event counts as the spending time (which determines
+how aggressively alpha is spent at each analysis). This is because the
+subgroup is a subset of the all-subjects population, and the subgroup events
+may better reflect the information available for the treatment effect
+comparison.
+
+We define a helper function that creates a spending function with a custom
+spending time:
+
+```{r spending-time-helper}
+# Factory function: create a spending function that uses spending_time
+# instead of info_frac for alpha allocation
+make_spending_with_time <- function(base_spending_fn, spending_time) {
+  function(alpha, info_frac) {
+    # Use spending_time for alpha allocation, ignoring info_frac
+    # Truncate to match length (handles interim stops)
+    st <- spending_time[seq_along(info_frac)]
+    base_spending_fn(alpha, st)
+  }
+}
+```
+
+For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
+(`r paste(c(529, 700, 800), collapse = ", ")`) for the correlation structure
+(via `info_frac`), but subgroup OS events
+(`r paste(c(185, 245, 295), collapse = ", ")`) for spending:
+
+```{r spending-time-setup}
+# Spending time = subgroup event fractions (same as H1_OS_S)
+spending_h2 <- make_spending_with_time(
+  spending_of,
+  spending_time = c(185 / 295, 245 / 295, 1)
+)
+
+# Similarly, H4 (PFS, all subjects) uses subgroup PFS event fractions
+spending_h4 <- make_spending_with_time(
+  spending_of,
+  spending_time = c(265 / 310, 1)
+)
+
+# Build per-hypothesis spending function list
+spending_fn_onc <- list(
+  spending_of,   # H1_OS_S:  standard (info_frac = spending time)
+  spending_h2,   # H2_OS_A:  spending time = subgroup OS events
+  spending_of,   # H3_PFS_S: standard
+  spending_h4,   # H4_PFS_A: spending time = subgroup PFS events
+  spending_of,   # H5_ORR_S: standard (single analysis)
+  spending_of    # H6_ORR_A: standard (single analysis)
+)
+```
+
+Now `info_frac_onc` continues to use all-subjects event counts for $H_2$ and
+$H_4$ (determining the correlation structure), while the custom spending
+functions use subgroup event counts for alpha allocation:
+
+```{r spending-time-run}
+result_onc_st <- graph_test_shortcut_gsd(
   graph = g_onc,
   p = p_onc,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_of,
-  look_back = FALSE
+  spending_fn = spending_fn_onc,
+  look_back = TRUE
 )
+print(result_onc_st)
 ```
 
-```{r oncology-compare}
-onc_comparison <- data.frame(
+```{r spending-time-compare}
+st_comparison <- data.frame(
   Hypothesis = hyp_names_onc,
-  `Rejected (LB)` = result_onc_lb$outputs$rejected,
-  `At (LB)` = ifelse(
-    is.na(result_onc_lb$outputs$rejected_at), "—",
-    as.character(result_onc_lb$outputs$rejected_at)
-  ),
-  `Rejected (no LB)` = result_onc$outputs$rejected,
-  `At (no LB)` = ifelse(
-    is.na(result_onc$outputs$rejected_at), "—",
-    as.character(result_onc$outputs$rejected_at)
-  ),
+  `Rejected (info fraction)` = result_onc_lb$outputs$rejected,
+  `Adj. P (info fraction)` = round(result_onc_lb$outputs$adjusted_p, 6),
+  `Rejected (spending time)` = result_onc_st$outputs$rejected,
+  `Adj. P (spending time)` = round(result_onc_st$outputs$adjusted_p, 6),
   check.names = FALSE
 )
-knitr::kable(onc_comparison, row.names = FALSE,
-             caption = "Comparison: look_back = TRUE vs. FALSE (oncology case study)")
+knitr::kable(st_comparison, row.names = FALSE,
+             caption = "Effect of spending time on rejection decisions")
 ```
 
-For this example, both modes produce the same rejection decisions. This is
-because the evidence at the rejection analyses is strong enough that looking
-back at earlier analyses does not change the outcome.
+The spending time adjustment affects the sequential p-values for $H_2$ and
+$H_4$ because it changes how alpha is allocated across their analyses. The
+subgroup event fractions are smaller than the all-subjects event fractions at
+early analyses (e.g., `r round(185/295, 3)` vs. `r round(529/800, 3)` at
+analysis 1 for OS), meaning the spending function allocates less alpha to
+early analyses — the boundaries become more conservative at interim analyses
+and more liberal at the final analysis.
 
-**Note on differences from gMCPLite.** This case study is adapted from the
-[gMCPLite vignette](https://cran.r-project.org/web/packages/gMCPLite/vignettes/huyett-burnett-example.html).
-The rejection decisions (H1, H3, H5 rejected; H2, H4, H6 not rejected) agree
-between the two implementations. However, sequential p-values may differ
-slightly for some hypotheses. The reason is that gMCPLite (via gsDesign)
-separates *spending time* from *information fraction*: for all-subjects
-hypotheses (H2 and H4), gMCPLite uses the subgroup event counts as the
-spending time while using the all-subjects event counts for the correlation
-structure. In contrast, `graphicalMCP` uses `info_frac` for both alpha
-spending and the correlation structure. This difference affects the group
-sequential boundaries and hence the sequential p-values, but in this example
-it does not change which hypotheses are rejected.
-
-This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
-where different endpoints have different numbers of analyses — a common
-situation in oncology trials with OS, PFS, and ORR endpoints.
+This approach illustrates a general principle: because `spending_fn` accepts
+any function with the signature `function(alpha, info_frac)`, users can
+encode arbitrary spending behaviors — including spending time separation —
+without requiring changes to the `graph_test_shortcut_gsd()` interface.
 
 ## Summary
 
