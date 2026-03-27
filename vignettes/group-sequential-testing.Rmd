@@ -1,6 +1,9 @@
 ---
 title: "Group Sequential Design with Graphical Approaches"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    number_sections: true
+    toc: true
 vignette: >
   %\VignetteIndexEntry{Group Sequential Design with Graphical Approaches}
   %\VignetteEngine{knitr::rmarkdown}
@@ -81,7 +84,11 @@ $$P(Z_1 < b_1, \ldots, Z_k < b_k) = 1 - f(\alpha, t_k)$$
 
 where $f(\alpha, t_k)$ is the cumulative spending and
 $(Z_1, \ldots, Z_k)$ follow the canonical joint distribution with
-$\text{Cor}(Z_i, Z_j) = \sqrt{t_i / t_j}$ for $i \le j$.
+$\text{Cor}(Z_i, Z_j) = \sqrt{t_i / t_j}$ for $i \le j$. We consider
+one-sided tests with the upper alternative (i.e., larger effects are better).
+At analysis $k$, the null hypothesis is rejected if $Z_k \ge b_k$, or
+equivalently, if the observed p-value $p_k \le \Phi(-b_k)$ where $\Phi$ is
+the standard normal CDF.
 
 ```{r boundaries-example}
 # Compute boundaries for OBF spending at alpha = 0.025 with 3 equally spaced analyses
@@ -101,13 +108,15 @@ knitr::kable(boundary_table, digits = 6,
 
 ## Repeated and Sequential P-values
 
-Two types of p-values are central to the group sequential graphical procedure:
+Two types of p-values are central to the group sequential graphical procedure.
+Let $\hat{p}_k$ denote the repeated p-value and $\tilde{p}_k$ denote the
+sequential p-value at analysis $k$.
 
-- **Repeated p-value** at analysis $k$: the minimum significance level at which
+- **Repeated p-value** $\hat{p}_k$: the minimum significance level at which
   the group sequential boundary *at analysis $k$ specifically* would be crossed.
   It only considers the boundary at the current analysis.
 
-- **Sequential p-value** at analysis $k$: the minimum significance level at
+- **Sequential p-value** $\tilde{p}_k$: the minimum significance level at
   which any group sequential boundary *at analyses $1, \ldots, k$* would be
   crossed. It equals the cumulative minimum of repeated p-values:
   $\tilde{p}_k = \min_{l=1}^{k} \hat{p}_l$.
@@ -140,6 +149,16 @@ since it considers all prior analyses. A hypothesis that nearly crossed its
 boundary at an earlier analysis will have a much smaller sequential p-value
 than its repeated p-value at the current analysis.
 
+The `graph_test_shortcut_gsd()` function supports two modes controlled by the
+`look_back` parameter. When `look_back = FALSE` (the default), rejection
+decisions at each analysis are based on repeated p-values only — i.e., only
+the boundary at the current analysis is considered. When `look_back = TRUE`,
+rejection decisions are based on sequential p-values, which "look back" at
+all prior analyses by taking the cumulative minimum of repeated p-values.
+This means that strong evidence from an earlier analysis is carried forward
+and can contribute to a rejection at a later analysis. Both modes are
+illustrated in the case studies below.
+
 ## Case Study: Maurer and Bretz (2013), Section 4
 
 We replicate the numerical example from Section 4 of Maurer and Bretz (2013).
@@ -159,7 +178,8 @@ The trial has four hypotheses:
 The testing strategy follows the successiveness principle: secondary hypotheses
 cannot be tested until their parent primary hypothesis is rejected. Both
 primary hypotheses start with equal weight (0.5 each), and upon rejection,
-the full weight propagates to the corresponding secondary hypothesis.
+the weight is split equally between the other primary hypothesis and the
+corresponding secondary hypothesis.
 
 ```{r graph-setup}
 hypotheses <- c(0.5, 0.5, 0, 0)
@@ -194,26 +214,28 @@ p <- rbind(
   H4 = c(0.13,   0.06)
 )
 
+p_display <- as.data.frame(p)
+colnames(p_display) <- paste("Analysis", 1:2)
 knitr::kable(
-  data.frame(
-    Analysis = 1:2,
-    `Info Fraction` = c("1/3", "2/3"),
-    H1 = p["H1", ], H2 = p["H2", ], H3 = p["H3", ], H4 = p["H4", ],
-    check.names = FALSE
-  ),
-  caption = "Observed nominal p-values (Table 1 of Maurer and Bretz, 2013)"
+  p_display,
+  caption = "Observed nominal p-values"
 )
 ```
 
 ### Running the Procedure (look_back = FALSE)
 
 The default mode is `look_back = FALSE`, which means the procedure does **not**
-look back at evidence from prior analyses. At each analysis, rejection decisions
-are based solely on the data observed at that analysis.
+look back at test statistics from prior analyses. At each analysis $k$,
+rejection decisions are based solely on the repeated p-value $\hat{p}_k$
+computed from the test statistic at analysis $k$, without utilizing test
+statistics from previous analyses. Note that the test statistic at analysis
+$k$ is computed from all data accumulated up to that point, but the
+rejection decision at analysis $k$ does not incorporate the test statistics
+(or repeated p-values) from analyses $1, \ldots, k-1$.
 
 There are two equivalent ways to understand the rejection decisions:
 
-1. **Repeated p-values** (default): A repeated p-value at analysis $k$ is the
+1. **Repeated p-values** (default): The repeated p-value $\hat{p}_k$ is the
    minimum significance level at which the group sequential boundary at
    analysis $k$ would be crossed. These are passed to the graphical shortcut
    procedure (`graph_test_shortcut()`) for multiplicity adjustment.
@@ -301,35 +323,41 @@ with their new (increased) weights, potentially enabling further rejections
 at the same analysis.
 
 ```{r test-values-tables}
-knitr::kable(result$test_values[[1]], digits = 6,
+format_test_values <- function(tv) {
+  tv$Boundary <- formatC(tv$Boundary, format = "f", digits = 6)
+  tv
+}
+knitr::kable(format_test_values(result$test_values[[1]]), digits = 6,
              caption = "Analysis 1: nominal boundaries and rejection decisions")
-knitr::kable(result$test_values[[2]], digits = 6,
+knitr::kable(format_test_values(result$test_values[[2]]), digits = 6,
              caption = "Analysis 2: nominal boundaries and rejection decisions")
 ```
 
 **Analysis 1 (t = 1/3).** The initial weights are $(0.5, 0.5, 0, 0)$. The
 OBF spending function allocates very little alpha to the first interim
-analysis — the nominal boundary for $H_1$ and $H_2$ is approximately
-`r sprintf("%.5f", result$test_values[[1]]$Boundary[1])`. Since both observed
-p-values ($p_{1,1} = 0.0062$ and $p_{2,1} = 0.017$) exceed this boundary, no
-hypothesis is rejected.
+analysis — as shown in the Analysis 1 table above, the nominal boundary for
+$H_1$ and $H_2$ is approximately
+`r formatC(result$test_values[[1]]$Boundary[1], format = "f", digits = 6)`.
+Since both observed p-values (0.0062 for $H_1$ and 0.017 for $H_2$) exceed
+this boundary, no hypothesis is rejected.
 
-An important note from the paper: the nominal significance level
-$\alpha^*_{1,1}(w \cdot \alpha)$ is **not** equal to
-$w \cdot \alpha^*_{1,1}(\alpha)$:
+An important note: the nominal boundary computed at a fraction of alpha is
+**not** equal to the same fraction of the boundary computed at the full alpha.
+For example, the boundary at the first analysis with the OBF spending function:
 
 ```{r key-inequality}
 b_half <- gs_boundaries(0.0125, c(1/3, 2/3, 1), spending_of)
 b_full <- gs_boundaries(0.025, c(1/3, 2/3, 1), spending_of)
 cat(sprintf(
-  "alpha*_1(0.0125) = %.6f\n0.5 * alpha*_1(0.025) = %.6f\n",
+  "Boundary at alpha = 0.0125:     %.6f\n0.5 * Boundary at alpha = 0.025: %.6f\n",
   b_half$bounds_nominal[1],
   0.5 * b_full$bounds_nominal[1]
 ))
 ```
 
-This demonstrates why one must evaluate the spending function at
-$w_i \cdot \alpha$, not apply the weight to boundaries computed at $\alpha$.
+This demonstrates why the spending function must be evaluated at the
+hypothesis-specific significance level (weight times alpha), rather than
+applying the weight to boundaries computed at the full alpha.
 
 **Analysis 2 (t = 2/3).** The test_values table above shows the boundary for
 each hypothesis at the point when it is tested, reflecting sequential graph
@@ -505,14 +533,10 @@ via graph update) at a later analysis. We illustrate this using the same graph
 but with modified p-values and Pocock spending:
 
 ```{r look-back-difference}
-# Same graph as MB case study, but different p-values and spending function
-# H3 has strong evidence at analysis 1 (p = 0.0008) but just misses at analysis 2
-p_modified <- rbind(
-  H1 = c(0.02,   0.0002),
-  H2 = c(0.02,   0.003),
-  H3 = c(0.0008, 0.006),
-  H4 = c(0.3,    0.2)
-)
+# Same graph and p-values as MB case study, except H3's p-values are modified
+# H3 has strong evidence at analysis 1 (p = 0.0008) but weaker at analysis 2
+p_modified <- p
+p_modified["H3", ] <- c(0.0008, 0.006)
 
 # look_back = FALSE: only considers repeated p-values at each analysis
 result_no_lb <- graph_test_shortcut_gsd(
@@ -738,18 +762,34 @@ The transition structure follows the hierarchy: within each population, alpha
 flows from OS to PFS to ORR, and ORR recycles to OS. Between populations,
 the all-subjects hypotheses share alpha with the subgroup hypotheses.
 
-```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=8, fig.width=6}
+```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=6, fig.width=6}
 onc_layout <- rbind(
-  c(1, 3),   # H1_OS_S
-  c(2, 3),   # H2_OS_A
-  c(1, 2),   # H3_PFS_S
-  c(2.5, 2), # H4_PFS_A (shifted right)
-  c(1, 1),   # H5_ORR_S
-  c(2, 1)    # H6_ORR_A
+  c(0, 3),     # H1_OS_S
+  c(2, 3),     # H2_OS_A
+  c(0, 1.8),   # H3_PFS_S
+  c(1.3, 1.8), # H4_PFS_A
+  c(0, 0.5),   # H5_ORR_S
+  c(2, 0.5)    # H6_ORR_A
 )
-plot(g_onc, layout = onc_layout, vertex.size = 60,
-     edge_curves = c("H6_ORR_A|H2_OS_A" = 0.01,
-                      "H4_PFS_A|H5_ORR_S" = 0.01,
+# Edge label positions: NA = auto, explicit coords to move specific labels
+# Edge order: 1=H6->H1, 2=H1->H2, 3=H6->H2, 4=H2->H3, 5=H2->H4,
+#             6=H3->H4, 7=H4->H5, 8=H4->H6, 9=H5->H6
+label_x <- rep(NA, 9)
+label_y <- rep(NA, 9)
+label_x[1] <- 1.35; label_y[1] <- 1.1   # H6->H1: on the curved edge
+label_x[7] <- 0.65; label_y[7] <- 1.1   # H4->H5: between nodes, near arrow
+
+plot(g_onc, layout = onc_layout, vertex.size = 60, asp = 1,
+     vertex.label.cex = 0.7,
+     rescale = FALSE,
+     xlim = c(-1.2, 3.5),
+     ylim = c(-0.2, 3.8),
+     edge.label.x = label_x,
+     edge.label.y = label_y,
+     edge_curves = c("H6_ORR_A|H2_OS_A" = 0,
+                      "H6_ORR_A|H1_OS_S" = 0.2,
+                      "H4_PFS_A|H6_ORR_A" = 0,
+                      "H4_PFS_A|H5_ORR_S" = 0,
                       "H3_PFS_S|H4_PFS_A" = 0))
 ```
 
@@ -938,6 +978,19 @@ knitr::kable(onc_comparison, row.names = FALSE,
 For this example, both modes produce the same rejection decisions. This is
 because the evidence at the rejection analyses is strong enough that looking
 back at earlier analyses does not change the outcome.
+
+**Note on differences from gMCPLite.** This case study is adapted from the
+[gMCPLite vignette](https://cran.r-project.org/web/packages/gMCPLite/vignettes/huyett-burnett-example.html).
+The rejection decisions (H1, H3, H5 rejected; H2, H4, H6 not rejected) agree
+between the two implementations. However, sequential p-values may differ
+slightly for some hypotheses. The reason is that gMCPLite (via gsDesign)
+separates *spending time* from *information fraction*: for all-subjects
+hypotheses (H2 and H4), gMCPLite uses the subgroup event counts as the
+spending time while using the all-subjects event counts for the correlation
+structure. In contrast, `graphicalMCP` uses `info_frac` for both alpha
+spending and the correlation structure. This difference affects the group
+sequential boundaries and hence the sequential p-values, but in this example
+it does not change which hypotheses are rejected.
 
 This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
 where different endpoints have different numbers of analyses — a common
