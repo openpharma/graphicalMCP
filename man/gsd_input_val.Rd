@@ -56,19 +56,27 @@ and \code{info_frac} (information fraction), and return the cumulative alpha
 spent. Built-in options include \code{\link[=spending_of]{spending_of()}}, \code{\link[=spending_pocock]{spending_pocock()}},
 \code{\link[=spending_hsd]{spending_hsd()}}, and \code{\link[=spending_linear]{spending_linear()}}.}
 
-\item{look_back}{A logical scalar controlling the testing strategy.
-If \code{FALSE} (default), rejection decisions at each analysis are based on
-repeated p-values at that analysis only. If \code{TRUE}, rejection decisions
-are based on sequential p-values which consider all analyses up to the
-current one. The \code{look_back = TRUE} option can lead to additional
-rejections because a hypothesis may have crossed its boundary at an
-earlier analysis but only becomes testable (via graph update) at a later
-analysis. The default is \code{FALSE}.}
+\item{look_back}{A logical scalar or vector controlling the testing strategy.
+Can be:
+\itemize{
+\item A single logical — applied to all hypotheses.
+\item A logical vector of length \eqn{m} — one per hypothesis, allowing
+different strategies for different hypotheses.
+}
 
-\item{verbose}{A logical scalar specifying whether the details of
-intermediate update graphs should be included in results. When
-\code{verbose = TRUE}, intermediate update graphs are provided after deleting
-each hypothesis, which has been rejected. The default is \code{verbose = FALSE}.}
+For hypotheses with \code{look_back = FALSE} (the default), rejection decisions
+at each analysis are based on repeated p-values at that analysis only.
+For hypotheses with \code{look_back = TRUE}, rejection decisions are based on
+sequential p-values which consider all analyses up to the current one.
+The \code{look_back = TRUE} option can lead to additional rejections because
+a hypothesis may have crossed its boundary at an earlier analysis but
+only becomes testable (via graph update) at a later analysis.}
+
+\item{verbose}{A logical scalar specifying whether to include the boundary
+table in results. When \code{verbose = TRUE}, a table of nominal p-value
+boundaries is computed for each hypothesis at all possible weights from
+the graph's closure (via \code{\link[=graph_generate_weights]{graph_generate_weights()}}). This enables manual
+verification of rejection decisions. The default is \code{FALSE}.}
 
 \item{test_values}{A logical scalar specifying whether to include the
 per-analysis rejection details in results. When \code{test_values = TRUE}, the

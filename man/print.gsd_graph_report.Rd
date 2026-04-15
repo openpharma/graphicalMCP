@@ -21,10 +21,22 @@ results.}
 An object x of class \code{gsd_graph_report}, invisibly.
 }
 \description{
-A printed \code{gsd_graph_report} displays the initial graph, group sequential
-design parameters, repeated and sequential p-values, adjusted p-values,
-rejection decisions with the analysis at which each rejection occurred,
-and optional per-analysis boundary details.
+A printed \code{gsd_graph_report} displays:
+\itemize{
+\item \strong{Test parameters}: the initial graph, alpha, information fractions,
+p-values, spending functions, and per-hypothesis look_back settings.
+\item \strong{Test summary}: adjusted p-values, rejection decisions, the analysis
+at which each decision was made (\code{Decision.at}), the earliest analysis
+at which the boundary was crossed (\code{First.Rej.at}), look_back status,
+and the rejection sequence.
+\item \strong{Per-analysis details} (if \code{test_values = TRUE}): nominal p-values,
+boundaries, and rejection decisions at each analysis. For hypotheses
+rejected via look_back, additional rows show the boundary crossing at
+earlier analyses, marked with \code{*} and a footnote.
+\item \strong{Boundary table} (if \code{verbose = TRUE}): nominal p-value boundaries
+for all possible hypothesis weights from the graph's closure, enabling
+manual verification of rejection decisions.
+}
 }
 \examples{
 hypotheses <- c(0.5, 0.5)

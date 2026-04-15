@@ -57,19 +57,27 @@ and \code{info_frac} (information fraction), and return the cumulative alpha
 spent. Built-in options include \code{\link[=spending_of]{spending_of()}}, \code{\link[=spending_pocock]{spending_pocock()}},
 \code{\link[=spending_hsd]{spending_hsd()}}, and \code{\link[=spending_linear]{spending_linear()}}.}
 
-\item{look_back}{A logical scalar controlling the testing strategy.
-If \code{FALSE} (default), rejection decisions at each analysis are based on
-repeated p-values at that analysis only. If \code{TRUE}, rejection decisions
-are based on sequential p-values which consider all analyses up to the
-current one. The \code{look_back = TRUE} option can lead to additional
-rejections because a hypothesis may have crossed its boundary at an
-earlier analysis but only becomes testable (via graph update) at a later
-analysis. The default is \code{FALSE}.}
+\item{look_back}{A logical scalar or vector controlling the testing strategy.
+Can be:
+\itemize{
+\item A single logical — applied to all hypotheses.
+\item A logical vector of length \eqn{m} — one per hypothesis, allowing
+different strategies for different hypotheses.
+}
 
-\item{verbose}{A logical scalar specifying whether the details of
-intermediate update graphs should be included in results. When
-\code{verbose = TRUE}, intermediate update graphs are provided after deleting
-each hypothesis, which has been rejected. The default is \code{verbose = FALSE}.}
+For hypotheses with \code{look_back = FALSE} (the default), rejection decisions
+at each analysis are based on repeated p-values at that analysis only.
+For hypotheses with \code{look_back = TRUE}, rejection decisions are based on
+sequential p-values which consider all analyses up to the current one.
+The \code{look_back = TRUE} option can lead to additional rejections because
+a hypothesis may have crossed its boundary at an earlier analysis but
+only becomes testable (via graph update) at a later analysis.}
+
+\item{verbose}{A logical scalar specifying whether to include the boundary
+table in results. When \code{verbose = TRUE}, a table of nominal p-value
+boundaries is computed for each hypothesis at all possible weights from
+the graph's closure (via \code{\link[=graph_generate_weights]{graph_generate_weights()}}). This enables manual
+verification of rejection decisions. The default is \code{FALSE}.}
 
 \item{test_values}{A logical scalar specifying whether to include the
 per-analysis rejection details in results. When \code{test_values = TRUE}, the
@@ -109,7 +117,17 @@ hypotheses were rejected across all analyses,
 of length \eqn{K} (one entry per analysis). Each entry is a data frame
 containing the hypothesis name, current weight, observed p-value,
 nominal boundary, and rejection decision at that analysis. Entries are
-\code{NULL} for analyses where no hypotheses are active.
+\code{NULL} for analyses where no hypotheses are active. When
+\code{look_back = TRUE} and a hypothesis is rejected at an earlier analysis,
+additional rows show the nominal p-value and boundary at each prior
+analysis, with a \code{Look_back} column indicating these rows.
+\item \code{boundary_table} - Boundary lookup table (if \code{verbose = TRUE}). A named
+list with one data frame per hypothesis. Each data frame contains the
+columns \code{Weight}, \code{Alpha.Allocated}, and \code{Boundary.k} for each
+analysis \eqn{k}, showing the nominal p-value boundary at each analysis
+for every possible weight from the graph's closure. This table is
+independent of observed p-values and can be used to manually verify
+rejection decisions.
 }
 }
 \description{
@@ -137,8 +155,9 @@ analyses conducted so far. Like the default mode, the procedure
 processes analyses sequentially, applying \code{\link[=graph_test_shortcut]{graph_test_shortcut()}} at
 each analysis using sequential p-values and updating the graph before
 proceeding. When a hypothesis becomes testable at a later analysis
-(via graph update), its \code{decision_at} is set to the earliest analysis
-where its sequential p-value crossed the boundary.
+(via graph update), its \code{first_rejected_at} is set to the earliest
+analysis where its boundary was crossed, while \code{decision_at} records
+the analysis where the rejection was operationally processed.
 }
 }
 \examples{
