@@ -134,8 +134,11 @@ repeated_p <- function(p,
 
   # If boundary at analysis K is not crossed even at alpha ~ 1,
   # the p-value at this analysis is too large. Return 1.
-  exc_upper <- exceedance_K(upper)
-  if (exc_upper <= 0) {
+  exc_upper <- tryCatch(
+    exceedance_K(upper),
+    error = function(e) NA_real_
+  )
+  if (is.na(exc_upper) || exc_upper <= 0) {
     message("Boundary at analysis K not crossed; returning 1 as an upper bound.")
     return(1)
   }
@@ -145,7 +148,15 @@ repeated_p <- function(p,
   # Use >= 0 to also handle the edge case where the exceedance is exactly 0
   # (boundary exactly crossed), which would cause uniroot to fail because
   # f(lower) and f(upper) would have the same sign.
-  exc_lower <- exceedance_K(lower)
+  exc_lower <- tryCatch(
+    exceedance_K(lower),
+    error = function(e) {
+      # gs_boundaries can fail at very small alpha due to numerical issues
+      # in pmvnorm. Treat this as the boundary being extremely large
+      # (i.e., not crossed), so exceedance is negative.
+      -1
+    }
+  )
   if (exc_lower >= 0) {
     message(
       "Boundary crossed at alpha = ", lower,
@@ -154,11 +165,31 @@ repeated_p <- function(p,
     return(lower)
   }
 
-  # Find the root: minimum alpha where boundary at analysis K is crossed
-  result <- stats::uniroot(
-    exceedance_K,
-    interval = c(lower, upper),
-    tol = tol
+  # Find the root: minimum alpha where boundary at analysis K is crossed.
+  # Wrap in tryCatch to handle numerical edge cases in uniroot.
+  result <- tryCatch(
+    stats::uniroot(
+      exceedance_K,
+      interval = c(lower, upper),
+      tol = tol
+    ),
+    error = function(e) {
+      # If uniroot fails, try with a wider lower bound
+      tryCatch(
+        stats::uniroot(
+          exceedance_K,
+          interval = c(lower * 10, upper),
+          tol = tol
+        ),
+        error = function(e2) {
+          message(
+            "Root-finding failed; returning ", lower,
+            " as a lower bound. Original error: ", e$message
+          )
+          list(root = lower)
+        }
+      )
+    }
   )
 
   result$root

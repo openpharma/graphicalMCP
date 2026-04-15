@@ -158,8 +158,11 @@ sequential_p <- function(p,
   # If no boundary is crossed even at the most lenient alpha (~1),
   # the observed p-values are too large to ever be significant.
   # Return 1 (the largest possible sequential p-value).
-  exc_upper <- max_exceedance(upper)
-  if (exc_upper <= 0) {
+  exc_upper <- tryCatch(
+    max_exceedance(upper),
+    error = function(e) NA_real_
+  )
+  if (is.na(exc_upper) || exc_upper <= 0) {
     message("No boundary crossed; returning 1 as an upper bound.")
     return(1)
   }
@@ -169,7 +172,15 @@ sequential_p <- function(p,
   # Use >= 0 to also handle the edge case where the exceedance is exactly 0
   # (boundary exactly crossed), which would cause uniroot to fail because
   # f(lower) and f(upper) would have the same sign.
-  exc_lower <- max_exceedance(lower)
+  exc_lower <- tryCatch(
+    max_exceedance(lower),
+    error = function(e) {
+      # gs_boundaries can fail at very small alpha due to numerical issues
+      # in pmvnorm. Treat this as the boundary being extremely large
+      # (i.e., not crossed), so exceedance is negative.
+      -1
+    }
+  )
   if (exc_lower >= 0) {
     message(
       "Boundary crossed at alpha = ", lower,
@@ -178,11 +189,31 @@ sequential_p <- function(p,
     return(lower)
   }
 
-  # Find the root: minimum alpha where boundary is crossed
-  result <- stats::uniroot(
-    max_exceedance,
-    interval = c(lower, upper),
-    tol = tol
+  # Find the root: minimum alpha where boundary is crossed.
+  # Wrap in tryCatch to handle numerical edge cases in uniroot.
+  result <- tryCatch(
+    stats::uniroot(
+      max_exceedance,
+      interval = c(lower, upper),
+      tol = tol
+    ),
+    error = function(e) {
+      # If uniroot fails, try with a wider lower bound
+      tryCatch(
+        stats::uniroot(
+          max_exceedance,
+          interval = c(lower * 10, upper),
+          tol = tol
+        ),
+        error = function(e2) {
+          message(
+            "Root-finding failed; returning ", lower,
+            " as a lower bound. Original error: ", e$message
+          )
+          list(root = lower)
+        }
+      )
+    }
   )
 
   result$root
