@@ -91,8 +91,18 @@ minimum of repeated p-values),
 (adjusted repeated p-values when \code{look_back = FALSE}, adjusted
 sequential p-values when \code{look_back = TRUE}),
 \item \code{rejected} - Logical vector of rejection decisions,
-\item \code{rejected_at} - Integer vector indicating at which analysis each
-hypothesis was rejected (\code{NA} if not rejected),
+\item \code{decision_at} - Integer vector indicating the analysis at which each
+hypothesis's decision was made. For rejected hypotheses, this is
+the analysis where the rejection was operationally processed. For
+non-rejected hypotheses, this is the last analysis where the
+hypothesis was tested,
+\item \code{first_rejected_at} - Integer vector indicating the earliest analysis
+at which each hypothesis's boundary was crossed. For non-rejected
+hypotheses, this is \code{NA}. When \code{look_back = TRUE}, this may be
+earlier than \code{decision_at} if a hypothesis crossed its boundary at
+a prior analysis but only became testable at a later analysis,
+\item \code{rejection_sequence} - Character vector giving the order in which
+hypotheses were rejected across all analyses,
 \item \code{graph} - Updated graph after removing all rejected hypotheses.
 }
 \item \code{test_values} - Per-analysis details (if \code{test_values = TRUE}). A list
@@ -127,7 +137,7 @@ analyses conducted so far. Like the default mode, the procedure
 processes analyses sequentially, applying \code{\link[=graph_test_shortcut]{graph_test_shortcut()}} at
 each analysis using sequential p-values and updating the graph before
 proceeding. When a hypothesis becomes testable at a later analysis
-(via graph update), its \code{rejected_at} is set to the earliest analysis
+(via graph update), its \code{decision_at} is set to the earliest analysis
 where its sequential p-value crossed the boundary.
 }
 }

@@ -1,10 +1,20 @@
 #' S3 print method for the class `gsd_graph_report`
 #'
 #' @description
-#' A printed `gsd_graph_report` displays the initial graph, group sequential
-#' design parameters, repeated and sequential p-values, adjusted p-values,
-#' rejection decisions with the analysis at which each rejection occurred,
-#' and optional per-analysis boundary details.
+#' A printed `gsd_graph_report` displays:
+#' * **Test parameters**: the initial graph, alpha, information fractions,
+#'   p-values, spending functions, and per-hypothesis look_back settings.
+#' * **Test summary**: adjusted p-values, rejection decisions, the analysis
+#'   at which each decision was made (`Decision.at`), the earliest analysis
+#'   at which the boundary was crossed (`First.Rej.at`), look_back status,
+#'   and the rejection sequence.
+#' * **Per-analysis details** (if `test_values = TRUE`): nominal p-values,
+#'   boundaries, and rejection decisions at each analysis. For hypotheses
+#'   rejected via look_back, additional rows show the boundary crossing at
+#'   earlier analyses, marked with `*` and a footnote.
+#' * **Boundary table** (if `verbose = TRUE`): nominal p-value boundaries
+#'   for all possible hypothesis weights from the graph's closure, enabling
+#'   manual verification of rejection decisions.
 #'
 #' @param x An object of class `gsd_graph_report` to print.
 #' @param ... Other values passed on to other methods (currently unused).
@@ -94,8 +104,15 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   }
 
   # Look back mode
-  look_back <- isTRUE(x$inputs$look_back)
-  cat("\n", pad, "Look back = ", look_back, "\n", sep = "")
+  look_back <- x$inputs$look_back
+  if (all(look_back == look_back[1])) {
+    cat("\n", pad, "Look back = ", look_back[1], "\n", sep = "")
+  } else {
+    cat("\n", pad, "Look back\n", sep = "")
+    for (j in seq_len(num_hyps)) {
+      cat(pad, pad, hyp_names[j], ": ", look_back[j], "\n", sep = "")
+    }
+  }
 
   # Test summary ---------------------------------------------------------------
   cat("\n")
@@ -109,54 +126,34 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   adj_p_format[exceed_1] <- gsub(".00000001", "+", adj_p[exceed_1])
   adj_p_format[!exceed_1] <- format(adj_p[!exceed_1], digits = precision)
 
-  rej_at_display <- ifelse(
-    is.na(x$outputs$rejected_at),
-    "--",
-    as.character(x$outputs$rejected_at)
-  )
+  decision_at <- x$outputs$decision_at
 
-  # Choose which p-values to display based on look_back mode.
-  # For rejected hypotheses, show the p-value at the analysis where rejection
-  # occurred. For non-rejected hypotheses, show the last non-NA value.
-  p_at_decision <- function(mat, rejected_at) {
-    vapply(seq_len(nrow(mat)), function(j) {
-      if (!is.na(rejected_at[j])) {
-        mat[j, rejected_at[j]]
-      } else {
-        non_na <- which(!is.na(mat[j, ]))
-        if (length(non_na) == 0) NA_real_ else mat[j, max(non_na)]
-      }
-    }, numeric(1))
-  }
-  if (look_back) {
-    p_col_name <- "Seq. P"
-    p_col_values <- format(
-      p_at_decision(x$outputs$sequential_p, x$outputs$rejected_at),
-      digits = precision
-    )
-    adj_col_name <- "Adj. Seq. P"
-  } else {
-    p_col_name <- "Rep. P"
-    p_col_values <- format(
-      p_at_decision(x$outputs$repeated_p, x$outputs$rejected_at),
-      digits = precision
-    )
-    adj_col_name <- "Adj. Rep. P"
-  }
+  first_rej_display <- ifelse(
+    is.na(x$outputs$first_rejected_at),
+    "--",
+    as.character(x$outputs$first_rejected_at)
+  )
 
   df_summary <- data.frame(
     Hypothesis = formatC(hyp_names, width = hyp_width),
-    P = p_col_values,
-    `Adj. P` = adj_p_format,
+    Adj.P = adj_p_format,
     Reject = x$outputs$rejected,
-    `Rejected at` = rej_at_display,
+    Decision.at = as.character(decision_at),
+    First.Rej.at = first_rej_display,
+    Look.back = look_back,
     check.names = FALSE
   )
   names(df_summary)[[1]] <- formatC("Hypothesis", width = hyp_width)
-  names(df_summary)[[2]] <- p_col_name
-  names(df_summary)[[3]] <- adj_col_name
+  names(df_summary)[[2]] <- "Adj.P-value"
 
   print(df_summary, row.names = FALSE)
+
+  # Rejection sequence
+  rej_seq <- x$outputs$rejection_sequence
+  if (length(rej_seq) > 0) {
+    cat("\n", pad, "Rejection sequence: ",
+        paste(rej_seq, collapse = " -> "), "\n", sep = "")
+  }
   cat("\n")
 
   attr(x$outputs$graph, "title") <-
@@ -174,6 +171,23 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
 
       cat(pad, "Analysis ", k, "\n", sep = "")
 
+      # Check for look_back rows
+      has_look_back <- "Look_back" %in% names(detail) && any(detail$Look_back)
+      lb_hypotheses <- if (has_look_back) {
+        unique(detail$Hypothesis[detail$Look_back])
+      } else {
+        character(0)
+      }
+
+      # Add footnote marker (*) to hypotheses with look_back attribution
+      if (has_look_back) {
+        detail$Hypothesis[detail$Look_back] <-
+          paste0(detail$Hypothesis[detail$Look_back], "*")
+      }
+
+      # Remove the Look_back column from display
+      detail$Look_back <- NULL
+
       # Format numeric columns
       detail$Weight <- format(detail$Weight, digits = precision)
       detail$p <- format(detail$p, digits = precision)
@@ -183,6 +197,36 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
         print(detail, row.names = FALSE)
       )
       cat(paste0(pad, detail_out), sep = "\n")
+
+      # Print footnote for look_back hypotheses
+      if (has_look_back) {
+        cat(pad, "(*) Rejected via look_back: nominal p-value did not cross",
+            " the boundary at the\n", pad, "    current analysis, but",
+            " crossed the boundary at an earlier analysis.\n", sep = "")
+      }
+      cat("\n")
+    }
+  }
+
+  # Boundary table (verbose) ---------------------------------------------------
+  if (!is.null(x$boundary_table)) {
+    section_break("Boundary table ($boundary_table)")
+
+    cat(pad, "Nominal p-value boundaries for all possible hypothesis weights\n",
+        pad, "from the graph's closure. Use to verify rejection decisions:\n",
+        pad, "a hypothesis is rejected when its p-value <= boundary.\n\n",
+        sep = "")
+
+    for (hyp in names(x$boundary_table)) {
+      cat(pad, hyp, "\n", sep = "")
+      bt <- x$boundary_table[[hyp]]
+      bt_display <- bt
+      # Format numeric columns
+      for (col in names(bt_display)) {
+        bt_display[[col]] <- format(bt_display[[col]], digits = precision)
+      }
+      bt_out <- utils::capture.output(print(bt_display, row.names = FALSE))
+      cat(paste0(pad, bt_out), sep = "\n")
       cat("\n")
     }
   }

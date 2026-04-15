@@ -161,7 +161,7 @@ This means that strong evidence from an earlier analysis is carried forward
 and can contribute to a rejection at a later analysis. Both modes are
 illustrated in the case studies below.
 
-## Case Study: Maurer and Bretz (2013), Section 4
+## Case Study using repeated p-values and look_back = FALSE
 
 We replicate the numerical example from Section 4 of Maurer and Bretz (2013).
 This is a diabetes trial with two preplanned interim analyses comparing two
@@ -390,7 +390,7 @@ We can verify our results against Table 2 of Maurer and Bretz (2013). The
 paper reports repeated p-values (which they call $\tilde{p}^r$) at each
 analysis:
 
-```{r paper-comparison}
+```{r paper-comparison, include=FALSE}
 paper_repeated_p <- data.frame(
   Hypothesis = c("H1", "H2", "H3", "H4"),
   `pr_1 (paper)` = c(0.1141, 0.1683, 0.1316, 0.382),
@@ -405,7 +405,7 @@ knitr::kable(paper_repeated_p, digits = 4,
 
 The nominal significance levels at each analysis also match the paper's Table 1:
 
-```{r nominal-comparison}
+```{r nominal-comparison, include=FALSE}
 paper_table1 <- data.frame(
   Hypothesis = c("H1", "H2", "H3", "H4"),
   `alpha*_1 (paper)` = c(0.00002, 0.00002, 0, 0),
@@ -419,303 +419,12 @@ knitr::kable(paper_table1,
              caption = "Comparison of nominal boundaries with paper Table 1")
 ```
 
-## The look_back Option (look_back = TRUE)
-
-The `look_back = TRUE` mode allows the procedure to "look back" at evidence
-from prior analyses. Rejection decisions are based on **sequential p-values**,
-which are the cumulative minimum of repeated p-values across all analyses
-conducted so far. This means a hypothesis can be rejected based on evidence
-from any prior analysis, even if it only becomes testable (via graph update)
-at a later analysis. This can lead to additional rejections compared to
-`look_back = FALSE`.
-
-As with `look_back = FALSE`, the procedure processes analyses sequentially and
-the rejection decisions can be understood in two equivalent ways:
-
-1. **Sequential p-values**: At each analysis, the sequential p-values are
-   passed to `graph_test_shortcut()` for multiplicity adjustment. A hypothesis
-   is rejected when its adjusted sequential p-value is at most $\alpha$.
-2. **Nominal boundaries** (`test_values = TRUE`): At each analysis, the
-   observed p-value is compared against the nominal boundary for the
-   hypothesis's current weight.
-
-Both approaches lead to the same rejection decisions.
-
-#### Sequential p-values
-
-A sequential p-value at analysis $k$ is computed using `sequential_p()`:
-
-```{r sequential-p-matrix}
-seq_p_matrix <- matrix(NA, nrow = 4, ncol = 2,
-                       dimnames = list(rownames(p), c("Analysis 1", "Analysis 2")))
-
-for (j in 1:4) {
-  for (k in 1:2) {
-    seq_p_matrix[j, k] <- sequential_p(
-      p = p[j, 1:k],
-      info_frac = info_frac[1:k],
-      spending_fn = spending_of
-    )
-  }
-}
-
-knitr::kable(seq_p_matrix, digits = 4,
-             caption = "Sequential p-values at each analysis")
-```
-
-We now walk through the procedure analysis by analysis using sequential
-p-values. At each analysis, the sequential p-values are passed to
-`graph_test_shortcut()` for multiplicity adjustment. The shortcut procedure
-rejects hypotheses in order of increasing adjusted sequential p-values. Newly
-rejected hypotheses are removed from the graph before proceeding to the next
-analysis.
-
-**Analysis 1.** The sequential p-values equal the repeated p-values (only one
-analysis so far). All are large, so no hypothesis is rejected. The graph is
-unchanged.
-
-**Analysis 2.** The sequential p-values are updated as the cumulative minimum
-of repeated p-values across analyses 1 and 2. The graphical shortcut
-procedure rejects $H_1$ first, updates the graph, then rejects $H_2$,
-followed by $H_3$. $H_4$'s sequential p-value remains too large, so it is
-retained. The rejection sequence at analysis 2 is: $H_1 \to H_2 \to H_3$.
-
-The key difference from `look_back = FALSE` is that sequential p-values can
-reflect evidence from earlier analyses. A hypothesis that nearly crossed its
-boundary at analysis 1 will have a small sequential p-value at analysis 2,
-even if its observed p-value at analysis 2 is large. This is what enables
-additional rejections.
-
-```{r run-gsd-lb}
-result_lb <- graph_test_shortcut_gsd(
-  graph = g,
-  p = p,
-  alpha = 0.025,
-  info_frac = info_frac,
-  spending_fn = spending_of,
-  look_back = TRUE,
-  test_values = TRUE
-)
-print(result_lb)
-```
-
-The adjusted sequential p-values at analysis 2 are
-`r round(result_lb$outputs$adjusted_p[["H1"]], 4)` ($H_1$),
-`r round(result_lb$outputs$adjusted_p[["H2"]], 4)` ($H_2$),
-`r round(result_lb$outputs$adjusted_p[["H3"]], 4)` ($H_3$), and
-`r round(result_lb$outputs$adjusted_p[["H4"]], 4)` ($H_4$).
-The rejection sequence follows increasing adjusted sequential p-values:
-$H_1$ (smallest) $\to H_2 \to H_3$. $H_4$'s adjusted sequential p-value
-exceeds $\alpha = 0.025$, so it is not rejected.
-
-### Comparing look_back = FALSE vs. TRUE
-
-For the Maurer and Bretz case study, both modes produce the same rejection
-decisions because the evidence at analysis 2 is strong enough for the repeated
-p-values to drive the rejections:
-
-```{r compare-mb}
-comparison <- data.frame(
-  Hypothesis = c("H1", "H2", "H3", "H4"),
-  `Rejected (no LB)` = result$outputs$rejected,
-  `Adj. P (no LB)` = round(result$outputs$adjusted_p, 4),
-  `Rejected (LB)` = result_lb$outputs$rejected,
-  `Adj. P (LB)` = round(result_lb$outputs$adjusted_p, 4),
-  check.names = FALSE
-)
-knitr::kable(comparison,
-             caption = "Comparison: look_back = FALSE vs. TRUE (MB case study)")
-```
-
-### When look_back Makes a Difference
-
-The two modes can produce different results when a hypothesis nearly crosses
-its boundary at an early analysis but only becomes testable (receives weight
-via graph update) at a later analysis. We illustrate this using the same graph
-but with modified p-values and Pocock spending:
-
-```{r look-back-difference}
-# Same graph and p-values as MB case study, except H3's p-values are modified
-# H3 has strong evidence at analysis 1 (p = 0.0008) but weaker at analysis 2
-p_modified <- p
-p_modified["H3", ] <- c(0.0008, 0.006)
-
-# look_back = FALSE: only considers repeated p-values at each analysis
-result_no_lb <- graph_test_shortcut_gsd(
-  graph = g, p = p_modified, alpha = 0.025,
-  info_frac = info_frac,
-  spending_fn = spending_pocock,
-  look_back = FALSE
-)
-
-# look_back = TRUE: considers sequential p-values (all analyses)
-result_with_lb <- graph_test_shortcut_gsd(
-  graph = g, p = p_modified, alpha = 0.025,
-  info_frac = info_frac,
-  spending_fn = spending_pocock,
-  look_back = TRUE
-)
-
-diff_table <- data.frame(
-  Hypothesis = c("H1", "H2", "H3", "H4"),
-  `Rep. P (final)` = round(result_no_lb$outputs$repeated_p[, 2], 4),
-  `Seq. P (final)` = round(result_with_lb$outputs$sequential_p[, 2], 4),
-  `Rejected (no LB)` = result_no_lb$outputs$rejected,
-  `Rejected at (no LB)` = ifelse(is.na(result_no_lb$outputs$rejected_at),
-                                  "--", result_no_lb$outputs$rejected_at),
-  `Rejected (LB)` = result_with_lb$outputs$rejected,
-  `Rejected at (LB)` = ifelse(is.na(result_with_lb$outputs$rejected_at),
-                               "--", result_with_lb$outputs$rejected_at),
-  check.names = FALSE
-)
-knitr::kable(diff_table,
-             caption = "Same graph, modified p-values: look_back = FALSE vs. TRUE")
-```
-
-With `look_back = FALSE`:
-
-- Analysis 1: The Pocock spending function allocates more alpha to the first
-  interim than OBF, but neither $H_1$ nor $H_2$ crosses its boundary. $H_3$
-  and $H_4$ have weight 0 and cannot be tested.
-- Analysis 2: $H_1$ and $H_2$ are rejected. The graph is updated, giving
-  $H_3$ weight 0.5 and $H_4$ weight 0.5. However, $H_3$'s observed p-value
-  at analysis 2 ($p = 0.006$) just exceeds its nominal boundary — **not
-  rejected**.
-
-With `look_back = TRUE`:
-
-- Analysis 2: $H_1$ and $H_2$ are rejected as before. After graph propagation,
-  $H_3$'s sequential p-value is
-  `r round(result_with_lb$outputs$sequential_p["H3", 2], 4)`, which reflects
-  its strong evidence at analysis 1 ($p = 0.0008$) rather than its borderline
-  result at analysis 2 ($p = 0.006$). This is small enough for rejection —
-  **$H_3$ is rejected and attributed to analysis 1**.
-
-The `look_back = TRUE` option is more powerful because it allows a hypothesis
-to benefit from evidence at an earlier analysis, even if it only becomes
-testable later.
-
-## Additional Examples
-
-### Different Spending Functions per Hypothesis
-
-The procedure allows different hypotheses to use different spending functions.
-For example, one might use a more aggressive spending function for secondary
-hypotheses:
-
-```{r different-spending}
-result2 <- graph_test_shortcut_gsd(
-  graph = g,
-  p = p,
-  alpha = 0.025,
-  info_frac = c(1/3, 2/3),
-  spending_fn = list(
-    spending_of,      # H1: O'Brien-Fleming
-    spending_of,      # H2: O'Brien-Fleming
-    spending_pocock,  # H3: Pocock (more aggressive)
-    spending_pocock   # H4: Pocock (more aggressive)
-  ),
-  test_values = TRUE
-)
-print(result2)
-```
-
-### Using Spending Functions from Other Packages
-
-The `spending_fn` argument accepts any function with the signature
-`function(alpha, info_frac)` that returns the cumulative alpha spent at each
-information fraction. This makes it straightforward to use spending functions
-from other packages.
-
-**gsDesign.** The `gsDesign` package provides a rich collection of spending
-functions (`sfLDOF`, `sfLDPocock`, `sfHSD`, `sfExponential`, etc.). Each
-takes `(alpha, t, param)` and returns a list with a `$spend` element
-containing the cumulative spending. A simple wrapper extracts this:
-
-```{r gsdesign-wrapper}
-if (requireNamespace("gsDesign", quietly = TRUE)) {
-  # Wrapper for gsDesign's Lan-DeMets O'Brien-Fleming
-  gsdesign_of <- function(alpha, info_frac) {
-    gsDesign::sfLDOF(alpha, info_frac)$spend
-  }
-
-  # Wrapper for gsDesign's Hwang-Shih-DeCani with gamma = -2
-  gsdesign_hsd <- function(alpha, info_frac) {
-    gsDesign::sfHSD(alpha, info_frac, param = -2)$spend
-  }
-
-  result_gsdesign <- graph_test_shortcut_gsd(
-    graph = g,
-    p = p,
-    alpha = 0.025,
-    info_frac = c(1/3, 2/3),
-    spending_fn = list(
-      gsdesign_of,   # H1: gsDesign O'Brien-Fleming
-      gsdesign_of,   # H2: gsDesign O'Brien-Fleming
-      gsdesign_hsd,  # H3: gsDesign HSD(gamma=-2)
-      gsdesign_hsd   # H4: gsDesign HSD(gamma=-2)
-    )
-  )
-  print(result_gsdesign)
-}
-```
-
-Any of `gsDesign`'s spending functions can be wrapped this way. For spending
-functions with additional parameters (like `sfHSD`), simply bind the
-parameter in the wrapper as shown above. A more advanced use of custom
-spending functions — including the separation of *spending time* from
-*information fraction* — is illustrated in the
-[Customizing Spending Functions: Spending Time] section of the oncology
-case study below.
-
-**rpact.** The `rpact` package computes group sequential designs via
-`getDesignGroupSequential()` but does not expose standalone spending
-functions that can be called with arbitrary `alpha` and information fraction
-inputs. During the graphical testing procedure, `graph_test_shortcut_gsd()`
-internally evaluates spending functions at the current local significance
-level for each hypothesis (i.e., hypothesis weight $\times$ overall
-$\alpha$), which can be very small as weights shift during the procedure.
-While `rpact::getDesignGroupSequential()` accepts small alpha values, it
-issues warnings for alpha below $10^{-6}$ ("out of validated bounds") and
-throws an error when alpha is exactly 0 — which occurs when a hypothesis
-has zero weight. The internal function
-`rpact:::.getDesignGroupSequentialAlphaSpending()` is also not suitable,
-as it takes a design object rather than raw alpha and information fraction
-inputs, and is not part of the public API. Since `rpact` does not provide a
-standalone spending function interface, its spending functions cannot be
-directly wrapped for use with `graph_test_shortcut_gsd()`. However,
-`gsDesign` and `rpact` implement the same standard spending function
-formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
-
-### Different Information Fractions per Hypothesis
-
-When endpoints have different sample size requirements or different timing of
-data availability, each hypothesis can have its own information fractions:
-
-```{r different-info-frac}
-result3 <- graph_test_shortcut_gsd(
-  graph = g,
-  p = p,
-  alpha = 0.025,
-  info_frac = rbind(
-    c(1/3, 2/3),    # H1: equally spaced
-    c(1/3, 2/3),    # H2: equally spaced
-    c(0.4, 0.7),    # H3: different timing
-    c(0.4, 0.7)     # H4: different timing
-  ),
-  spending_fn = spending_of,
-  test_values = TRUE
-)
-print(result3)
-```
-
-## Case Study: Oncology Trial with Different Numbers of Analyses
+## Case Study using sequential p-values and look_back = TRUE
 
 This example is adapted from the
 [gMCPLite vignette](https://cran.r-project.org/package=gMCPLite/vignettes/GraphicalMultiplicity.html)
-and demonstrates a more complex scenario where hypotheses have different numbers
-of analyses. This is common in oncology trials where different endpoints mature
-at different rates.
+for an oncology trial with three endpoints, two populations and two interim
+analyses. Different hypotheses are tested at different analyses.
 
 ### Trial Setup
 
@@ -768,7 +477,7 @@ The transition structure follows the hierarchy: within each population, alpha
 flows from OS to PFS to ORR, and ORR recycles to OS. Between populations,
 the all-subjects hypotheses share alpha with the subgroup hypotheses.
 
-```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=6, fig.width=7}
+```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=5.5, fig.width=6, out.width="100%"}
 onc_layout <- rbind(
   c(0, 3),     # H1_OS_S
   c(2, 3),     # H2_OS_A
@@ -792,8 +501,8 @@ label_x[8] <- 2.5;  label_y[8] <- 1.15   # H4->H6: on the edge, midway
 plot(g_onc, layout = onc_layout, vertex.size = 60, asp = 1,
      vertex.label.cex = 0.7,
      rescale = FALSE,
-     xlim = c(-0.8, 4.0),
-     ylim = c(-0.2, 3.8),
+     xlim = c(-0.6, 3.6),
+     ylim = c(-0.1, 3.6),
      edge.label.x = label_x,
      edge.label.y = label_y)
 ```
@@ -930,13 +639,10 @@ onc_summary_lb <- data.frame(
   `p` = formatC(decision_p, format = "f", digits = 6),
   Boundary = formatC(decision_bound, format = "f", digits = 6),
   Rejected = result_onc_lb$outputs$rejected,
-  `Rejected at` = ifelse(
-    is.na(result_onc_lb$outputs$rejected_at), "—",
-    as.character(result_onc_lb$outputs$rejected_at)
-  ),
-  `Not rejected at` = ifelse(
-    result_onc_lb$outputs$rejected, "—",
-    as.character(last_tested)
+  Decision = result_onc_lb$outputs$decision_at,
+  First.Rej = ifelse(
+    is.na(result_onc_lb$outputs$first_rejected_at), "—",
+    as.character(result_onc_lb$outputs$first_rejected_at)
   ),
   check.names = FALSE
 )
@@ -947,6 +653,133 @@ knitr::kable(onc_summary_lb, row.names = FALSE,
 This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
 where different endpoints have different numbers of analyses — a common
 situation in oncology trials with OS, PFS, and ORR endpoints.
+
+### Per-hypothesis look_back
+
+The `look_back` parameter can also be specified as a logical vector, allowing
+different hypotheses to use different testing strategies. This is useful when
+some endpoints benefit from looking back at earlier evidence while others
+do not.
+
+Consider a scenario where we want to use `look_back = TRUE` for ORR
+endpoints (to allow them to benefit from earlier evidence if they receive
+alpha via graph propagation at a later analysis) while using
+`look_back = FALSE` for OS and PFS endpoints:
+
+```{r per-hyp-look-back}
+look_back_onc <- c(
+  FALSE,  # H1_OS_S:  no look_back
+  FALSE,  # H2_OS_A:  no look_back
+  FALSE,  # H3_PFS_S: no look_back
+  FALSE,  # H4_PFS_A: no look_back
+  TRUE,   # H5_ORR_S: look_back
+  TRUE    # H6_ORR_A: look_back
+)
+
+result_onc_mixed <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  spending_fn = spending_of,
+  look_back = look_back_onc
+)
+print(result_onc_mixed)
+```
+
+```{r per-hyp-look-back-compare}
+mixed_comparison <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (all LB)` = result_onc_lb$outputs$rejected,
+  `Adj. P (all LB)` = round(result_onc_lb$outputs$adjusted_p, 6),
+  `Rejected (mixed)` = result_onc_mixed$outputs$rejected,
+  `Adj. P (mixed)` = round(result_onc_mixed$outputs$adjusted_p, 6),
+  check.names = FALSE
+)
+knitr::kable(mixed_comparison, row.names = FALSE,
+             caption = "Effect of per-hypothesis look_back on rejection decisions")
+```
+
+In this example, using `look_back = FALSE` for OS and PFS means their
+rejection decisions are based solely on repeated p-values at each analysis.
+The ORR hypotheses use `look_back = TRUE`, allowing them to benefit from
+evidence at earlier analyses if they receive alpha via graph propagation
+at a later analysis. This mixed strategy can be useful when different
+endpoints have different clinical or regulatory rationales for looking back.
+
+### When look_back makes a difference
+
+We modify the oncology trial p-values to illustrate a scenario where
+`look_back = TRUE` leads to an additional rejection. The key change is
+$H_4$ (PFS, all subjects): it has strong evidence at analysis 1
+($p = 0.0001$) but weaker evidence at analysis 2 ($p = 0.02$). Since $H_4$
+starts with weight 0, it cannot be tested until it receives alpha via graph
+propagation — which only happens after $H_3$ is rejected at analysis 2.
+
+```{r oncology-look-back-diff}
+p_onc_lb <- p_onc
+p_onc_lb["H4_PFS_A", ] <- c(0.0001, 0.02, NA)
+
+# look_back = FALSE: H4's repeated p-value at analysis 2 is too large
+result_onc_no_lb <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc_lb,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  spending_fn = spending_of,
+  look_back = FALSE,
+  test_values = TRUE
+)
+
+# look_back = TRUE: H4 benefits from its strong analysis-1 evidence
+result_onc_yes_lb <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc_lb,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  spending_fn = spending_of,
+  look_back = TRUE,
+  test_values = TRUE
+)
+```
+
+With `look_back = FALSE`, $H_4$ is **not rejected** because its nominal
+p-value at analysis 2 ($p = 0.02$) does not cross its boundary:
+
+```{r oncology-look-back-diff-no}
+print(result_onc_no_lb)
+```
+
+With `look_back = TRUE`, $H_4$ **is rejected** and attributed to analysis 1.
+The `test_values` output shows this clearly: at analysis 2, $H_4$'s nominal
+p-value ($p = 0.02$) does not cross the boundary, but looking back to
+analysis 1, the nominal p-value ($p = 0.0001$) crosses the boundary with the
+weight $H_4$ received after $H_3$'s rejection:
+
+```{r oncology-look-back-diff-yes}
+print(result_onc_yes_lb)
+```
+
+```{r oncology-look-back-diff-compare}
+lb_diff_table <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (no LB)` = result_onc_no_lb$outputs$rejected,
+  `Rejected (LB)` = result_onc_yes_lb$outputs$rejected,
+  `First.Rej (LB)` = ifelse(
+    is.na(result_onc_yes_lb$outputs$first_rejected_at), "--",
+    as.character(result_onc_yes_lb$outputs$first_rejected_at)),
+  check.names = FALSE
+)
+knitr::kable(lb_diff_table, row.names = FALSE,
+             caption = "Effect of look_back on oncology trial rejection decisions")
+```
+
+The difference arises because $H_4$ starts with weight 0 and only becomes
+testable after $H_3$ is rejected at analysis 2. With `look_back = FALSE`,
+$H_4$ can only use its analysis-2 evidence ($p = 0.02$), which is
+insufficient. With `look_back = TRUE`, the procedure looks back to
+analysis 1 where $H_4$ had very strong evidence ($p = 0.0001$), enabling
+the rejection.
 
 ### Customizing Spending Functions: Spending Time
 
@@ -1058,6 +891,98 @@ This approach illustrates a general principle: because `spending_fn` accepts
 any function with the signature `function(alpha, info_frac)`, users can
 encode arbitrary spending behaviors — including spending time separation —
 without requiring changes to the `graph_test_shortcut_gsd()` interface.
+
+## Additional Examples
+
+### Different Spending Functions per Hypothesis
+
+The procedure allows different hypotheses to use different spending functions.
+For example, one might use a more aggressive spending function for secondary
+hypotheses:
+
+```{r different-spending}
+result2 <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  spending_fn = list(
+    spending_of,      # H1: O'Brien-Fleming
+    spending_of,      # H2: O'Brien-Fleming
+    spending_pocock,  # H3: Pocock (more aggressive)
+    spending_pocock   # H4: Pocock (more aggressive)
+  ),
+  test_values = TRUE
+)
+print(result2)
+```
+
+### Using Spending Functions from Other Packages
+
+The `spending_fn` argument accepts any function with the signature
+`function(alpha, info_frac)` that returns the cumulative alpha spent at each
+information fraction. This makes it straightforward to use spending functions
+from other packages.
+
+**gsDesign.** The `gsDesign` package provides a rich collection of spending
+functions (`sfLDOF`, `sfLDPocock`, `sfHSD`, `sfExponential`, etc.). Each
+takes `(alpha, t, param)` and returns a list with a `$spend` element
+containing the cumulative spending. A simple wrapper extracts this:
+
+```{r gsdesign-wrapper}
+if (requireNamespace("gsDesign", quietly = TRUE)) {
+  # Wrapper for gsDesign's Lan-DeMets O'Brien-Fleming
+  gsdesign_of <- function(alpha, info_frac) {
+    gsDesign::sfLDOF(alpha, info_frac)$spend
+  }
+
+  # Wrapper for gsDesign's Hwang-Shih-DeCani with gamma = -2
+  gsdesign_hsd <- function(alpha, info_frac) {
+    gsDesign::sfHSD(alpha, info_frac, param = -2)$spend
+  }
+
+  result_gsdesign <- graph_test_shortcut_gsd(
+    graph = g,
+    p = p,
+    alpha = 0.025,
+    info_frac = c(1/3, 2/3),
+    spending_fn = list(
+      gsdesign_of,   # H1: gsDesign O'Brien-Fleming
+      gsdesign_of,   # H2: gsDesign O'Brien-Fleming
+      gsdesign_hsd,  # H3: gsDesign HSD(gamma=-2)
+      gsdesign_hsd   # H4: gsDesign HSD(gamma=-2)
+    )
+  )
+  print(result_gsdesign)
+}
+```
+
+Any of `gsDesign`'s spending functions can be wrapped this way. For spending
+functions with additional parameters (like `sfHSD`), simply bind the
+parameter in the wrapper as shown above. A more advanced use of custom
+spending functions — including the separation of *spending time* from
+*information fraction* — is illustrated in the
+[Customizing Spending Functions: Spending Time] section of the oncology
+case study above.
+
+**rpact.** The `rpact` package computes group sequential designs via
+`getDesignGroupSequential()` but does not expose standalone spending
+functions that can be called with arbitrary `alpha` and information fraction
+inputs. During the graphical testing procedure, `graph_test_shortcut_gsd()`
+internally evaluates spending functions at the current local significance
+level for each hypothesis (i.e., hypothesis weight $\times$ overall
+$\alpha$), which can be very small as weights shift during the procedure.
+While `rpact::getDesignGroupSequential()` accepts small alpha values, it
+issues warnings for alpha below $10^{-6}$ ("out of validated bounds") and
+throws an error when alpha is exactly 0 — which occurs when a hypothesis
+has zero weight. The internal function
+`rpact:::.getDesignGroupSequentialAlphaSpending()` is also not suitable,
+as it takes a design object rather than raw alpha and information fraction
+inputs, and is not part of the public API. Since `rpact` does not provide a
+standalone spending function interface, its spending functions cannot be
+directly wrapped for use with `graph_test_shortcut_gsd()`. However,
+`gsDesign` and `rpact` implement the same standard spending function
+formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
 
 ## Summary
 
