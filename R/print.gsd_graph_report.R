@@ -208,6 +208,21 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     }
   }
 
+  # Repeated and sequential p-values (verbose) --------------------------------
+  if (!is.null(x$boundary_table)) {
+    section_break("Repeated p-values ($outputs$repeated_p)")
+    rep_p_display <- x$outputs$repeated_p
+    rep_p_display[] <- format(rep_p_display, digits = precision)
+    print(as.data.frame(rep_p_display))
+
+    cat("\n")
+    section_break("Sequential p-values ($outputs$sequential_p)")
+    seq_p_display <- x$outputs$sequential_p
+    seq_p_display[] <- format(seq_p_display, digits = precision)
+    print(as.data.frame(seq_p_display))
+    cat("\n")
+  }
+
   # Boundary table (verbose) ---------------------------------------------------
   if (!is.null(x$boundary_table)) {
     section_break("Boundary table ($boundary_table)")

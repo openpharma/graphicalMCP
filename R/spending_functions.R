@@ -141,3 +141,78 @@ spending_linear <- function(alpha, info_frac) {
   )
   alpha * info_frac
 }
+
+
+#' Create a spending function with a custom spending time
+#'
+#' @description
+#' Wraps an existing spending function to use a fixed **spending time** instead
+#' of the information fractions passed to it at runtime. This separates the
+#' alpha allocation schedule (determined by spending time) from the correlation
+#' structure (determined by information fractions in
+#' [graph_test_shortcut_gsd()]).
+#'
+#' This is useful in two common scenarios:
+#' * **Subgroup analyses**: all-subjects hypotheses use all-subjects event
+#'   counts for the correlation structure but subgroup event counts for
+#'   spending (see the spending time section of
+#'   `vignette("group-sequential-testing")`).
+#' * **Monitoring with changed final information**: when the actual total
+#'   information at the final analysis differs from the planned total, the
+#'   planned information fractions are used as spending time to preserve
+#'   boundaries at earlier analyses, while the actual information fractions
+#'   are used for the correlation structure (see the monitoring section of
+#'   `vignette("group-sequential-testing")`).
+#'
+#' @param spending_fn A spending function to wrap. Must accept two arguments:
+#'   `alpha` (significance level) and `info_frac` (information fraction), and
+#'   return the cumulative alpha spent.
+#' @param spending_time A numeric vector of spending time values. These replace
+#'   the `info_frac` argument when the wrapped function is called. The vector
+#'   is truncated to match the length of `info_frac` at runtime, which handles
+#'   interim analyses where fewer analyses have been conducted.
+#'
+#' @return A function with the same signature as `spending_fn` —
+#'   `function(alpha, info_frac)` — that internally uses `spending_time`
+#'   instead of `info_frac` for alpha allocation.
+#'
+#' @seealso [spending_of()], [spending_pocock()], [spending_hsd()],
+#'   [spending_linear()] for built-in spending functions,
+#'   [graph_test_shortcut_gsd()] for the graphical procedure with group
+#'   sequential designs.
+#'
+#' @export
+#'
+#' @examples
+#' # Subgroup spending time: use subgroup event fractions for spending
+#' # while info_frac uses all-subjects event fractions for correlation
+#' spending_h2 <- spending_with_time(
+#'   spending_of,
+#'   spending_time = c(185 / 295, 245 / 295, 1)
+#' )
+#'
+#' # The wrapped function has the standard (alpha, info_frac) signature
+#' # but ignores info_frac and uses spending_time internally
+#' spending_h2(0.01, c(0.5, 0.8, 1))
+#'
+#' # Monitoring: use planned info fractions for spending
+#' # when actual final information differs from planned
+#' spending_monitor <- spending_with_time(
+#'   spending_of,
+#'   spending_time = c(0.627, 0.831, 1)  # planned
+#' )
+#' # Call with actual info fractions (for correlation structure)
+#' spending_monitor(0.01, c(0.597, 0.790, 1))  # actual
+spending_with_time <- function(spending_fn, spending_time) {
+  stopifnot(
+    "spending_fn must be a function" = is.function(spending_fn),
+    "spending_time must be a numeric vector" = is.numeric(spending_time),
+    "spending_time must be in [0, 1]" =
+      all(spending_time >= 0 & spending_time <= 1)
+  )
+
+  function(alpha, info_frac) {
+    st <- spending_time[seq_along(info_frac)]
+    spending_fn(alpha, st)
+  }
+}
