@@ -419,6 +419,40 @@ knitr::kable(paper_table1,
              caption = "Comparison of nominal boundaries with paper Table 1")
 ```
 
+#### Boundary table
+
+Setting `verbose = TRUE` produces a boundary table that lists the nominal
+p-value boundaries at each analysis for all possible hypothesis weights from
+the graph's closure. This table is independent of the observed p-values and
+can be used to manually verify the rejection decisions shown in `test_values`.
+
+```{r boundary-table}
+result_verbose <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = info_frac,
+  spending_fn = spending_of,
+  verbose = TRUE
+)
+
+# Display boundary tables for each hypothesis
+for (h in names(result_verbose$boundary_table)) {
+  cat(h, "\n")
+  print(result_verbose$boundary_table[[h]])
+  cat("\n")
+}
+```
+
+To verify the rejection decisions at analysis 2, look up each hypothesis's
+weight in the boundary table and compare the `Boundary.2` column against
+the observed p-value. For example, $H_1$ is tested at weight 0.5 with
+boundary `r formatC(result_verbose$boundary_table$H1$Boundary.2[result_verbose$boundary_table$H1$Weight == 0.5], format = "f", digits = 7)`.
+Since $p_{1,2} = 0.0002$ is below this boundary, $H_1$ is rejected. After
+$H_1$'s rejection, the graph propagates weight to $H_2$ (weight 0.75) and
+$H_3$ (weight 0.25). Looking up these weights confirms the boundaries used
+in the `test_values` output.
+
 ## Case Study using sequential p-values and look_back = TRUE
 
 This example is adapted from the
