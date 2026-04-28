@@ -78,7 +78,7 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   cat("\n", pad, "P-values\n", sep = "")
   p_df <- as.data.frame(x$inputs$p, row.names = hyp_names)
   colnames(p_df) <- analysis_names
-  p_df[] <- lapply(p_df, function(col) format(col, digits = precision))
+  p_df[] <- lapply(p_df, function(col) formatC(col, format = "f", digits = precision))
   print(p_df)
 
   # Spending functions
@@ -124,7 +124,8 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   exceed_1 <- adj_p > 1
   adj_p_format <- character(length(adj_p))
   adj_p_format[exceed_1] <- gsub(".00000001", "+", adj_p[exceed_1])
-  adj_p_format[!exceed_1] <- format(adj_p[!exceed_1], digits = precision)
+  adj_p_format[!exceed_1] <- formatC(adj_p[!exceed_1], format = "f",
+                                     digits = precision)
 
   decision_at <- x$outputs$decision_at
 
@@ -188,10 +189,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       # Remove the Look_back column from display
       detail$Look_back <- NULL
 
-      # Format numeric columns
-      detail$Weight <- format(detail$Weight, digits = precision)
-      detail$p <- format(detail$p, digits = precision)
-      detail$Boundary <- format(detail$Boundary, digits = precision)
+      # Format numeric columns with consistent fixed notation
+      detail$Weight <- formatC(detail$Weight, format = "f", digits = precision)
+      detail$p <- formatC(detail$p, format = "f", digits = precision)
+      detail$Boundary <- formatC(detail$Boundary, format = "f", digits = precision)
 
       detail_out <- utils::capture.output(
         print(detail, row.names = FALSE)
@@ -212,13 +213,13 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   if (!is.null(x$boundary_table)) {
     section_break("Repeated p-values ($outputs$repeated_p)")
     rep_p_display <- x$outputs$repeated_p
-    rep_p_display[] <- format(rep_p_display, digits = precision)
+    rep_p_display[] <- formatC(rep_p_display, format = "f", digits = precision)
     print(as.data.frame(rep_p_display))
 
     cat("\n")
     section_break("Sequential p-values ($outputs$sequential_p)")
     seq_p_display <- x$outputs$sequential_p
-    seq_p_display[] <- format(seq_p_display, digits = precision)
+    seq_p_display[] <- formatC(seq_p_display, format = "f", digits = precision)
     print(as.data.frame(seq_p_display))
     cat("\n")
   }
@@ -236,9 +237,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       cat(pad, hyp, "\n", sep = "")
       bt <- x$boundary_table[[hyp]]
       bt_display <- bt
-      # Format numeric columns
+      # Format numeric columns with consistent fixed notation
       for (col in names(bt_display)) {
-        bt_display[[col]] <- format(bt_display[[col]], digits = precision)
+        bt_display[[col]] <- formatC(bt_display[[col]],
+                                     format = "f", digits = precision)
       }
       bt_out <- utils::capture.output(print(bt_display, row.names = FALSE))
       cat(paste0(pad, bt_out), sep = "\n")

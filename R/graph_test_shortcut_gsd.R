@@ -473,22 +473,36 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
   tv_details <- if (test_values) vector("list", num_analyses)
 
   for (k in seq_len(num_analyses)) {
-    # Get active hypotheses: not rejected AND has data at analysis k
+    # Get active hypotheses: not rejected AND has data at this analysis.
+    # For look_back hypotheses, "has data" means data at any analysis up to k
+    # (since the sequential p-value carries forward from prior analyses).
     has_data_k <- !is.na(p[, k])
-    active <- !rejected & has_data_k
+    has_prior_data <- vapply(seq_len(num_hyps), function(j) {
+      any(!is.na(p[j, seq_len(k)]))
+    }, logical(1))
+    active_at_k <- ifelse(look_back, has_prior_data, has_data_k)
+    active <- !rejected & active_at_k
 
     if (!any(active)) next
 
     # Construct the p-value vector for the shortcut: use sequential p-values
     # for hypotheses with look_back = TRUE, repeated p-values otherwise.
+    # For look_back hypotheses without data at analysis k, use their most
+    # recent sequential p-value (carried forward from the last available
+    # analysis).
+    last_seq_p <- vapply(seq_len(num_hyps), function(j) {
+      available <- which(!is.na(seq_p_matrix[j, seq_len(k)]))
+      if (length(available) == 0) NA_real_ else seq_p_matrix[j, max(available)]
+    }, numeric(1))
+
     p_for_shortcut <- ifelse(
       look_back,
-      seq_p_matrix[, k],
+      last_seq_p,
       rep_p_matrix[, k]
     )
 
-    # For hypotheses without data at analysis k or already rejected,
-    # set p to 1 so they are never selected by graph_test_shortcut().
+    # For hypotheses that are not active, set p to 1 so they are never
+    # selected by graph_test_shortcut().
     p_for_shortcut[!active] <- 1
 
     # Apply shortcut to the current graph
@@ -568,18 +582,26 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
             info_frac, spending_fn, hyp_names, w_at_rej
           )
 
-          # Set the analysis-k row's Reject to FALSE for this hypothesis
+          # Check if this hypothesis has a standard row at analysis k
           hyp_row <- which(tv_details[[k]]$Hypothesis == hyp_name &
                            tv_details[[k]]$Analysis == k)
-          tv_details[[k]]$Reject[hyp_row] <- FALSE
 
-          # Insert look_back rows immediately after the hypothesis's row
-          before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
-          after <- if (hyp_row < nrow(tv_details[[k]])) {
-            tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
-                            drop = FALSE]
+          if (length(hyp_row) > 0) {
+            # Has data at analysis k: set Reject to FALSE and insert
+            # look_back rows after it
+            tv_details[[k]]$Reject[hyp_row] <- FALSE
+            before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
+            after <- if (hyp_row < nrow(tv_details[[k]])) {
+              tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
+                              drop = FALSE]
+            }
+            tv_details[[k]] <- rbind(before, lb_rows, after)
+          } else {
+            # No data at analysis k (look_back-only): append look_back rows
+            # at the position where this hypothesis was rejected in the
+            # shortcut sequence
+            tv_details[[k]] <- rbind(tv_details[[k]], lb_rows)
           }
-          tv_details[[k]] <- rbind(before, lb_rows, after)
         }
       }
     }
