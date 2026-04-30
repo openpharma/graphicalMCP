@@ -70,3 +70,40 @@ test_that("repeated_p returns lower bound for very small p-values", {
   rp <- repeated_p(c(1e-15, 1e-15), c(0.5, 1), spending_of)
   expect_true(rp < 1e-4)
 })
+
+test_that("repeated_p returns 1 for p-values that never cross the boundary", {
+  # p = 1 at all analyses: boundary never crossed
+  expect_message(
+    rp <- repeated_p(c(1, 1), c(0.5, 1), spending_of),
+    "upper bound"
+  )
+  expect_equal(rp, 1)
+})
+
+test_that("repeated_p handles spending function that errors at small alpha", {
+  # Create a spending function that errors for very small alpha
+  bad_spending <- function(alpha, info_frac) {
+    if (alpha < 1e-5) stop("too small")
+    spending_of(alpha, info_frac)
+  }
+
+  # With a very small p-value, the lower bound check may trigger the error
+  # The tryCatch should handle it gracefully
+  expect_no_error({
+    rp <- repeated_p(c(0.01, 0.005), c(0.5, 1), bad_spending)
+  })
+  expect_true(is.numeric(rp))
+})
+
+test_that("repeated_p handles single analysis", {
+  rp <- repeated_p(0.01, 1, spending_of)
+  expect_equal(rp, 0.01, tolerance = 1e-6)
+})
+
+test_that("repeated_p returns lower bound message for extremely small p", {
+  expect_message(
+    rp <- repeated_p(1e-20, 1, spending_of),
+    "lower bound"
+  )
+  expect_true(rp <= 1e-6)
+})

@@ -145,9 +145,14 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     check.names = FALSE
   )
   names(df_summary)[[1]] <- formatC("Hypothesis", width = hyp_width)
-  names(df_summary)[[2]] <- "Adj.P-value"
+  names(df_summary)[[2]] <- "Adj.P-value*"
 
   print(df_summary, row.names = FALSE)
+
+  cat(pad, "(*) Adjusted p-values account for both the group sequential",
+      " design and the\n", pad, "    graphical multiple comparison procedure.",
+      " Based on repeated p-values when\n", pad, "    look_back = FALSE,",
+      " and sequential p-values when look_back = TRUE.\n", sep = "")
 
   # Rejection sequence
   rej_seq <- x$outputs$rejection_sequence
@@ -201,9 +206,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
 
       # Print footnote for look_back hypotheses
       if (has_look_back) {
-        cat(pad, "(*) Rejected via look_back: nominal p-value did not cross",
-            " the boundary at the\n", pad, "    current analysis, but",
-            " crossed the boundary at an earlier analysis.\n", sep = "")
+        cat(pad, "(*) Rejected via look_back: the nominal p-value crossed",
+            " the boundary at an\n", pad, "    earlier analysis with the",
+            " hypothesis weight updated via graph propagation.\n",
+            sep = "")
       }
       cat("\n")
     }

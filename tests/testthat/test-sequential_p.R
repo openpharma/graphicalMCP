@@ -89,3 +89,48 @@ test_that("sequential_p matches gsDesign::sequentialPValue", {
     expect_equal(sp, gsd_sp, tolerance = 1e-4)
   }
 })
+
+test_that("sequential_p returns 1 for p-values that never cross the boundary", {
+  expect_message(
+    sp <- sequential_p(c(1, 1), c(0.5, 1), spending_of),
+    "upper bound"
+  )
+  expect_equal(sp, 1)
+})
+
+test_that("sequential_p handles spending function that errors at small alpha", {
+  bad_spending <- function(alpha, info_frac) {
+    if (alpha < 1e-5) stop("too small")
+    spending_of(alpha, info_frac)
+  }
+
+  expect_no_error({
+    sp <- sequential_p(c(0.01, 0.005), c(0.5, 1), bad_spending)
+  })
+  expect_true(is.numeric(sp))
+})
+
+test_that("sequential_p returns lower bound for extremely small p-values", {
+  expect_message(
+    sp <- sequential_p(1e-20, 1, spending_of),
+    "lower bound"
+  )
+  expect_true(sp <= 1e-6)
+})
+
+test_that("sequential_p handles single analysis", {
+  sp <- sequential_p(0.01, 1, spending_of)
+  expect_equal(sp, 0.01, tolerance = 1e-6)
+})
+
+test_that("sequential_p <= repeated_p at every analysis", {
+  p <- c(0.05, 0.02, 0.01)
+  t <- c(1/3, 2/3, 1)
+
+  for (k in seq_along(p)) {
+    rp <- repeated_p(p[1:k], t[1:k], spending_of)
+    sp <- sequential_p(p[1:k], t[1:k], spending_of)
+    expect_true(sp <= rp + 1e-4,
+                label = paste("analysis", k))
+  }
+})

@@ -44,8 +44,11 @@
 #'     `NA` padding, `info_frac` must be a matrix with `NA` in the same
 #'     positions as `p`.
 #'
-#'   Non-`NA` values must be in (0, 1] and monotonically non-decreasing per
-#'   hypothesis. The last non-`NA` value does not need to be 1, allowing
+#'   Non-`NA` values must be positive and monotonically non-decreasing per
+#'   hypothesis. Values greater than 1 are allowed (e.g., when more
+#'   information is collected than planned). The spending functions cap
+#'   the cumulative spending at `alpha` for information fractions at or
+#'   above 1. The last non-`NA` value does not need to be 1, allowing
 #'   the procedure to be applied up to an interim analysis.
 #' @param spending_fn Spending function(s) for computing group sequential
 #'   boundaries. Can be:
@@ -562,7 +565,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     if (test_values) {
       tv_details[[k]] <- gsd_test_values_details(
         step_graph, p, k, alpha, info_frac, spending_fn,
-        newly_in_order, hyp_names, rejected, has_data_k
+        newly_in_order, hyp_names, rejected, active_at_k
       )
 
       # Add Look_back column (FALSE for all standard rows)
@@ -587,9 +590,14 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
                            tv_details[[k]]$Analysis == k)
 
           if (length(hyp_row) > 0) {
-            # Has data at analysis k: set Reject to FALSE and insert
-            # look_back rows after it
-            tv_details[[k]]$Reject[hyp_row] <- FALSE
+            # Has data at analysis k: check if the nominal p-value at
+            # analysis k also crosses the boundary. If not, set Reject
+            # to FALSE (the rejection is only via look_back).
+            p_at_k <- tv_details[[k]]$p[hyp_row]
+            b_at_k <- tv_details[[k]]$Boundary[hyp_row]
+            if (is.na(p_at_k) || p_at_k > b_at_k) {
+              tv_details[[k]]$Reject[hyp_row] <- FALSE
+            }
             before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
             after <- if (hyp_row < nrow(tv_details[[k]])) {
               tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
@@ -822,8 +830,8 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     "Information fractions must have the same number of columns as p" =
       ncol(info_frac) == num_analyses,
     "Information fractions must be numeric" = is.numeric(info_frac),
-    "Non-NA information fractions must be in (0, 1]" =
-      length(if_non_na) == 0 || all(if_non_na > 0 & if_non_na <= 1),
+    "Non-NA information fractions must be positive" =
+      length(if_non_na) == 0 || all(if_non_na > 0),
     "Spending functions must be a list of functions" =
       is.list(spending_fn) &&
       all(vapply(spending_fn, is.function, logical(1))),

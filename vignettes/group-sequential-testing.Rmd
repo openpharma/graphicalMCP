@@ -744,8 +744,17 @@ endpoints have different clinical or regulatory rationales for looking back.
 ### When look_back makes a difference
 
 We modify the oncology trial p-values to illustrate a scenario where
-`look_back = TRUE` leads to additional rejections. Two key changes are made:
+`look_back = TRUE` leads to additional rejections. Three key changes are
+made:
 
+- $H_2$ (OS, all subjects): strong evidence at both analysis 1
+  ($p = 0.003$) and analysis 2 ($p = 0.005$). At analysis 1, $H_2$'s
+  weight (0.4) gives a boundary of 0.00154 — too small for $p = 0.003$.
+  At analysis 2, after $H_1$ is rejected, $H_2$ receives $H_1$'s weight
+  (reaching 0.8) and its analysis-2 p-value crosses the boundary.
+  Additionally, looking back to analysis 1 with the increased weight gives
+  a boundary of 0.00423, which $p = 0.003$ also crosses — so $H_2$ is
+  attributed to analysis 1.
 - $H_4$ (PFS, all subjects): strong evidence at analysis 1
   ($p = 0.0001$) but weaker at analysis 2 ($p = 0.02$). Since $H_4$ starts
   with weight 0, it cannot be tested until it receives alpha via graph
@@ -756,6 +765,7 @@ We modify the oncology trial p-values to illustrate a scenario where
 
 ```{r oncology-look-back-diff}
 p_onc_lb <- p_onc
+p_onc_lb["H2_OS_A", ] <- c(0.003, 0.005, 0.1)
 p_onc_lb["H4_PFS_A", ] <- c(0.0001, 0.02, NA)
 p_onc_lb["H5_ORR_S", ] <- c(0.0008, NA, NA)
 
@@ -782,16 +792,25 @@ result_onc_yes_lb <- graph_test_shortcut_gsd(
 )
 ```
 
-With `look_back = FALSE`, neither $H_4$ nor $H_5$ is rejected:
+With `look_back = FALSE`, $H_4$ and $H_5$ are not rejected, while $H_2$ is
+rejected at analysis 2:
 
 ```{r oncology-look-back-diff-no}
 print(result_onc_no_lb)
 ```
 
-With `look_back = TRUE`, both $H_4$ and $H_5$ **are rejected** and
+With `look_back = TRUE`, $H_2$, $H_4$, and $H_5$ **are all rejected** and
 attributed to analysis 1. The `test_values` output at analysis 2 shows
-this clearly:
+three different look_back scenarios:
 
+- $H_2$: its nominal p-value at analysis 2 ($p = 0.005$) crosses the
+  boundary at analysis 2 after receiving $H_1$'s weight — so $H_2$ is
+  rejected at analysis 2 regardless of look_back. But looking back to
+  analysis 1 with the increased weight (0.8) gives a boundary of 0.00423,
+  which $p = 0.003$ also crosses. This means $H_2$ is rejected at both
+  analyses, and is attributed to analysis 1 (`First.Rej.at = 1`). In the
+  `test_values`, both the analysis-2 row and the look_back analysis-1 row
+  show `Reject = TRUE`.
 - $H_4$: its nominal p-value at analysis 2 ($p = 0.02$) does not cross the
   boundary, but looking back to analysis 1, $p = 0.0001$ crosses the
   boundary with the weight received after $H_3$'s rejection.
@@ -819,15 +838,22 @@ knitr::kable(lb_diff_table, row.names = FALSE,
              caption = "Effect of look_back on oncology trial rejection decisions")
 ```
 
-The difference arises because $H_4$ starts with weight 0 and only becomes
-testable after $H_3$ is rejected at analysis 2. With `look_back = FALSE`,
-$H_4$ can only use its analysis-2 evidence ($p = 0.02$), which is
-insufficient. With `look_back = TRUE`, the procedure looks back to
-analysis 1 where $H_4$ had very strong evidence ($p = 0.0001$), enabling
-the rejection. Similarly, $H_5$ starts with weight 0.02 and boundary
-0.0005 — too small for its p-value of 0.0008. But after $H_4$'s
-rejection propagates weight to $H_5$, looking back to analysis 1 with
-the increased weight enables $H_5$'s rejection as well.
+The three look_back rejections illustrate different mechanisms:
+
+- $H_2$ had data at both analyses and was rejected at analysis 2 even
+  without look_back. But graph propagation from $H_1$'s rejection increased
+  $H_2$'s weight, and looking back to analysis 1 with the new weight showed
+  that the boundary was also crossed there — attributing the rejection to
+  the earlier analysis.
+- $H_4$ started with weight 0 and only became testable after $H_3$'s
+  rejection at analysis 2. With `look_back = FALSE`, $H_4$ could only use
+  its analysis-2 evidence ($p = 0.02$), which was insufficient. With
+  `look_back = TRUE`, the strong analysis-1 evidence ($p = 0.0001$)
+  crossed the boundary.
+- $H_5$ had a single analysis and was not rejected initially (boundary too
+  small). After $H_4$'s rejection propagated weight to $H_5$, looking back
+  to analysis 1 with the increased weight enabled rejection — even though
+  $H_5$ had no data at analysis 2.
 
 ### Customizing Spending Functions: Spending Time
 

@@ -20,8 +20,8 @@ spending_linear(alpha, info_frac)
 Must be between 0 and 1.}
 
 \item{info_frac}{A numeric scalar or vector of information fractions. Values
-must be in [0, 1]. When \code{info_frac = 0}, the spending is 0. When
-\code{info_frac = 1}, the spending equals \code{alpha}.}
+must be non-negative. When \code{info_frac = 0}, the spending is 0. When
+\code{info_frac >= 1}, the spending is capped at \code{alpha}.}
 
 \item{gamma}{A numeric scalar for the gamma parameter of the
 Hwang-Shih-DeCani spending function. Common choices are \code{gamma = -4}

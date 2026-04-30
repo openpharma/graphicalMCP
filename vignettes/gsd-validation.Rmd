@@ -25,6 +25,7 @@ against two established R packages: **gsDesign** (Anderson, 2024) and **rpact**
 3. Correlation matrix against the analytical formula
 4. Repeated p-values against rpact
 5. Sequential p-values against gsDesign
+6. Wang-Tsiatis boundaries against rpact
 
 For all comparisons, we expect agreement to within numerical tolerance
 (typically $< 10^{-6}$).
@@ -613,6 +614,100 @@ cat(sprintf(
 ))
 ```
 
+## 6. Wang-Tsiatis Boundaries
+
+The `spending_wt()` function computes the implied cumulative spending from
+the Wang-Tsiatis family of group sequential boundaries, parameterized by
+$\Delta$: $c_k = C \cdot t_k^{\Delta - 0.5}$. Special cases are
+$\Delta = 0$ (O'Brien-Fleming) and $\Delta = 0.5$ (Pocock). We validate
+against rpact's `getDesignGroupSequential()` with `typeOfDesign = "WT"`.
+
+### Comparison with rpact
+
+```{r wt-rpact}
+alpha <- 0.025
+info_frac <- c(1/3, 2/3, 1)
+
+wt_comparison <- data.frame()
+
+for (delta in c(0, 0.1, 0.25, 0.4, 0.5)) {
+  # graphicalMCP: compute boundaries via spending_wt
+  b_graphicalMCP <- gs_boundaries(
+    alpha, info_frac,
+    function(a, t) spending_wt(a, t, delta = delta)
+  )
+
+  # rpact: Wang-Tsiatis boundaries
+  rpact_type <- if (delta == 0) {
+    "OF"
+  } else if (delta == 0.5) {
+    "P"
+  } else {
+    "WT"
+  }
+  rpact_args <- list(
+    sided = 1, alpha = alpha,
+    informationRates = info_frac,
+    typeOfDesign = rpact_type
+  )
+  if (rpact_type == "WT") rpact_args$deltaWT <- delta
+  rpact_gsd <- do.call(getDesignGroupSequential, rpact_args)
+
+  max_diff <- max(abs(b_graphicalMCP$bounds_z - rpact_gsd$criticalValues))
+
+  wt_comparison <- rbind(wt_comparison, data.frame(
+    Delta = delta,
+    Type = ifelse(delta == 0, "O'Brien-Fleming",
+           ifelse(delta == 0.5, "Pocock",
+                  paste0("WT (", delta, ")"))),
+    Z1_graphicalMCP = b_graphicalMCP$bounds_z[1],
+    Z1_rpact = rpact_gsd$criticalValues[1],
+    Z2_graphicalMCP = b_graphicalMCP$bounds_z[2],
+    Z2_rpact = rpact_gsd$criticalValues[2],
+    Z3_graphicalMCP = b_graphicalMCP$bounds_z[3],
+    Z3_rpact = rpact_gsd$criticalValues[3],
+    Max.Diff = max_diff,
+    check.names = FALSE
+  ))
+}
+
+knitr::kable(wt_comparison, digits = 6, row.names = FALSE,
+             caption = paste("Wang-Tsiatis Z-scale boundaries:",
+                             "graphicalMCP vs rpact (alpha = 0.025)"))
+```
+
+### Verification of boundary shape
+
+The Wang-Tsiatis boundaries satisfy $c_k \cdot t_k^{0.5 - \Delta} = C$
+(constant across analyses). We verify this property:
+
+```{r wt-shape}
+shape_check <- data.frame()
+
+for (delta in c(0, 0.25, 0.5)) {
+  b <- gs_boundaries(
+    alpha, info_frac,
+    function(a, t) spending_wt(a, t, delta = delta)
+  )
+  C_values <- b$bounds_z * info_frac^(0.5 - delta)
+
+  shape_check <- rbind(shape_check, data.frame(
+    Delta = delta,
+    C1 = C_values[1],
+    C2 = C_values[2],
+    C3 = C_values[3],
+    Max.Variation = max(C_values) - min(C_values)
+  ))
+}
+
+knitr::kable(shape_check, digits = 6, row.names = FALSE,
+             caption = paste("Verification that C = Z * t^(0.5 - delta)",
+                             "is constant across analyses"))
+```
+
+The constant $C$ varies by less than $10^{-3}$ across analyses, confirming
+the Wang-Tsiatis boundary shape.
+
 ## Summary
 
 ```{r summary-table}
@@ -623,7 +718,8 @@ summary_table <- data.frame(
     "gs_corr",
     "repeated_p",
     "sequential_p",
-    "sequential_p == cummin(repeated_p)"
+    "sequential_p == cummin(repeated_p)",
+    "spending_wt (Wang-Tsiatis)"
   ),
   `Compared Against` = c(
     "gsDesign (sfLDOF, sfLDPocock, sfHSD, sfLinear), rpact (alphaSpent)",
@@ -631,7 +727,8 @@ summary_table <- data.frame(
     "Analytical formula",
     "Boundary inversion: gsDesign + rpact boundaries",
     "gsDesign (sequentialPValue)",
-    "Internal consistency"
+    "Internal consistency",
+    "rpact (getDesignGroupSequential with typeOfDesign OF/P/WT)"
   ),
   check.names = FALSE
 )
@@ -645,6 +742,9 @@ validated by confirming that the boundary at the returned alpha equals the
 observed p-value (using both graphicalMCP and rpact boundaries). Sequential
 p-values match gsDesign, and the internal relationship
 $\text{sequential\_p} = \text{cummin}(\text{repeated\_p})$ holds.
+Wang-Tsiatis boundaries from `spending_wt()` match rpact across all delta
+values, including the special cases of O'Brien-Fleming ($\Delta = 0$) and
+Pocock ($\Delta = 0.5$).
 
 ## References
 
