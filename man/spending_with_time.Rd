@@ -4,7 +4,7 @@
 \alias{spending_with_time}
 \title{Create a spending function with a custom spending time}
 \usage{
-spending_with_time(spending_fn, spending_time)
+spending_with_time(spending_fn, spending_time, info_frac = NULL)
 }
 \arguments{
 \item{spending_fn}{A spending function to wrap. Must accept two arguments:
@@ -12,9 +12,15 @@ spending_with_time(spending_fn, spending_time)
 return the cumulative alpha spent.}
 
 \item{spending_time}{A numeric vector of spending time values. These replace
-the \code{info_frac} argument when the wrapped function is called. The vector
-is truncated to match the length of \code{info_frac} at runtime, which handles
-interim analyses where fewer analyses have been conducted.}
+the \code{info_frac} argument when the wrapped function is called. May contain
+\code{NA} for analyses that are skipped (e.g., a hypothesis not tested at a
+particular analysis). The last non-\code{NA} value should be 1 if the final
+analysis has been specified.}
+
+\item{info_frac}{An optional numeric vector of information fractions with
+the same length as \code{spending_time}. If provided, the \code{NA} positions are
+validated to match those in \code{spending_time}. This ensures that the
+spending time and information fraction structures are consistent.}
 }
 \value{
 A function with the same signature as \code{spending_fn} —
@@ -23,45 +29,65 @@ instead of \code{info_frac} for alpha allocation.
 }
 \description{
 Wraps an existing spending function to use a fixed \strong{spending time} instead
-of the information fractions passed to it at runtime. This separates the
-alpha allocation schedule (determined by spending time) from the correlation
-structure (determined by information fractions in
-\code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}}).
+of the information fractions passed to it at runtime. This controls only
+the alpha allocation schedule. The correlation structure of the test
+statistics is determined separately by the \code{info_frac} argument in
+\code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} (via \code{\link[=gs_corr]{gs_corr()}}), not by the spending
+function.
 
 This is useful in two common scenarios:
 \itemize{
-\item \strong{Subgroup analyses}: all-subjects hypotheses use all-subjects event
-counts for the correlation structure but subgroup event counts for
-spending (see the spending time section of
-\code{vignette("group-sequential-testing")}).
+\item \strong{Subgroup analyses}: all-subjects hypotheses use subgroup event
+fractions as spending time (controlling how alpha is allocated across
+analyses), while \code{info_frac} in \code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} uses
+all-subjects event fractions (controlling the correlation structure).
 \item \strong{Monitoring with changed final information}: when the actual total
 information at the final analysis differs from the planned total, the
 planned information fractions are used as spending time to preserve
-boundaries at earlier analyses, while the actual information fractions
-are used for the correlation structure (see the monitoring section of
-\code{vignette("group-sequential-testing")}).
+the alpha allocation at earlier analyses, while \code{info_frac} in
+\code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} uses the actual information fractions
+for the correlation structure.
 }
 }
 \examples{
-# Subgroup spending time: use subgroup event fractions for spending
-# while info_frac uses all-subjects event fractions for correlation
-spending_h2 <- spending_with_time(
+# --- Subgroup spending time ---
+# Without spending_with_time, spending_of() uses info_frac for spending:
+info_frac_all <- c(529 / 800, 700 / 800, 1)  # all-subjects fractions
+spending_of(0.01, info_frac_all)
+
+# With spending_with_time, spending uses subgroup fractions instead.
+# The info_frac passed at runtime is ignored by the spending function;
+# it is only used by gs_boundaries()/graph_test_shortcut_gsd() for
+# the correlation structure.
+spending_time_sub <- c(185 / 295, 245 / 295, 1)  # subgroup fractions
+spending_with_time(spending_of, spending_time_sub)
+
+# --- Monitoring with changed final information ---
+# Planned: 295 OS events at 3 analyses (185, 245, 295 events).
+# spending_time uses planned fractions for interim analyses and 1
+# for the final analysis.
+spending_monitor <- spending_with_time(
   spending_of,
   spending_time = c(185 / 295, 245 / 295, 1)
 )
 
-# The wrapped function has the standard (alpha, info_frac) signature
-# but ignores info_frac and uses spending_time internally
-spending_h2(0.01, c(0.5, 0.8, 1))
+# Overrunning (310 events) or underrunning (280 events):
+# spending_time is the same in both cases — it uses planned fractions
+# for interim analyses and 1 for the final analysis, because alpha
+# spent has been fixed for interim analyses. The actual info_frac
+# (which differs between overrunning and underrunning) only affects
+# the correlation structure in gs_boundaries()/graph_test_shortcut_gsd().
+spending_monitor(0.01, c(185 / 295, 245 / 295, 1))
 
-# Monitoring: use planned info fractions for spending
-# when actual final information differs from planned
-spending_monitor <- spending_with_time(
+# --- Skipped analyses (NA in spending_time) ---
+# If a hypothesis is not tested at analysis 2, both spending_time and
+# info_frac have NA at that position. The output also has NA there.
+spending_skip <- spending_with_time(
   spending_of,
-  spending_time = c(0.627, 0.831, 1)  # planned
+  spending_time = c(185 / 295, NA, 1),
+  info_frac = c(185 / 295, NA, 1)
 )
-# Call with actual info fractions (for correlation structure)
-spending_monitor(0.01, c(0.597, 0.790, 1))  # actual
+spending_skip(0.01, c(185 / 295, NA, 1))
 }
 \seealso{
 \code{\link[=spending_of]{spending_of()}}, \code{\link[=spending_pocock]{spending_pocock()}}, \code{\link[=spending_hsd]{spending_hsd()}},

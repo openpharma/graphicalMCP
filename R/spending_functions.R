@@ -154,30 +154,36 @@ spending_linear <- function(alpha, info_frac) {
 #'
 #' @description
 #' Wraps an existing spending function to use a fixed **spending time** instead
-#' of the information fractions passed to it at runtime. This separates the
-#' alpha allocation schedule (determined by spending time) from the correlation
-#' structure (determined by information fractions in
-#' [graph_test_shortcut_gsd()]).
+#' of the information fractions passed to it at runtime. This controls only
+#' the alpha allocation schedule. The correlation structure of the test
+#' statistics is determined separately by the `info_frac` argument in
+#' [graph_test_shortcut_gsd()] (via [gs_corr()]), not by the spending
+#' function.
 #'
 #' This is useful in two common scenarios:
-#' * **Subgroup analyses**: all-subjects hypotheses use all-subjects event
-#'   counts for the correlation structure but subgroup event counts for
-#'   spending (see the spending time section of
-#'   `vignette("group-sequential-testing")`).
+#' * **Subgroup analyses**: all-subjects hypotheses use subgroup event
+#'   fractions as spending time (controlling how alpha is allocated across
+#'   analyses), while `info_frac` in [graph_test_shortcut_gsd()] uses
+#'   all-subjects event fractions (controlling the correlation structure).
 #' * **Monitoring with changed final information**: when the actual total
 #'   information at the final analysis differs from the planned total, the
 #'   planned information fractions are used as spending time to preserve
-#'   boundaries at earlier analyses, while the actual information fractions
-#'   are used for the correlation structure (see the monitoring section of
-#'   `vignette("group-sequential-testing")`).
+#'   the alpha allocation at earlier analyses, while `info_frac` in
+#'   [graph_test_shortcut_gsd()] uses the actual information fractions
+#'   for the correlation structure.
 #'
 #' @param spending_fn A spending function to wrap. Must accept two arguments:
 #'   `alpha` (significance level) and `info_frac` (information fraction), and
 #'   return the cumulative alpha spent.
 #' @param spending_time A numeric vector of spending time values. These replace
-#'   the `info_frac` argument when the wrapped function is called. The vector
-#'   is truncated to match the length of `info_frac` at runtime, which handles
-#'   interim analyses where fewer analyses have been conducted.
+#'   the `info_frac` argument when the wrapped function is called. May contain
+#'   `NA` for analyses that are skipped (e.g., a hypothesis not tested at a
+#'   particular analysis). The last non-`NA` value should be 1 if the final
+#'   analysis has been specified.
+#' @param info_frac An optional numeric vector of information fractions with
+#'   the same length as `spending_time`. If provided, the `NA` positions are
+#'   validated to match those in `spending_time`. This ensures that the
+#'   spending time and information fraction structures are consistent.
 #'
 #' @return A function with the same signature as `spending_fn` —
 #'   `function(alpha, info_frac)` — that internally uses `spending_time`
@@ -191,38 +197,83 @@ spending_linear <- function(alpha, info_frac) {
 #' @export
 #'
 #' @examples
-#' # Subgroup spending time: use subgroup event fractions for spending
-#' # while info_frac uses all-subjects event fractions for correlation
-#' spending_h2 <- spending_with_time(
+#' # --- Subgroup spending time ---
+#' # Without spending_with_time, spending_of() uses info_frac for spending:
+#' info_frac_all <- c(529 / 800, 700 / 800, 1)  # all-subjects fractions
+#' spending_of(0.01, info_frac_all)
+#'
+#' # With spending_with_time, spending uses subgroup fractions instead.
+#' # The info_frac passed at runtime is ignored by the spending function;
+#' # it is only used by gs_boundaries()/graph_test_shortcut_gsd() for
+#' # the correlation structure.
+#' spending_time_sub <- c(185 / 295, 245 / 295, 1)  # subgroup fractions
+#' spending_with_time(spending_of, spending_time_sub)
+#'
+#' # --- Monitoring with changed final information ---
+#' # Planned: 295 OS events at 3 analyses (185, 245, 295 events).
+#' # spending_time uses planned fractions for interim analyses and 1
+#' # for the final analysis.
+#' spending_monitor <- spending_with_time(
 #'   spending_of,
 #'   spending_time = c(185 / 295, 245 / 295, 1)
 #' )
 #'
-#' # The wrapped function has the standard (alpha, info_frac) signature
-#' # but ignores info_frac and uses spending_time internally
-#' spending_h2(0.01, c(0.5, 0.8, 1))
+#' # Overrunning (310 events) or underrunning (280 events):
+#' # spending_time is the same in both cases — it uses planned fractions
+#' # for interim analyses and 1 for the final analysis, because alpha
+#' # spent has been fixed for interim analyses. The actual info_frac
+#' # (which differs between overrunning and underrunning) only affects
+#' # the correlation structure in gs_boundaries()/graph_test_shortcut_gsd().
+#' spending_monitor(0.01, c(185 / 295, 245 / 295, 1))
 #'
-#' # Monitoring: use planned info fractions for spending
-#' # when actual final information differs from planned
-#' spending_monitor <- spending_with_time(
+#' # --- Skipped analyses (NA in spending_time) ---
+#' # If a hypothesis is not tested at analysis 2, both spending_time and
+#' # info_frac have NA at that position. The output also has NA there.
+#' spending_skip <- spending_with_time(
 #'   spending_of,
-#'   spending_time = c(0.627, 0.831, 1)  # planned
+#'   spending_time = c(185 / 295, NA, 1),
+#'   info_frac = c(185 / 295, NA, 1)
 #' )
-#' # Call with actual info fractions (for correlation structure)
-#' spending_monitor(0.01, c(0.597, 0.790, 1))  # actual
-spending_with_time <- function(spending_fn, spending_time) {
+#' spending_skip(0.01, c(185 / 295, NA, 1))
+spending_with_time <- function(spending_fn, spending_time, info_frac = NULL) {
   stopifnot(
     "spending_fn must be a function" = is.function(spending_fn),
-    "spending_time must be a numeric vector" = is.numeric(spending_time),
-    "spending_time must be non-negative" =
-      all(spending_time >= 0),
-    "At most one spending_time value can be >= 1" =
-      sum(spending_time >= 1) <= 1
+    "spending_time must be a numeric vector" = is.numeric(spending_time)
   )
 
-  function(alpha, info_frac) {
-    st <- spending_time[seq_along(info_frac)]
-    spending_fn(alpha, st)
+  # Validate non-NA spending_time values
+  st_non_na <- spending_time[!is.na(spending_time)]
+  stopifnot(
+    "Non-NA spending_time values must be non-negative" =
+      length(st_non_na) == 0 || all(st_non_na >= 0),
+    "At most one non-NA spending_time value can be >= 1" =
+      sum(st_non_na >= 1) <= 1
+  )
+
+  # If info_frac provided, validate NA positions match
+  if (!is.null(info_frac)) {
+    stopifnot(
+      "spending_time and info_frac must have the same length" =
+        length(spending_time) == length(info_frac),
+      "NA positions in spending_time and info_frac must match" =
+        identical(is.na(spending_time), is.na(info_frac))
+    )
+  }
+
+  function(alpha, info_frac_runtime) {
+    non_na <- !is.na(info_frac_runtime)
+    n_non_na <- sum(non_na)
+
+    # Use the first n_non_na entries of the non-NA spending_time
+    st <- st_non_na[seq_len(n_non_na)]
+
+    # Compute spending for non-NA entries
+    spent <- spending_fn(alpha, st)
+
+    # Build result with NAs in the same positions as info_frac_runtime
+    result <- rep(NA_real_, length(info_frac_runtime))
+    result[non_na] <- spent
+    result
   }
 }
 
