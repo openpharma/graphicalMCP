@@ -10,7 +10,10 @@ spending_wt(alpha, info_frac, delta = 0.5, maxpts = 25000, abseps = 1e-06)
 \item{alpha}{A numeric scalar of the total significance level.}
 
 \item{info_frac}{A numeric vector of information fractions at each analysis.
-Must be non-negative, with at most one value \eqn{\geq 1}.}
+Must be non-negative, with at most one value \eqn{\geq 1}. The last
+value must be \eqn{\geq 1} (i.e., the final analysis must be included),
+because the Wang-Tsiatis constant \eqn{C} is calibrated over the full
+set of analyses.}
 
 \item{delta}{A numeric scalar for the shape parameter \eqn{\Delta}.
 The default is \code{0.5} (Pocock). Use \code{0} for O'Brien-Fleming.}

@@ -104,6 +104,11 @@
 #'       hypotheses, this is `NA`. When `look_back = TRUE`, this may be
 #'       earlier than `decision_at` if a hypothesis crossed its boundary at
 #'       a prior analysis but only became testable at a later analysis,
+#'     * `last_rejected_at` - Integer vector indicating the latest analysis
+#'       at which each hypothesis's boundary was crossed. For non-rejected
+#'       hypotheses, this is `NA`. Comparing `first_rejected_at` and
+#'       `last_rejected_at` shows whether the rejection is supported by
+#'       data at multiple analyses or only at a single analysis,
 #'     * `rejection_sequence` - Character vector giving the order in which
 #'       hypotheses were rejected across all analyses,
 #'     * `graph` - Updated graph after removing all rejected hypotheses.
@@ -333,6 +338,7 @@ graph_test_shortcut_gsd <- function(graph,
         rejected = result$rejected,
         decision_at = result$decision_at,
         first_rejected_at = result$first_rejected_at,
+        last_rejected_at = result$last_rejected_at,
         rejection_sequence = result$rejection_sequence,
         graph = if (any(result$rejected)) {
           graph_update(graph, result$rejected)$updated_graph
@@ -467,6 +473,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
 
   # Process analyses sequentially
   rejected <- structure(rep(FALSE, num_hyps), names = hyp_names)
+  last_rejected_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   decision_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   first_rejected_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   adjusted_p <- structure(rep(NA_real_, num_hyps), names = hyp_names)
@@ -542,13 +549,19 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
           shortcut_k$details$results[[rej_idx]]$hypotheses[hyp_name]
         allocated_alpha <- w_at_rejection * alpha
 
-        # Look back: earliest analysis where sequential p <= allocated alpha
+        # Look back: earliest and latest analysis where boundary is crossed.
+        # Check repeated p-values (not sequential) at each analysis against
+        # the allocated alpha — a repeated p <= allocated alpha means the
+        # boundary at that specific analysis is crossed.
         j <- which(hyp_names == hyp_name)
-        earliest <- which(seq_p_matrix[j, 1:k] <= allocated_alpha)[1]
+        crossed <- which(rep_p_matrix[j, 1:k] <= allocated_alpha)
         first_rejected_at[hyp_name] <-
-          if (!is.na(earliest)) earliest else k
+          if (length(crossed) > 0) crossed[1] else k
+        last_rejected_at[hyp_name] <-
+          if (length(crossed) > 0) crossed[length(crossed)] else k
       } else {
         first_rejected_at[hyp_name] <- k
+        last_rejected_at[hyp_name] <- k
       }
     }
 
@@ -627,6 +640,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     rejected = rejected,
     decision_at = decision_at,
     first_rejected_at = first_rejected_at,
+    last_rejected_at = last_rejected_at,
     rejection_sequence = rejection_sequence,
     test_values = tv_details
   )

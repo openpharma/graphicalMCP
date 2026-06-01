@@ -673,10 +673,14 @@ onc_summary_lb <- data.frame(
   `p` = formatC(decision_p, format = "f", digits = 6),
   Boundary = formatC(decision_bound, format = "f", digits = 6),
   Rejected = result_onc_lb$outputs$rejected,
-  Decision = result_onc_lb$outputs$decision_at,
-  First.Rej = ifelse(
+  Tested.at = result_onc_lb$outputs$decision_at,
+  First.Rej.at = ifelse(
     is.na(result_onc_lb$outputs$first_rejected_at), "—",
     as.character(result_onc_lb$outputs$first_rejected_at)
+  ),
+  Last.Rej.at = ifelse(
+    is.na(result_onc_lb$outputs$last_rejected_at), "—",
+    as.character(result_onc_lb$outputs$last_rejected_at)
   ),
   check.names = FALSE
 )
@@ -829,9 +833,12 @@ lb_diff_table <- data.frame(
   Hypothesis = hyp_names_onc,
   `Rejected (no LB)` = result_onc_no_lb$outputs$rejected,
   `Rejected (LB)` = result_onc_yes_lb$outputs$rejected,
-  `First.Rej (LB)` = ifelse(
+  `First.Rej.at (LB)` = ifelse(
     is.na(result_onc_yes_lb$outputs$first_rejected_at), "--",
     as.character(result_onc_yes_lb$outputs$first_rejected_at)),
+  `Last.Rej.at (LB)` = ifelse(
+    is.na(result_onc_yes_lb$outputs$last_rejected_at), "--",
+    as.character(result_onc_yes_lb$outputs$last_rejected_at)),
   check.names = FALSE
 )
 knitr::kable(lb_diff_table, row.names = FALSE,
@@ -889,15 +896,18 @@ For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
 
 ```{r spending-time-setup}
 # Spending time = subgroup event fractions (same as H1_OS_S)
+# info_frac ensures NA positions match those in info_frac_onc
 spending_h2 <- spending_with_time(
   spending_of,
-  spending_time = c(185 / 295, 245 / 295, 1)
+  spending_time = c(185 / 295, 245 / 295, 1),
+  info_frac = info_frac_onc["H2_OS_A", ]
 )
 
 # Similarly, H4 (PFS, all subjects) uses subgroup PFS event fractions
 spending_h4 <- spending_with_time(
   spending_of,
-  spending_time = c(265 / 310, 1)
+  spending_time = c(265 / 310, 1, NA),
+  info_frac = info_frac_onc["H4_PFS_A", ]
 )
 
 # Build per-hypothesis spending function list
@@ -996,10 +1006,12 @@ for alpha allocation, while the procedure uses the actual information
 fractions for the correlation structure:
 
 ```{r monitoring-spending}
-# Spending function using planned info fractions
+# Spending function using planned info fractions for spending,
+# with info_frac for NA structure validation
 spending_h1_monitor <- spending_with_time(
   spending_of,
-  spending_time = planned_if_h1
+  spending_time = planned_if_h1,
+  info_frac = actual_if_h1
 )
 ```
 
@@ -1062,8 +1074,12 @@ actual_if_onc["H2_OS_A", ] <- c(529 / 830, 700 / 830, 1)
 
 # Spending functions using planned info fractions for OS hypotheses
 spending_fn_monitor <- list(
-  spending_with_time(spending_of, info_frac_onc["H1_OS_S", ]),
-  spending_with_time(spending_of, info_frac_onc["H2_OS_A", ]),
+  spending_with_time(spending_of,
+    spending_time = info_frac_onc["H1_OS_S", ],
+    info_frac = actual_if_onc["H1_OS_S", ]),
+  spending_with_time(spending_of,
+    spending_time = info_frac_onc["H2_OS_A", ],
+    info_frac = actual_if_onc["H2_OS_A", ]),
   spending_of,   # H3: PFS complete, no change
   spending_of,   # H4: PFS complete, no change
   spending_of,   # H5: ORR complete
@@ -1172,6 +1188,67 @@ standalone spending function interface, its spending functions cannot be
 directly wrapped for use with `graph_test_shortcut_gsd()`. However,
 `gsDesign` and `rpact` implement the same standard spending function
 formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
+
+### User-Defined Spending Functions
+
+Users can define entirely custom spending functions as long as they accept
+two arguments — `alpha` and `info_frac` — and return the cumulative alpha
+spent. This provides full flexibility in controlling how alpha is allocated
+across analyses.
+
+As an example, consider a **piecewise spending function** that uses
+O'Brien-Fleming spending for the first half of alpha (conservative at early
+analyses) and Pocock spending for the second half (more aggressive). This
+can arise naturally in the graphical procedure: a hypothesis that starts
+with a small weight uses conservative OBF spending, and when it receives
+additional weight via graph propagation, the incremental alpha is spent
+more aggressively using Pocock.
+
+```{r user-defined-spending}
+# Piecewise spending: OBF for the first 'threshold' of alpha,
+# Pocock for the remainder
+spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
+  spending_of(pmin(alpha, threshold), info_frac) +
+    spending_pocock(pmax(alpha - threshold, 0), info_frac)
+}
+
+# At alpha = 0.025: first 0.0125 is OBF, second 0.0125 is Pocock
+t <- c(1/3, 2/3, 1)
+comparison <- data.frame(
+  `Info Fraction` = t,
+  `OBF only` = spending_of(0.025, t),
+  `Pocock only` = spending_pocock(0.025, t),
+  Piecewise = spending_piecewise(0.025, t),
+  check.names = FALSE
+)
+knitr::kable(comparison, digits = 6,
+             caption = "Piecewise spending: OBF for first half, Pocock for second half")
+```
+
+At `alpha = 0.0125` (e.g., a hypothesis with weight 0.5), the piecewise
+function reduces to pure O'Brien-Fleming:
+
+```{r user-defined-spending-half}
+# At alpha = 0.0125: entirely OBF (below threshold)
+all.equal(
+  spending_piecewise(0.0125, t),
+  spending_of(0.0125, t)
+)
+```
+
+The piecewise spending function can be used directly in
+`graph_test_shortcut_gsd()`:
+
+```{r user-defined-spending-gsd}
+result_piecewise <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  spending_fn = spending_piecewise
+)
+print(result_piecewise)
+```
 
 ## Summary
 

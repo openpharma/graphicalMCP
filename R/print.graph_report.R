@@ -121,7 +121,7 @@ print.graph_report <- function(x, ..., precision = 4, indent = 2, rows = 10) {
 
   df_summary <- data.frame(
     Hypothesis = formatC(hyp_names, width = hyp_width),
-    `Adj. P-value` = adjusted_p,
+    Adj.p = adjusted_p,
     Reject = x$outputs$rejected,
     check.names = FALSE
   )

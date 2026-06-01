@@ -112,6 +112,11 @@ at which each hypothesis's boundary was crossed. For non-rejected
 hypotheses, this is \code{NA}. When \code{look_back = TRUE}, this may be
 earlier than \code{decision_at} if a hypothesis crossed its boundary at
 a prior analysis but only became testable at a later analysis,
+\item \code{last_rejected_at} - Integer vector indicating the latest analysis
+at which each hypothesis's boundary was crossed. For non-rejected
+hypotheses, this is \code{NA}. Comparing \code{first_rejected_at} and
+\code{last_rejected_at} shows whether the rejection is supported by
+data at multiple analyses or only at a single analysis,
 \item \code{rejection_sequence} - Character vector giving the order in which
 hypotheses were rejected across all analyses,
 \item \code{graph} - Updated graph after removing all rejected hypotheses.

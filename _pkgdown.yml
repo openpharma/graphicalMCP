@@ -45,6 +45,7 @@ reference:
   - repeated_p
   - sequential_p
   - spending_of
+  - spending_wt
   - spending_with_time
   - gs_boundaries
   - gs_corr

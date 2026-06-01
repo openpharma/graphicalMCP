@@ -135,17 +135,24 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     as.character(x$outputs$first_rejected_at)
   )
 
+  last_rej_display <- ifelse(
+    is.na(x$outputs$last_rejected_at),
+    "--",
+    as.character(x$outputs$last_rejected_at)
+  )
+
   df_summary <- data.frame(
     Hypothesis = formatC(hyp_names, width = hyp_width),
     Adj.P = adj_p_format,
     Reject = x$outputs$rejected,
-    Decision.at = as.character(decision_at),
+    Tested.at = as.character(decision_at),
     First.Rej.at = first_rej_display,
+    Last.Rej.at = last_rej_display,
     Look.back = look_back,
     check.names = FALSE
   )
   names(df_summary)[[1]] <- formatC("Hypothesis", width = hyp_width)
-  names(df_summary)[[2]] <- "Adj.P-value*"
+  names(df_summary)[[2]] <- "Adj.p*"
 
   print(df_summary, row.names = FALSE)
 

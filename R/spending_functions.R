@@ -87,6 +87,21 @@
 #' spending_pocock(0.025, c(1/3, 2/3, 1))
 #' spending_hsd(0.025, c(1/3, 2/3, 1), gamma = -4)
 #' spending_linear(0.025, c(1/3, 2/3, 1))
+#'
+#' # User-defined spending function: piecewise combination.
+#' # Use O'Brien-Fleming for the first half of alpha (conservative at
+#' # early analyses), and Pocock for the second half (more aggressive).
+#' # This can be useful when a hypothesis starts with a small weight
+#' # (OBF spending) and later receives additional weight via graph
+#' # propagation (Pocock spending for the increment).
+#' spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
+#'   spending_of(pmin(alpha, threshold), info_frac) +
+#'     spending_pocock(pmax(alpha - threshold, 0), info_frac)
+#' }
+#' spending_piecewise(0.025, c(1/3, 2/3, 1))
+#' # Compare: alpha = 0.0125 uses only OBF
+#' spending_piecewise(0.0125, c(1/3, 2/3, 1))
+#' spending_of(0.0125, c(1/3, 2/3, 1))
 spending_of <- function(alpha, info_frac) {
   stopifnot(
     "info_frac must be non-negative" = all(info_frac >= 0),
@@ -303,7 +318,10 @@ spending_with_time <- function(spending_fn, spending_time, info_frac = NULL) {
 #'
 #' @param alpha A numeric scalar of the total significance level.
 #' @param info_frac A numeric vector of information fractions at each analysis.
-#'   Must be non-negative, with at most one value \eqn{\geq 1}.
+#'   Must be non-negative, with at most one value \eqn{\geq 1}. The last
+#'   value must be \eqn{\geq 1} (i.e., the final analysis must be included),
+#'   because the Wang-Tsiatis constant \eqn{C} is calibrated over the full
+#'   set of analyses.
 #' @param delta A numeric scalar for the shape parameter \eqn{\Delta}.
 #'   The default is `0.5` (Pocock). Use `0` for O'Brien-Fleming.
 #' @param maxpts An integer scalar for the maximum number of function values
@@ -350,9 +368,12 @@ spending_with_time <- function(spending_fn, spending_time, info_frac = NULL) {
 #' }
 spending_wt <- function(alpha, info_frac, delta = 0.5,
                         maxpts = 25000, abseps = 1e-6) {
+
   stopifnot(
     "info_frac must be non-negative" = all(info_frac >= 0),
     "At most one info_frac value can be >= 1" = sum(info_frac >= 1) <= 1,
+    "The last info_frac value must be >= 1 for spending_wt" =
+      length(info_frac) > 0 && info_frac[length(info_frac)] >= 1,
     "delta must be a numeric scalar" = is.numeric(delta) && length(delta) == 1
   )
 
