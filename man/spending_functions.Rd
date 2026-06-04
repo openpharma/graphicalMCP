@@ -20,8 +20,8 @@ spending_linear(alpha, info_frac)
 Must be between 0 and 1.}
 
 \item{info_frac}{A numeric scalar or vector of information fractions. Values
-must be in [0, 1]. When \code{info_frac = 0}, the spending is 0. When
-\code{info_frac = 1}, the spending equals \code{alpha}.}
+must be non-negative. When \code{info_frac = 0}, the spending is 0. When
+\code{info_frac >= 1}, the spending is capped at \code{alpha}.}
 
 \item{gamma}{A numeric scalar for the gamma parameter of the
 Hwang-Shih-DeCani spending function. Common choices are \code{gamma = -4}
@@ -99,6 +99,21 @@ spending_of(0.025, c(1/3, 2/3, 1))
 spending_pocock(0.025, c(1/3, 2/3, 1))
 spending_hsd(0.025, c(1/3, 2/3, 1), gamma = -4)
 spending_linear(0.025, c(1/3, 2/3, 1))
+
+# User-defined spending function: piecewise combination.
+# Use O'Brien-Fleming for the first half of alpha (conservative at
+# early analyses), and Pocock for the second half (more aggressive).
+# This can be useful when a hypothesis starts with a small weight
+# (OBF spending) and later receives additional weight via graph
+# propagation (Pocock spending for the increment).
+spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
+  spending_of(pmin(alpha, threshold), info_frac) +
+    spending_pocock(pmax(alpha - threshold, 0), info_frac)
+}
+spending_piecewise(0.025, c(1/3, 2/3, 1))
+# Compare: alpha = 0.0125 uses only OBF
+spending_piecewise(0.0125, c(1/3, 2/3, 1))
+spending_of(0.0125, c(1/3, 2/3, 1))
 # Pocock spending at 50\% information
 spending_pocock(0.025, 0.5)
 # Hwang-Shih-DeCani spending at 50\% information

@@ -999,3 +999,213 @@ test_that("print method shows rejection sequence", {
 
   expect_output(print(result), "Rejection sequence")
 })
+
+# =============================================================================
+# Look_back tests: H4-type (data at both analyses, crosses only at earlier)
+# and H5-type (data at analysis 1 only, look_back from later analysis)
+# =============================================================================
+
+# Helper: oncology-like graph for look_back tests
+gsd_onc_graph <- function() {
+  alpha_allocation <- c(0.01, 0.01, 0.004, 0, 0.0005, 0.0005)
+  hypotheses <- alpha_allocation / sum(alpha_allocation)
+  names(hypotheses) <- c("H1", "H2", "H3", "H4", "H5", "H6")
+  transitions <- rbind(
+    c(0, 1, 0, 0, 0, 0),
+    c(0, 0, 0.5, 0.5, 0, 0),
+    c(0, 0, 0, 1, 0, 0),
+    c(0, 0, 0, 0, 0.5, 0.5),
+    c(0, 0, 0, 0, 0, 1),
+    c(0.5, 0.5, 0, 0, 0, 0)
+  )
+  graph_create(hypotheses, transitions)
+}
+
+gsd_onc_info_frac <- function() {
+  rbind(
+    H1 = c(185 / 295, 245 / 295, 1),
+    H2 = c(529 / 800, 700 / 800, 1),
+    H3 = c(265 / 310, 1, NA),
+    H4 = c(675 / 750, 1, NA),
+    H5 = c(1, NA, NA),
+    H6 = c(1, NA, NA)
+  )
+}
+
+test_that("H4-type look_back: data at both analyses, crosses only at earlier", {
+  g <- gsd_onc_graph()
+  info_frac <- gsd_onc_info_frac()
+
+  # H4 has strong evidence at analysis 1, weak at analysis 2
+  # H4 starts with weight 0, gets weight after H3 rejection at analysis 2
+  p <- rbind(
+    H1 = c(0.03, 0.0001, 0.000001),
+    H2 = c(0.2, 0.15, 0.1),
+    H3 = c(0.2, 0.001, NA),
+    H4 = c(0.0001, 0.02, NA),
+    H5 = c(0.00001, NA, NA),
+    H6 = c(0.1, NA, NA)
+  )
+
+  r_no <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = FALSE
+  )
+  r_yes <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = TRUE, test_values = TRUE
+  )
+
+  # H4 not rejected without look_back
+  expect_false(r_no$outputs$rejected[["H4"]])
+
+  # H4 rejected with look_back, attributed to analysis 1
+  expect_true(r_yes$outputs$rejected[["H4"]])
+  expect_equal(r_yes$outputs$decision_at[["H4"]], 2L)
+  expect_equal(r_yes$outputs$first_rejected_at[["H4"]], 1L)
+
+  # test_values at analysis 2: H4 has standard row (Reject=FALSE) and
+  # look_back row (Reject=TRUE)
+  tv2 <- r_yes$test_values[[2]]
+  h4_standard <- tv2[tv2$Hypothesis == "H4" & !tv2$Look_back, ]
+  h4_lb <- tv2[tv2$Hypothesis == "H4" & tv2$Look_back, ]
+
+  expect_equal(nrow(h4_standard), 1)
+  expect_false(h4_standard$Reject)
+  expect_equal(h4_standard$Analysis, 2L)
+
+  expect_equal(nrow(h4_lb), 1)
+  expect_true(h4_lb$Reject)
+  expect_equal(h4_lb$Analysis, 1L)
+})
+
+test_that("H5-type look_back: single-analysis hypothesis, rejected via look_back at later analysis", {
+  g <- gsd_onc_graph()
+  info_frac <- gsd_onc_info_frac()
+
+  # H5 has 1 analysis, p=0.0008 > initial boundary (0.0005)
+  # After graph propagation at analysis 2, H5 gets more weight and
+  # look_back finds p=0.0008 crosses the new boundary
+  p <- rbind(
+    H1 = c(0.03, 0.0001, 0.000001),
+    H2 = c(0.2, 0.15, 0.1),
+    H3 = c(0.2, 0.001, NA),
+    H4 = c(0.0001, 0.02, NA),
+    H5 = c(0.0008, NA, NA),
+    H6 = c(0.1, NA, NA)
+  )
+
+  r_no <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = FALSE
+  )
+  r_yes <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = TRUE, test_values = TRUE
+  )
+
+  # H5 not rejected without look_back
+  expect_false(r_no$outputs$rejected[["H5"]])
+
+  # H5 rejected with look_back, attributed to analysis 1
+  expect_true(r_yes$outputs$rejected[["H5"]])
+  expect_equal(r_yes$outputs$decision_at[["H5"]], 2L)
+  expect_equal(r_yes$outputs$first_rejected_at[["H5"]], 1L)
+
+  # test_values at analysis 2: H5 has a standard row with p=NA (no data)
+  # and a look_back row at analysis 1 (Reject=TRUE)
+  tv2 <- r_yes$test_values[[2]]
+  h5_standard <- tv2[tv2$Hypothesis == "H5" & !tv2$Look_back, ]
+  h5_lb <- tv2[tv2$Hypothesis == "H5" & tv2$Look_back, ]
+
+  # Standard row: p is NA, Reject is FALSE
+  expect_equal(nrow(h5_standard), 1)
+  expect_true(is.na(h5_standard$p))
+  expect_false(h5_standard$Reject)
+
+  # Look_back row: analysis 1, p=0.0008, Reject=TRUE
+  expect_equal(nrow(h5_lb), 1)
+  expect_true(h5_lb$Reject)
+  expect_equal(h5_lb$Analysis, 1L)
+  expect_equal(h5_lb$p, 0.0008)
+})
+
+test_that("H5-type: without look_back, single-analysis hypothesis not reconsidered", {
+  g <- gsd_onc_graph()
+  info_frac <- gsd_onc_info_frac()
+
+  p <- rbind(
+    H1 = c(0.03, 0.0001, 0.000001),
+    H2 = c(0.2, 0.15, 0.1),
+    H3 = c(0.2, 0.001, NA),
+    H4 = c(0.0001, 0.02, NA),
+    H5 = c(0.0008, NA, NA),
+    H6 = c(0.1, NA, NA)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = FALSE, test_values = TRUE
+  )
+
+  # H5 not rejected
+  expect_false(result$outputs$rejected[["H5"]])
+  # H5 decision_at should be 1 (only analysis with data)
+  expect_equal(result$outputs$decision_at[["H5"]], 1L)
+
+  # H5 should not appear in test_values at analysis 2
+  tv2 <- result$test_values[[2]]
+  expect_false("H5" %in% tv2$Hypothesis)
+})
+
+test_that("look_back with single-analysis hypothesis: not rejected when p too large", {
+  g <- gsd_onc_graph()
+  info_frac <- gsd_onc_info_frac()
+
+  # H5 p=0.01 is too large even after propagation
+  p <- rbind(
+    H1 = c(0.03, 0.0001, 0.000001),
+    H2 = c(0.2, 0.15, 0.1),
+    H3 = c(0.2, 0.001, NA),
+    H4 = c(0.0001, 0.02, NA),
+    H5 = c(0.01, NA, NA),
+    H6 = c(0.1, NA, NA)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = TRUE
+  )
+
+  # H5 still not rejected — p=0.01 too large even with increased weight
+  expect_false(result$outputs$rejected[["H5"]])
+})
+
+test_that("look_back carries forward sequential p for hypotheses with no current data", {
+  g <- gsd_onc_graph()
+  info_frac <- gsd_onc_info_frac()
+
+  p <- rbind(
+    H1 = c(0.03, 0.0001, 0.000001),
+    H2 = c(0.2, 0.15, 0.1),
+    H3 = c(0.2, 0.001, NA),
+    H4 = c(0.0001, 0.02, NA),
+    H5 = c(0.0008, NA, NA),
+    H6 = c(0.1, NA, NA)
+  )
+
+  result <- graph_test_shortcut_gsd(
+    g, p, alpha = 0.025, info_frac = info_frac,
+    spending_fn = spending_of, look_back = TRUE
+  )
+
+  # Sequential p for H5 should be the same at analysis 1
+  # (only one analysis with data)
+  expect_equal(
+    result$outputs$sequential_p["H5", 1],
+    result$outputs$repeated_p["H5", 1]
+  )
+  # Analysis 2 and 3 should be NA for H5
+  expect_true(is.na(result$outputs$sequential_p["H5", 2]))
+  expect_true(is.na(result$outputs$sequential_p["H5", 3]))
+})

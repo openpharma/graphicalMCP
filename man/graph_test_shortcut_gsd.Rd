@@ -41,8 +41,11 @@ have the same number of analyses).
 positions as \code{p}.
 }
 
-Non-\code{NA} values must be in (0, 1] and monotonically non-decreasing per
-hypothesis. The last non-\code{NA} value does not need to be 1, allowing
+Non-\code{NA} values must be positive and monotonically non-decreasing per
+hypothesis. Values greater than 1 are allowed (e.g., when more
+information is collected than planned). The spending functions cap
+the cumulative spending at \code{alpha} for information fractions at or
+above 1. The last non-\code{NA} value does not need to be 1, allowing
 the procedure to be applied up to an interim analysis.}
 
 \item{spending_fn}{Spending function(s) for computing group sequential
@@ -109,6 +112,11 @@ at which each hypothesis's boundary was crossed. For non-rejected
 hypotheses, this is \code{NA}. When \code{look_back = TRUE}, this may be
 earlier than \code{decision_at} if a hypothesis crossed its boundary at
 a prior analysis but only became testable at a later analysis,
+\item \code{last_rejected_at} - Integer vector indicating the latest analysis
+at which each hypothesis's boundary was crossed. For non-rejected
+hypotheses, this is \code{NA}. Comparing \code{first_rejected_at} and
+\code{last_rejected_at} shows whether the rejection is supported by
+data at multiple analyses or only at a single analysis,
 \item \code{rejection_sequence} - Character vector giving the order in which
 hypotheses were rejected across all analyses,
 \item \code{graph} - Updated graph after removing all rejected hypotheses.

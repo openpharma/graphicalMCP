@@ -44,8 +44,11 @@
 #'     `NA` padding, `info_frac` must be a matrix with `NA` in the same
 #'     positions as `p`.
 #'
-#'   Non-`NA` values must be in (0, 1] and monotonically non-decreasing per
-#'   hypothesis. The last non-`NA` value does not need to be 1, allowing
+#'   Non-`NA` values must be positive and monotonically non-decreasing per
+#'   hypothesis. Values greater than 1 are allowed (e.g., when more
+#'   information is collected than planned). The spending functions cap
+#'   the cumulative spending at `alpha` for information fractions at or
+#'   above 1. The last non-`NA` value does not need to be 1, allowing
 #'   the procedure to be applied up to an interim analysis.
 #' @param spending_fn Spending function(s) for computing group sequential
 #'   boundaries. Can be:
@@ -101,6 +104,11 @@
 #'       hypotheses, this is `NA`. When `look_back = TRUE`, this may be
 #'       earlier than `decision_at` if a hypothesis crossed its boundary at
 #'       a prior analysis but only became testable at a later analysis,
+#'     * `last_rejected_at` - Integer vector indicating the latest analysis
+#'       at which each hypothesis's boundary was crossed. For non-rejected
+#'       hypotheses, this is `NA`. Comparing `first_rejected_at` and
+#'       `last_rejected_at` shows whether the rejection is supported by
+#'       data at multiple analyses or only at a single analysis,
 #'     * `rejection_sequence` - Character vector giving the order in which
 #'       hypotheses were rejected across all analyses,
 #'     * `graph` - Updated graph after removing all rejected hypotheses.
@@ -330,6 +338,7 @@ graph_test_shortcut_gsd <- function(graph,
         rejected = result$rejected,
         decision_at = result$decision_at,
         first_rejected_at = result$first_rejected_at,
+        last_rejected_at = result$last_rejected_at,
         rejection_sequence = result$rejection_sequence,
         graph = if (any(result$rejected)) {
           graph_update(graph, result$rejected)$updated_graph
@@ -464,6 +473,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
 
   # Process analyses sequentially
   rejected <- structure(rep(FALSE, num_hyps), names = hyp_names)
+  last_rejected_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   decision_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   first_rejected_at <- structure(rep(NA_integer_, num_hyps), names = hyp_names)
   adjusted_p <- structure(rep(NA_real_, num_hyps), names = hyp_names)
@@ -473,22 +483,36 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
   tv_details <- if (test_values) vector("list", num_analyses)
 
   for (k in seq_len(num_analyses)) {
-    # Get active hypotheses: not rejected AND has data at analysis k
+    # Get active hypotheses: not rejected AND has data at this analysis.
+    # For look_back hypotheses, "has data" means data at any analysis up to k
+    # (since the sequential p-value carries forward from prior analyses).
     has_data_k <- !is.na(p[, k])
-    active <- !rejected & has_data_k
+    has_prior_data <- vapply(seq_len(num_hyps), function(j) {
+      any(!is.na(p[j, seq_len(k)]))
+    }, logical(1))
+    active_at_k <- ifelse(look_back, has_prior_data, has_data_k)
+    active <- !rejected & active_at_k
 
     if (!any(active)) next
 
     # Construct the p-value vector for the shortcut: use sequential p-values
     # for hypotheses with look_back = TRUE, repeated p-values otherwise.
+    # For look_back hypotheses without data at analysis k, use their most
+    # recent sequential p-value (carried forward from the last available
+    # analysis).
+    last_seq_p <- vapply(seq_len(num_hyps), function(j) {
+      available <- which(!is.na(seq_p_matrix[j, seq_len(k)]))
+      if (length(available) == 0) NA_real_ else seq_p_matrix[j, max(available)]
+    }, numeric(1))
+
     p_for_shortcut <- ifelse(
       look_back,
-      seq_p_matrix[, k],
+      last_seq_p,
       rep_p_matrix[, k]
     )
 
-    # For hypotheses without data at analysis k or already rejected,
-    # set p to 1 so they are never selected by graph_test_shortcut().
+    # For hypotheses that are not active, set p to 1 so they are never
+    # selected by graph_test_shortcut().
     p_for_shortcut[!active] <- 1
 
     # Apply shortcut to the current graph
@@ -525,13 +549,19 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
           shortcut_k$details$results[[rej_idx]]$hypotheses[hyp_name]
         allocated_alpha <- w_at_rejection * alpha
 
-        # Look back: earliest analysis where sequential p <= allocated alpha
+        # Look back: earliest and latest analysis where boundary is crossed.
+        # Check repeated p-values (not sequential) at each analysis against
+        # the allocated alpha — a repeated p <= allocated alpha means the
+        # boundary at that specific analysis is crossed.
         j <- which(hyp_names == hyp_name)
-        earliest <- which(seq_p_matrix[j, 1:k] <= allocated_alpha)[1]
+        crossed <- which(rep_p_matrix[j, 1:k] <= allocated_alpha)
         first_rejected_at[hyp_name] <-
-          if (!is.na(earliest)) earliest else k
+          if (length(crossed) > 0) crossed[1] else k
+        last_rejected_at[hyp_name] <-
+          if (length(crossed) > 0) crossed[length(crossed)] else k
       } else {
         first_rejected_at[hyp_name] <- k
+        last_rejected_at[hyp_name] <- k
       }
     }
 
@@ -548,7 +578,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     if (test_values) {
       tv_details[[k]] <- gsd_test_values_details(
         step_graph, p, k, alpha, info_frac, spending_fn,
-        newly_in_order, hyp_names, rejected, has_data_k
+        newly_in_order, hyp_names, rejected, active_at_k
       )
 
       # Add Look_back column (FALSE for all standard rows)
@@ -568,18 +598,31 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
             info_frac, spending_fn, hyp_names, w_at_rej
           )
 
-          # Set the analysis-k row's Reject to FALSE for this hypothesis
+          # Check if this hypothesis has a standard row at analysis k
           hyp_row <- which(tv_details[[k]]$Hypothesis == hyp_name &
                            tv_details[[k]]$Analysis == k)
-          tv_details[[k]]$Reject[hyp_row] <- FALSE
 
-          # Insert look_back rows immediately after the hypothesis's row
-          before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
-          after <- if (hyp_row < nrow(tv_details[[k]])) {
-            tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
-                            drop = FALSE]
+          if (length(hyp_row) > 0) {
+            # Has data at analysis k: check if the nominal p-value at
+            # analysis k also crosses the boundary. If not, set Reject
+            # to FALSE (the rejection is only via look_back).
+            p_at_k <- tv_details[[k]]$p[hyp_row]
+            b_at_k <- tv_details[[k]]$Boundary[hyp_row]
+            if (is.na(p_at_k) || p_at_k > b_at_k) {
+              tv_details[[k]]$Reject[hyp_row] <- FALSE
+            }
+            before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
+            after <- if (hyp_row < nrow(tv_details[[k]])) {
+              tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
+                              drop = FALSE]
+            }
+            tv_details[[k]] <- rbind(before, lb_rows, after)
+          } else {
+            # No data at analysis k (look_back-only): append look_back rows
+            # at the position where this hypothesis was rejected in the
+            # shortcut sequence
+            tv_details[[k]] <- rbind(tv_details[[k]], lb_rows)
           }
-          tv_details[[k]] <- rbind(before, lb_rows, after)
         }
       }
     }
@@ -597,6 +640,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     rejected = rejected,
     decision_at = decision_at,
     first_rejected_at = first_rejected_at,
+    last_rejected_at = last_rejected_at,
     rejection_sequence = rejection_sequence,
     test_values = tv_details
   )
@@ -800,8 +844,8 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     "Information fractions must have the same number of columns as p" =
       ncol(info_frac) == num_analyses,
     "Information fractions must be numeric" = is.numeric(info_frac),
-    "Non-NA information fractions must be in (0, 1]" =
-      length(if_non_na) == 0 || all(if_non_na > 0 & if_non_na <= 1),
+    "Non-NA information fractions must be positive" =
+      length(if_non_na) == 0 || all(if_non_na > 0),
     "Spending functions must be a list of functions" =
       is.list(spending_fn) &&
       all(vapply(spending_fn, is.function, logical(1))),

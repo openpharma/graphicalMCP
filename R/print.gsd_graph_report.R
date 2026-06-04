@@ -78,7 +78,7 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   cat("\n", pad, "P-values\n", sep = "")
   p_df <- as.data.frame(x$inputs$p, row.names = hyp_names)
   colnames(p_df) <- analysis_names
-  p_df[] <- lapply(p_df, function(col) format(col, digits = precision))
+  p_df[] <- lapply(p_df, function(col) formatC(col, format = "f", digits = precision))
   print(p_df)
 
   # Spending functions
@@ -124,7 +124,8 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   exceed_1 <- adj_p > 1
   adj_p_format <- character(length(adj_p))
   adj_p_format[exceed_1] <- gsub(".00000001", "+", adj_p[exceed_1])
-  adj_p_format[!exceed_1] <- format(adj_p[!exceed_1], digits = precision)
+  adj_p_format[!exceed_1] <- formatC(adj_p[!exceed_1], format = "f",
+                                     digits = precision)
 
   decision_at <- x$outputs$decision_at
 
@@ -134,19 +135,31 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     as.character(x$outputs$first_rejected_at)
   )
 
+  last_rej_display <- ifelse(
+    is.na(x$outputs$last_rejected_at),
+    "--",
+    as.character(x$outputs$last_rejected_at)
+  )
+
   df_summary <- data.frame(
     Hypothesis = formatC(hyp_names, width = hyp_width),
     Adj.P = adj_p_format,
     Reject = x$outputs$rejected,
-    Decision.at = as.character(decision_at),
+    Tested.at = as.character(decision_at),
     First.Rej.at = first_rej_display,
+    Last.Rej.at = last_rej_display,
     Look.back = look_back,
     check.names = FALSE
   )
   names(df_summary)[[1]] <- formatC("Hypothesis", width = hyp_width)
-  names(df_summary)[[2]] <- "Adj.P-value"
+  names(df_summary)[[2]] <- "Adj.p*"
 
   print(df_summary, row.names = FALSE)
+
+  cat(pad, "(*) Adjusted p-values account for both the group sequential",
+      " design and the\n", pad, "    graphical multiple comparison procedure.",
+      " Based on repeated p-values when\n", pad, "    look_back = FALSE,",
+      " and sequential p-values when look_back = TRUE.\n", sep = "")
 
   # Rejection sequence
   rej_seq <- x$outputs$rejection_sequence
@@ -188,10 +201,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       # Remove the Look_back column from display
       detail$Look_back <- NULL
 
-      # Format numeric columns
-      detail$Weight <- format(detail$Weight, digits = precision)
-      detail$p <- format(detail$p, digits = precision)
-      detail$Boundary <- format(detail$Boundary, digits = precision)
+      # Format numeric columns with consistent fixed notation
+      detail$Weight <- formatC(detail$Weight, format = "f", digits = precision)
+      detail$p <- formatC(detail$p, format = "f", digits = precision)
+      detail$Boundary <- formatC(detail$Boundary, format = "f", digits = precision)
 
       detail_out <- utils::capture.output(
         print(detail, row.names = FALSE)
@@ -200,12 +213,28 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
 
       # Print footnote for look_back hypotheses
       if (has_look_back) {
-        cat(pad, "(*) Rejected via look_back: nominal p-value did not cross",
-            " the boundary at the\n", pad, "    current analysis, but",
-            " crossed the boundary at an earlier analysis.\n", sep = "")
+        cat(pad, "(*) Rejected via look_back: the nominal p-value crossed",
+            " the boundary at an\n", pad, "    earlier analysis with the",
+            " hypothesis weight updated via graph propagation.\n",
+            sep = "")
       }
       cat("\n")
     }
+  }
+
+  # Repeated and sequential p-values (verbose) --------------------------------
+  if (!is.null(x$boundary_table)) {
+    section_break("Repeated p-values ($outputs$repeated_p)")
+    rep_p_display <- x$outputs$repeated_p
+    rep_p_display[] <- formatC(rep_p_display, format = "f", digits = precision)
+    print(as.data.frame(rep_p_display))
+
+    cat("\n")
+    section_break("Sequential p-values ($outputs$sequential_p)")
+    seq_p_display <- x$outputs$sequential_p
+    seq_p_display[] <- formatC(seq_p_display, format = "f", digits = precision)
+    print(as.data.frame(seq_p_display))
+    cat("\n")
   }
 
   # Boundary table (verbose) ---------------------------------------------------
@@ -221,9 +250,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       cat(pad, hyp, "\n", sep = "")
       bt <- x$boundary_table[[hyp]]
       bt_display <- bt
-      # Format numeric columns
+      # Format numeric columns with consistent fixed notation
       for (col in names(bt_display)) {
-        bt_display[[col]] <- format(bt_display[[col]], digits = precision)
+        bt_display[[col]] <- formatC(bt_display[[col]],
+                                     format = "f", digits = precision)
       }
       bt_out <- utils::capture.output(print(bt_display, row.names = FALSE))
       cat(paste0(pad, bt_out), sep = "\n")

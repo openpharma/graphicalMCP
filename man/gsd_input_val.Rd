@@ -40,8 +40,11 @@ have the same number of analyses).
 positions as \code{p}.
 }
 
-Non-\code{NA} values must be in (0, 1] and monotonically non-decreasing per
-hypothesis. The last non-\code{NA} value does not need to be 1, allowing
+Non-\code{NA} values must be positive and monotonically non-decreasing per
+hypothesis. Values greater than 1 are allowed (e.g., when more
+information is collected than planned). The spending functions cap
+the cumulative spending at \code{alpha} for information fractions at or
+above 1. The last non-\code{NA} value does not need to be 1, allowing
 the procedure to be applied up to an interim analysis.}
 
 \item{spending_fn}{Spending function(s) for computing group sequential

@@ -419,6 +419,40 @@ knitr::kable(paper_table1,
              caption = "Comparison of nominal boundaries with paper Table 1")
 ```
 
+#### Boundary table
+
+Setting `verbose = TRUE` produces a boundary table that lists the nominal
+p-value boundaries at each analysis for all possible hypothesis weights from
+the graph's closure. This table is independent of the observed p-values and
+can be used to manually verify the rejection decisions shown in `test_values`.
+
+```{r boundary-table}
+result_verbose <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = info_frac,
+  spending_fn = spending_of,
+  verbose = TRUE
+)
+
+# Display boundary tables for each hypothesis
+for (h in names(result_verbose$boundary_table)) {
+  cat(h, "\n")
+  print(result_verbose$boundary_table[[h]])
+  cat("\n")
+}
+```
+
+To verify the rejection decisions at analysis 2, look up each hypothesis's
+weight in the boundary table and compare the `Boundary.2` column against
+the observed p-value. For example, $H_1$ is tested at weight 0.5 with
+boundary `r formatC(result_verbose$boundary_table$H1$Boundary.2[result_verbose$boundary_table$H1$Weight == 0.5], format = "f", digits = 7)`.
+Since $p_{1,2} = 0.0002$ is below this boundary, $H_1$ is rejected. After
+$H_1$'s rejection, the graph propagates weight to $H_2$ (weight 0.75) and
+$H_3$ (weight 0.25). Looking up these weights confirms the boundaries used
+in the `test_values` output.
+
 ## Case Study using sequential p-values and look_back = TRUE
 
 This example is adapted from the
@@ -639,10 +673,14 @@ onc_summary_lb <- data.frame(
   `p` = formatC(decision_p, format = "f", digits = 6),
   Boundary = formatC(decision_bound, format = "f", digits = 6),
   Rejected = result_onc_lb$outputs$rejected,
-  Decision = result_onc_lb$outputs$decision_at,
-  First.Rej = ifelse(
+  Tested.at = result_onc_lb$outputs$decision_at,
+  First.Rej.at = ifelse(
     is.na(result_onc_lb$outputs$first_rejected_at), "—",
     as.character(result_onc_lb$outputs$first_rejected_at)
+  ),
+  Last.Rej.at = ifelse(
+    is.na(result_onc_lb$outputs$last_rejected_at), "—",
+    as.character(result_onc_lb$outputs$last_rejected_at)
   ),
   check.names = FALSE
 )
@@ -710,15 +748,30 @@ endpoints have different clinical or regulatory rationales for looking back.
 ### When look_back makes a difference
 
 We modify the oncology trial p-values to illustrate a scenario where
-`look_back = TRUE` leads to an additional rejection. The key change is
-$H_4$ (PFS, all subjects): it has strong evidence at analysis 1
-($p = 0.0001$) but weaker evidence at analysis 2 ($p = 0.02$). Since $H_4$
-starts with weight 0, it cannot be tested until it receives alpha via graph
-propagation — which only happens after $H_3$ is rejected at analysis 2.
+`look_back = TRUE` leads to additional rejections. Three key changes are
+made:
+
+- $H_2$ (OS, all subjects): strong evidence at both analysis 1
+  ($p = 0.003$) and analysis 2 ($p = 0.005$). At analysis 1, $H_2$'s
+  weight (0.4) gives a boundary of 0.00154 — too small for $p = 0.003$.
+  At analysis 2, after $H_1$ is rejected, $H_2$ receives $H_1$'s weight
+  (reaching 0.8) and its analysis-2 p-value crosses the boundary.
+  Additionally, looking back to analysis 1 with the increased weight gives
+  a boundary of 0.00423, which $p = 0.003$ also crosses — so $H_2$ is
+  attributed to analysis 1.
+- $H_4$ (PFS, all subjects): strong evidence at analysis 1
+  ($p = 0.0001$) but weaker at analysis 2 ($p = 0.02$). Since $H_4$ starts
+  with weight 0, it cannot be tested until it receives alpha via graph
+  propagation — which only happens after $H_3$ is rejected at analysis 2.
+- $H_5$ (ORR, subgroup): a single analysis with $p = 0.0008$, which is
+  above its initial boundary ($0.0005$) but below the boundary it would
+  receive after graph propagation from $H_4$'s rejection.
 
 ```{r oncology-look-back-diff}
 p_onc_lb <- p_onc
+p_onc_lb["H2_OS_A", ] <- c(0.003, 0.005, 0.1)
 p_onc_lb["H4_PFS_A", ] <- c(0.0001, 0.02, NA)
+p_onc_lb["H5_ORR_S", ] <- c(0.0008, NA, NA)
 
 # look_back = FALSE: H4's repeated p-value at analysis 2 is too large
 result_onc_no_lb <- graph_test_shortcut_gsd(
@@ -743,18 +796,33 @@ result_onc_yes_lb <- graph_test_shortcut_gsd(
 )
 ```
 
-With `look_back = FALSE`, $H_4$ is **not rejected** because its nominal
-p-value at analysis 2 ($p = 0.02$) does not cross its boundary:
+With `look_back = FALSE`, $H_4$ and $H_5$ are not rejected, while $H_2$ is
+rejected at analysis 2:
 
 ```{r oncology-look-back-diff-no}
 print(result_onc_no_lb)
 ```
 
-With `look_back = TRUE`, $H_4$ **is rejected** and attributed to analysis 1.
-The `test_values` output shows this clearly: at analysis 2, $H_4$'s nominal
-p-value ($p = 0.02$) does not cross the boundary, but looking back to
-analysis 1, the nominal p-value ($p = 0.0001$) crosses the boundary with the
-weight $H_4$ received after $H_3$'s rejection:
+With `look_back = TRUE`, $H_2$, $H_4$, and $H_5$ **are all rejected** and
+attributed to analysis 1. The `test_values` output at analysis 2 shows
+three different look_back scenarios:
+
+- $H_2$: its nominal p-value at analysis 2 ($p = 0.005$) crosses the
+  boundary at analysis 2 after receiving $H_1$'s weight — so $H_2$ is
+  rejected at analysis 2 regardless of look_back. But looking back to
+  analysis 1 with the increased weight (0.8) gives a boundary of 0.00423,
+  which $p = 0.003$ also crosses. This means $H_2$ is rejected at both
+  analyses, and is attributed to analysis 1 (`First.Rej.at = 1`). In the
+  `test_values`, both the analysis-2 row and the look_back analysis-1 row
+  show `Reject = TRUE`.
+- $H_4$: its nominal p-value at analysis 2 ($p = 0.02$) does not cross the
+  boundary, but looking back to analysis 1, $p = 0.0001$ crosses the
+  boundary with the weight received after $H_3$'s rejection.
+- $H_5$: it has no data at analysis 2 (single-analysis endpoint), but
+  looking back to analysis 1, $p = 0.0008$ crosses the boundary with the
+  weight received after $H_4$'s rejection. Note that $H_5$ only appears
+  as a look_back row (marked with `*`) in the analysis 2 test_values,
+  since it has no analysis-2 data.
 
 ```{r oncology-look-back-diff-yes}
 print(result_onc_yes_lb)
@@ -765,21 +833,34 @@ lb_diff_table <- data.frame(
   Hypothesis = hyp_names_onc,
   `Rejected (no LB)` = result_onc_no_lb$outputs$rejected,
   `Rejected (LB)` = result_onc_yes_lb$outputs$rejected,
-  `First.Rej (LB)` = ifelse(
+  `First.Rej.at (LB)` = ifelse(
     is.na(result_onc_yes_lb$outputs$first_rejected_at), "--",
     as.character(result_onc_yes_lb$outputs$first_rejected_at)),
+  `Last.Rej.at (LB)` = ifelse(
+    is.na(result_onc_yes_lb$outputs$last_rejected_at), "--",
+    as.character(result_onc_yes_lb$outputs$last_rejected_at)),
   check.names = FALSE
 )
 knitr::kable(lb_diff_table, row.names = FALSE,
              caption = "Effect of look_back on oncology trial rejection decisions")
 ```
 
-The difference arises because $H_4$ starts with weight 0 and only becomes
-testable after $H_3$ is rejected at analysis 2. With `look_back = FALSE`,
-$H_4$ can only use its analysis-2 evidence ($p = 0.02$), which is
-insufficient. With `look_back = TRUE`, the procedure looks back to
-analysis 1 where $H_4$ had very strong evidence ($p = 0.0001$), enabling
-the rejection.
+The three look_back rejections illustrate different mechanisms:
+
+- $H_2$ had data at both analyses and was rejected at analysis 2 even
+  without look_back. But graph propagation from $H_1$'s rejection increased
+  $H_2$'s weight, and looking back to analysis 1 with the new weight showed
+  that the boundary was also crossed there — attributing the rejection to
+  the earlier analysis.
+- $H_4$ started with weight 0 and only became testable after $H_3$'s
+  rejection at analysis 2. With `look_back = FALSE`, $H_4$ could only use
+  its analysis-2 evidence ($p = 0.02$), which was insufficient. With
+  `look_back = TRUE`, the strong analysis-1 evidence ($p = 0.0001$)
+  crossed the boundary.
+- $H_5$ had a single analysis and was not rejected initially (boundary too
+  small). After $H_4$'s rejection propagated weight to $H_5$, looking back
+  to analysis 1 with the increased weight enabled rejection — even though
+  $H_5$ had no data at analysis 2.
 
 ### Customizing Spending Functions: Spending Time
 
@@ -805,21 +886,8 @@ subgroup is a subset of the all-subjects population, and the subgroup events
 may better reflect the information available for the treatment effect
 comparison.
 
-We define a helper function that creates a spending function with a custom
-spending time:
-
-```{r spending-time-helper}
-# Factory function: create a spending function that uses spending_time
-# instead of info_frac for alpha allocation
-make_spending_with_time <- function(base_spending_fn, spending_time) {
-  function(alpha, info_frac) {
-    # Use spending_time for alpha allocation, ignoring info_frac
-    # Truncate to match length (handles interim stops)
-    st <- spending_time[seq_along(info_frac)]
-    base_spending_fn(alpha, st)
-  }
-}
-```
+The `spending_with_time()` function creates a spending function that uses
+a fixed spending time instead of the information fractions passed at runtime:
 
 For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
 (`r paste(c(529, 700, 800), collapse = ", ")`) for the correlation structure
@@ -828,15 +896,18 @@ For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
 
 ```{r spending-time-setup}
 # Spending time = subgroup event fractions (same as H1_OS_S)
-spending_h2 <- make_spending_with_time(
+# info_frac ensures NA positions match those in info_frac_onc
+spending_h2 <- spending_with_time(
   spending_of,
-  spending_time = c(185 / 295, 245 / 295, 1)
+  spending_time = c(185 / 295, 245 / 295, 1),
+  info_frac = info_frac_onc["H2_OS_A", ]
 )
 
 # Similarly, H4 (PFS, all subjects) uses subgroup PFS event fractions
-spending_h4 <- make_spending_with_time(
+spending_h4 <- spending_with_time(
   spending_of,
-  spending_time = c(265 / 310, 1)
+  spending_time = c(265 / 310, 1, NA),
+  info_frac = info_frac_onc["H4_PFS_A", ]
 )
 
 # Build per-hypothesis spending function list
@@ -891,6 +962,140 @@ This approach illustrates a general principle: because `spending_fn` accepts
 any function with the signature `function(alpha, info_frac)`, users can
 encode arbitrary spending behaviors — including spending time separation —
 without requiring changes to the `graph_test_shortcut_gsd()` interface.
+
+### Monitoring: Adjusting for Changed Final Information
+
+In practice, the total information (e.g., total number of events) at the
+final analysis may differ from what was planned at the design stage. When
+this happens, the information fractions at earlier analyses change
+retroactively — not because the data changed, but because the denominator
+(planned total) is now different. This creates a challenge: the boundaries
+at earlier analyses were already computed using the **planned** information
+fractions, but the correlation structure at the current analysis should
+reflect the **actual** information fractions.
+
+The spending time approach handles this naturally:
+
+- **Spending time**: use the planned information fractions to preserve the
+  boundaries at analyses 1 and 2 (which have already been applied).
+- **Information fraction** (`info_frac`): use the actual information fractions
+  for the correlation structure, since this reflects the true joint
+  distribution of the test statistics.
+
+Consider the OS subgroup hypothesis ($H_1$) in the oncology trial. The
+trial was designed with a planned maximum of 295 OS events in the subgroup,
+giving planned information fractions of
+(`r paste(round(c(185, 245, 295) / 295, 3), collapse = ", ")`).
+Suppose that by the time of the final analysis, 310 events have been
+observed instead of 295. The actual information fractions are now
+(`r paste(round(c(185, 245, 310) / 310, 3), collapse = ", ")`):
+
+```{r monitoring-setup}
+# Planned info fractions (used for boundaries at analyses 1 and 2)
+planned_if_h1 <- c(185 / 295, 245 / 295, 1)
+
+# Actual info fractions (more events than planned at final analysis)
+actual_if_h1 <- c(185 / 310, 245 / 310, 1)
+
+cat("Planned:", round(planned_if_h1, 4), "\n")
+cat("Actual: ", round(actual_if_h1, 4), "\n")
+```
+
+We create a spending function that uses the planned information fractions
+for alpha allocation, while the procedure uses the actual information
+fractions for the correlation structure:
+
+```{r monitoring-spending}
+# Spending function using planned info fractions for spending,
+# with info_frac for NA structure validation
+spending_h1_monitor <- spending_with_time(
+  spending_of,
+  spending_time = planned_if_h1,
+  info_frac = actual_if_h1
+)
+```
+
+To illustrate, we compare the boundaries computed under three scenarios:
+
+1. **Planned**: both spending and correlation use planned info fractions
+   (the original design).
+2. **Naive update**: both spending and correlation use actual info fractions
+   (ignores that analyses 1 and 2 used planned boundaries).
+3. **Correct monitoring**: spending uses planned info fractions, correlation
+   uses actual info fractions.
+
+```{r monitoring-comparison}
+alpha_h1 <- 0.01  # H1's allocated alpha
+
+# Scenario 1: Planned (original design)
+bounds_planned <- gs_boundaries(alpha_h1, planned_if_h1, spending_of)
+
+# Scenario 2: Naive update (both use actual)
+bounds_naive <- gs_boundaries(alpha_h1, actual_if_h1, spending_of)
+
+# Scenario 3: Correct monitoring (spending=planned, correlation=actual)
+bounds_monitor <- gs_boundaries(alpha_h1, actual_if_h1, spending_h1_monitor)
+
+monitor_table <- data.frame(
+  Analysis = 1:3,
+  Planned.IF = round(planned_if_h1, 4),
+  Actual.IF = round(actual_if_h1, 4),
+  Boundary.Planned = bounds_planned$bounds_nominal,
+  Boundary.Naive = bounds_naive$bounds_nominal,
+  Boundary.Monitor = bounds_monitor$bounds_nominal
+)
+knitr::kable(monitor_table, digits = 6,
+             caption = paste("Boundaries under three scenarios",
+                             "(H1 with alpha = 0.01)"))
+```
+
+The key observations:
+
+- **Analyses 1 and 2**: the monitoring boundaries differ from the planned
+  boundaries because the correlation structure has changed (the actual
+  info fractions are smaller). However, the spending at these analyses is
+  preserved — the same cumulative alpha is allocated.
+- **Analysis 3**: the monitoring boundary reflects both the preserved
+  spending schedule and the updated correlation structure.
+- **Naive update**: changes the spending at all analyses, which is
+  inconsistent with the boundaries already applied at analyses 1 and 2.
+
+This approach extends naturally to the full graphical procedure. For
+monitoring at analysis 3, use the actual information fractions in
+`info_frac` and per-hypothesis spending functions with planned information
+fractions:
+
+```{r monitoring-full}
+# Actual info fractions for all hypotheses
+# (only OS hypotheses affected; PFS and ORR are complete)
+actual_if_onc <- info_frac_onc
+actual_if_onc["H1_OS_S", ] <- c(185 / 310, 245 / 310, 1)
+actual_if_onc["H2_OS_A", ] <- c(529 / 830, 700 / 830, 1)
+
+# Spending functions using planned info fractions for OS hypotheses
+spending_fn_monitor <- list(
+  spending_with_time(spending_of,
+    spending_time = info_frac_onc["H1_OS_S", ],
+    info_frac = actual_if_onc["H1_OS_S", ]),
+  spending_with_time(spending_of,
+    spending_time = info_frac_onc["H2_OS_A", ],
+    info_frac = actual_if_onc["H2_OS_A", ]),
+  spending_of,   # H3: PFS complete, no change
+  spending_of,   # H4: PFS complete, no change
+  spending_of,   # H5: ORR complete
+  spending_of    # H6: ORR complete
+)
+
+result_monitor <- graph_test_shortcut_gsd(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = actual_if_onc,
+  spending_fn = spending_fn_monitor,
+  look_back = TRUE
+)
+print(result_monitor)
+```
 
 ## Additional Examples
 
@@ -1012,6 +1217,66 @@ It would be more beneficial to use the built-in `rpact` integration routines to 
 repeated p-values, because this would provide an alternative computation method. 
 Merely supplying another implementation of the same simple spending function formulas
 would not provide a meaningful alternative.
+### User-Defined Spending Functions
+
+Users can define entirely custom spending functions as long as they accept
+two arguments — `alpha` and `info_frac` — and return the cumulative alpha
+spent. This provides full flexibility in controlling how alpha is allocated
+across analyses.
+
+As an example, consider a **piecewise spending function** that uses
+O'Brien-Fleming spending for the first half of alpha (conservative at early
+analyses) and Pocock spending for the second half (more aggressive). This
+can arise naturally in the graphical procedure: a hypothesis that starts
+with a small weight uses conservative OBF spending, and when it receives
+additional weight via graph propagation, the incremental alpha is spent
+more aggressively using Pocock.
+
+```{r user-defined-spending}
+# Piecewise spending: OBF for the first 'threshold' of alpha,
+# Pocock for the remainder
+spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
+  spending_of(pmin(alpha, threshold), info_frac) +
+    spending_pocock(pmax(alpha - threshold, 0), info_frac)
+}
+
+# At alpha = 0.025: first 0.0125 is OBF, second 0.0125 is Pocock
+t <- c(1/3, 2/3, 1)
+comparison <- data.frame(
+  `Info Fraction` = t,
+  `OBF only` = spending_of(0.025, t),
+  `Pocock only` = spending_pocock(0.025, t),
+  Piecewise = spending_piecewise(0.025, t),
+  check.names = FALSE
+)
+knitr::kable(comparison, digits = 6,
+             caption = "Piecewise spending: OBF for first half, Pocock for second half")
+```
+
+At `alpha = 0.0125` (e.g., a hypothesis with weight 0.5), the piecewise
+function reduces to pure O'Brien-Fleming:
+
+```{r user-defined-spending-half}
+# At alpha = 0.0125: entirely OBF (below threshold)
+all.equal(
+  spending_piecewise(0.0125, t),
+  spending_of(0.0125, t)
+)
+```
+
+The piecewise spending function can be used directly in
+`graph_test_shortcut_gsd()`:
+
+```{r user-defined-spending-gsd}
+result_piecewise <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  spending_fn = spending_piecewise
+)
+print(result_piecewise)
+```
 
 ## Summary
 
