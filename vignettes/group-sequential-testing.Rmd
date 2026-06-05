@@ -1189,6 +1189,34 @@ directly wrapped for use with `graph_test_shortcut_gsd()`. However,
 `gsDesign` and `rpact` implement the same standard spending function
 formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
 
+However, it would be possible to use `rpact` if the `graphicalMCP` package functions interface
+differently with `rpact` compared to `gsDesign`. In particular, this code snippet shows how to obtain the
+repeated p-values from `rpact` shown in the above repeated p-values example:
+
+```{r rpact-snippet}
+rpact::setLogLevel("DISABLED")
+repP <- function(pVals){
+  cum_n <- seq_along(pVals) * 2
+  design <- rpact::getDesignGroupSequential(typeOfDesign = "asOF", kMax = 3)
+  data <- rpact::getDataset(
+    cumMeans = c(qnorm(1 - pVals) / sqrt(cum_n)),
+    cumStDevs = rep(1, length(pVals)), 
+    cumN = cum_n
+  )
+  stage_res <- rpact::getStageResults(design, data, normalApproximation = TRUE)
+  rpact::getRepeatedPValues(stage_res)
+}  
+
+repP(c(0.0062, 0.0002))
+repP(c(0.0170, 0.0035))
+repP(c(0.0090, 0.0020))
+repP(c(0.1300, 0.0600))
+```
+
+It would be more beneficial to use the built-in `rpact` integration routines to obtain these
+repeated p-values, because this would provide an alternative computation method. 
+Merely supplying another implementation of the same simple spending function formulas
+would not provide a meaningful alternative.
 ### User-Defined Spending Functions
 
 Users can define entirely custom spending functions as long as they accept
