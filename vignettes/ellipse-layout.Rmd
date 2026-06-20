@@ -1,0 +1,296 @@
+---
+title: "Elliptical graph layouts"
+output: rmarkdown::html_vignette
+bibliography: "`r system.file('references.bib', package='graphicalMCP')`"
+vignette: >
+  %\VignetteIndexEntry{Elliptical graph layouts}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  fig.dim = c(7, 4.2)
+)
+```
+
+```{r setup, warning = FALSE, message = FALSE}
+library(graphicalMCP)
+```
+
+# Overview
+
+The default `plot()` method in `graphicalMCP` uses `igraph` to draw hypotheses
+as vertices and transition weights as directed edges. The `layout = "ellipse"`
+option keeps the same `igraph` plotting path, but arranges hypotheses around an
+ellipse. This gives a communication-oriented display similar in spirit to the
+elliptical arrangement in `gMCPLite::hGraph()`, while staying compatible with
+the current `plot.initial_graph()` and `plot.updated_graph()` interface.
+
+Elliptical layouts are useful when:
+
+* the order of hypotheses matters and should be stable across plots;
+* the graph has cycles or several bidirectional edges, where force-directed
+  layouts can be unstable;
+* a wider or taller plotting area would make labels and edge weights easier to
+  read;
+* hypotheses naturally fall into groups that can be shown with color.
+
+The default elliptical layout is often a quick way to get a usable graph without
+substantial hand tuning. It uses a stable ordering, separates hypotheses around
+the plot boundary, and avoids the variability of force-directed layouts. The
+main tradeoff is that an ellipse is not topology-aware. It does not try to
+minimize edge crossings or edge-label overlap. For very dense graphs, large
+graphs, or graphs with many long-range transitions, a custom layout matrix can
+still be clearer. The ellipse layout is best viewed as a reproducible
+presentation layout that often works well immediately, with options available
+when a particular graph needs adjustment.
+
+# A Simple Five-Hypothesis Graph
+
+The example below has five hypotheses. The first two hypotheses start with most
+of the testing weight, and rejected hypotheses can pass weight to later
+hypotheses through the transition matrix.
+
+```{r create-five-hypothesis-graph}
+hypotheses <- c(
+  H1 = 0.40,
+  H2 = 0.25,
+  H3 = 0.20,
+  H4 = 0.10,
+  H5 = 0.05
+)
+
+transitions <- rbind(
+  H1 = c(0, 0.5, 0.5, 0, 0),
+  H2 = c(0, 0, 0.4, 0.6, 0),
+  H3 = c(0.3, 0, 0, 0, 0.7),
+  H4 = c(0, 0, 0, 0, 1),
+  H5 = c(0.5, 0.5, 0, 0, 0)
+)
+
+five_graph <- graph_create(hypotheses, transitions)
+```
+
+```{r simple-ellipse-plot}
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.7,
+  yradius = 1.35,
+  vertex.size = 72,
+  vertex.size2 = 44,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7
+)
+```
+
+`xradius` and `yradius` control the shape of the layout ellipse. The vertices
+also use an ellipse shape by default when `layout = "ellipse"`. Use
+`vertex.size` for the horizontal radius of the vertex and `vertex.size2` for
+the vertical radius. Larger hypothesis ellipses are helpful when labels include
+both hypothesis names and weights.
+
+# Grouped Hypotheses With A Legend
+
+Because `plot()` still uses `igraph`, the usual `igraph::plot.igraph()`
+arguments can be used. Here, color distinguishes two groups of hypotheses. The
+legend is added with base R graphics after the graph is drawn. In this example,
+`xlim` reserves space on the right edge for the legend.
+
+```{r grouped-ellipse-plot}
+hypothesis_groups <- c(
+  H1 = "Primary",
+  H2 = "Primary",
+  H3 = "Secondary",
+  H4 = "Secondary",
+  H5 = "Secondary"
+)
+
+group_colors <- c(
+  Primary = "#4477AA",
+  Secondary = "#CC6677"
+)
+
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.65,
+  yradius = 1.3,
+  xlim = c(-3.2, 5),
+  ylim = c(-1.9, 1.9),
+  vertex.color = group_colors[hypothesis_groups],
+  vertex.size = 72,
+  vertex.size2 = 44,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7
+)
+
+legend(
+  x = 3.4,
+  y = 1.4,
+  legend = names(group_colors),
+  fill = group_colors,
+  border = "black",
+  title = "Group",
+  bty = "n",
+  cex = 0.85
+)
+```
+
+# Custom Labels Inside Nodes
+
+By default, nodes are labeled with the hypothesis name and hypothesis weight.
+Pass `vertex.label` to use custom text instead. Line breaks (`\n`) are useful
+when labels need to include a short endpoint name or other trial-specific
+description.
+
+```{r custom-node-labels}
+custom_labels <- c(
+  H1 = "ORR\n0.40",
+  H2 = "PFS\n0.25",
+  H3 = "OS\n0.20",
+  H4 = "QoL\n0.10",
+  H5 = "Safety\n0.05"
+)
+
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.8,
+  yradius = 1.35,
+  vertex.label = custom_labels,
+  vertex.size = 84,
+  vertex.size2 = 48,
+  vertex.label.cex = 0.85,
+  edge.arrow.size = 0.7,
+  edge_curves = c(default = 0.05, pairs = 0.3)
+)
+```
+
+For longer labels, increase `vertex.size` and `vertex.size2`, decrease
+`vertex.label.cex`, or both.
+
+# Adjusting Arrow Curvature
+
+By default, bidirectional edge pairs get a small curvature so the two arrows do
+not sit directly on top of each other. With `edge_curves`, you can also set a
+small default curvature for all non-paired edges, make paired arrows more
+curved, or tune individual edges by name.
+
+```{r curved-ellipse-plot}
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.8,
+  yradius = 1.2,
+  vertex.size = 72,
+  vertex.size2 = 42,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7,
+  edge_curves = c(
+    default = 0.08,
+    pairs = 0.35,
+    "H3|H1" = -0.18
+  )
+)
+```
+
+The named edge entries follow the convention `"tail|head"`. In this example,
+`"H3|H1"` adjusts only the arrow from `H3` to `H1`.
+
+# Changing The Starting Position
+
+The first hypothesis is placed near the top by default, following the convention
+used by `gMCPLite::hGraph()`. Use `radian_start` to rotate the layout, and
+`clockwise = FALSE` if a counter-clockwise ordering is more natural for a
+specific graph. This is analogous to the `radianStart` argument in
+`gMCPLite::hGraph()`.
+
+```{r rotated-ellipse-plot}
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.7,
+  yradius = 1.35,
+  radian_start = 0,
+  clockwise = FALSE,
+  vertex.size = 72,
+  vertex.size2 = 44,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7,
+  edge_curves = c(default = 0.05, pairs = 0.3)
+)
+```
+
+# Updated Graphs
+
+`plot.updated_graph()` delegates to `plot.initial_graph()`, so the ellipse
+layout can also be used after hypotheses are deleted from the graph. Deleted
+hypotheses are shown in gray by default.
+
+```{r updated-ellipse-plot}
+updated_five_graph <- graph_update(
+  five_graph,
+  delete = c(TRUE, FALSE, FALSE, TRUE, FALSE)
+)
+
+plot(
+  updated_five_graph,
+  layout = "ellipse",
+  xradius = 2.7,
+  yradius = 1.35,
+  vertex.size = 72,
+  vertex.size2 = 44,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7,
+  edge_curves = c(default = 0.08, pairs = 0.35)
+)
+```
+
+# A Top-First Ellipse Layout
+
+The earlier examples use the default starting angle, which follows the
+`gMCPLite::hGraph()` convention. If you want the first hypothesis at the top of
+the ellipse, set `radian_start = pi / 2`. This gives a useful top-first layout
+without supplying a custom coordinate matrix.
+
+```{r top-first-ellipse-layout}
+plot(
+  five_graph,
+  layout = "ellipse",
+  xradius = 2.7,
+  yradius = 1.35,
+  radian_start = pi / 2,
+  xlim = c(-3.2, 5),
+  ylim = c(-1.9, 1.9),
+  vertex.color = group_colors[hypothesis_groups],
+  vertex.size = 72,
+  vertex.size2 = 44,
+  vertex.label.cex = 0.9,
+  edge.arrow.size = 0.7,
+  edge_curves = c(default = 0.06, pairs = 0.3)
+)
+
+legend(
+  x = 3.4,
+  y = 1.45,
+  legend = names(group_colors),
+  fill = group_colors,
+  border = "black",
+  title = "Group",
+  bty = "n",
+  cex = 0.85
+)
+```
+
+# When To Use A Custom Layout Instead
+
+The ellipse layout is meant to be a strong default for presentation. If a graph
+has many transition weights, many edge crossings, or a trial-specific ordering
+that cannot be expressed by rotating or reversing the ellipse, supply a
+coordinate matrix directly to `layout`. This keeps full control over placement
+while still using the same labeling, coloring, and edge-curvature tools.

@@ -84,6 +84,7 @@ articles:
   - shortcut-testing
   - closed-testing
   - graph-examples
+  - ellipse-layout
   - internal-validation
   - comparisons
   - generate-closure

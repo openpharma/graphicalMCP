@@ -11,6 +11,10 @@
   layout = "grid",
   nrow = NULL,
   ncol = NULL,
+  xradius = 2,
+  yradius = xradius,
+  radian_start = NULL,
+  clockwise = TRUE,
   edge_curves = NULL,
   precision = 4,
   eps = NULL,
@@ -27,9 +31,11 @@
 retained and deleted hypotheses. More extensive color customization must be
 done with \code{vertex.color}.}
 
-\item{layout}{An igraph layout specification (See \code{?igraph.plotting}), or
-\code{"grid"}, which lays out hypotheses left-to-right and top-to-bottom. \code{nrow}
-and \code{ncol} control the grid shape.}
+\item{layout}{An igraph layout specification (See \code{?igraph.plotting}),
+\code{"grid"}, which lays out hypotheses left-to-right and top-to-bottom, or
+\code{"ellipse"}, which lays out hypotheses clockwise around an ellipse.
+\code{nrow} and \code{ncol} control the grid shape. \code{xradius}, \code{yradius},
+\code{radian_start}, and \code{clockwise} control the ellipse shape.}
 
 \item{nrow}{An integer scalar specifying the number of rows in the vertex
 grid. If row and column counts are not specified, vertices will be laid out
@@ -39,12 +45,28 @@ as close to a square as possible.}
 grid. If row and column counts are not specified, vertices will be laid out
 as close to a square as possible.}
 
+\item{xradius}{A positive numeric scalar specifying the horizontal radius of
+the vertex layout ellipse when \code{layout = "ellipse"}.}
+
+\item{yradius}{A positive numeric scalar specifying the vertical radius of
+the vertex layout ellipse when \code{layout = "ellipse"}.}
+
+\item{radian_start}{A numeric scalar specifying the starting angle, in
+radians, for the first hypothesis when \code{layout = "ellipse"}. If \code{NULL},
+the default follows \code{gMCPLite::hGraph()}.}
+
+\item{clockwise}{A logical scalar indicating whether hypotheses should be
+placed clockwise around the ellipse when \code{layout = "ellipse"}.}
+
 \item{edge_curves}{A named numeric vector specifying the curvature of
-specific edges. Edge pairs (Where two vertices share an edge in each
+specific edges. Edge pairs (where two vertices share an edge in each
 possible direction) are detected automatically and get 0.25 curvature.
-Adjust edges by adding an entry with name \verb{"vertex1|vertex2}, and adjust
-default edge pairs curvature by adding an entry with name \code{"pairs"} -
-\code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
+Adjust edges by adding an entry with name \code{"vertex1|vertex2"}, and adjust
+default edge pairs curvature by adding an entry with name \code{"pairs"}.
+Adjust the base curvature for non-paired edges by adding an entry with name
+\code{"default"}, or by passing an unnamed numeric scalar. Paired edges keep the
+0.25 default unless \code{"pairs"} is also supplied -
+\code{edge_curves = c("default" = 0.1, "pairs" = 0.5, "H1|H3" = 0.25)}.}
 
 \item{precision}{An integer scalar indicating the number of decimal places to
 display.}
@@ -85,6 +107,11 @@ These values can still be changed by passing them as arguments to
 \item \code{edge.label.color = "black"}
 \item \code{asp = 0}.
 }
+
+When \code{layout = "ellipse"}, the vertices are drawn with an internal ellipse
+shape by default. Use \code{vertex.size} and \code{vertex.size2} to control the
+ellipse width and height. Ellipse layouts use \code{rescale = FALSE} and
+\code{asp = 1} by default so that \code{xradius} and \code{yradius} are respected.
 
 Neither \code{graphicalMCP} nor \code{igraph} does anything about overlapping edge
 labels. If you run into this problem, and vertices can't practically be
@@ -136,6 +163,17 @@ plot_layout <- rbind(
 )
 
 plot(g, layout = plot_layout, eps = epsilon, edge_curves = c(pairs = .5))
+
+plot(
+  g,
+  layout = "ellipse",
+  xradius = 2,
+  yradius = 1,
+  vertex.size = 30,
+  vertex.size2 = 20,
+  edge_curves = c(default = .1, pairs = .3),
+  eps = epsilon
+)
 }
 \references{
 Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,

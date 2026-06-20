@@ -21,3 +21,29 @@ test_that("plotting throws no error", {
     )
   )
 })
+
+test_that("ellipse plotting throws no error", {
+  graph <- graph_create(
+    c(pi / 10, 1 - pi / 10, 0, 0),
+    rbind(
+      c(0, .5, .5, 0),
+      c(.5, 0, 0, .5),
+      c(1e-5, 1 - 1e-5, 0, 0),
+      c(1 - 1e-5, 1e-5, 0, 0)
+    )
+  )
+
+  expect_no_error(
+    plot(
+      graph_update(graph, c(1, 4)),
+      layout = "ellipse",
+      xradius = 2,
+      yradius = 1,
+      vertex.size = 35,
+      vertex.size2 = 20,
+      edge_curves = c(default = .1, pairs = .4, "H1|H3" = .25),
+      precision = 6,
+      eps = 1e-4
+    )
+  )
+})

@@ -64,3 +64,9 @@
 
 * Closed Issue #90 by changing the precision for parametric tests
 * Submission for CRAN release
+
+# graphicalMCP 0.2.10
+
+* Added an elliptical layout option for graph plots, with controls for layout
+  radius, starting angle, vertex ellipse size, and edge curvature (#96)
+* Added a vignette demonstrating elliptical graph layouts

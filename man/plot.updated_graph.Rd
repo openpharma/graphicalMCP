@@ -15,21 +15,35 @@
     \item{\code{v_palette}}{A character vector of length two specifying the colors for
 retained and deleted hypotheses. More extensive color customization must be
 done with \code{vertex.color}.}
-    \item{\code{layout}}{An igraph layout specification (See \code{?igraph.plotting}), or
-\code{"grid"}, which lays out hypotheses left-to-right and top-to-bottom. \code{nrow}
-and \code{ncol} control the grid shape.}
+    \item{\code{layout}}{An igraph layout specification (See \code{?igraph.plotting}),
+\code{"grid"}, which lays out hypotheses left-to-right and top-to-bottom, or
+\code{"ellipse"}, which lays out hypotheses clockwise around an ellipse.
+\code{nrow} and \code{ncol} control the grid shape. \code{xradius}, \code{yradius},
+\code{radian_start}, and \code{clockwise} control the ellipse shape.}
     \item{\code{nrow}}{An integer scalar specifying the number of rows in the vertex
 grid. If row and column counts are not specified, vertices will be laid out
 as close to a square as possible.}
     \item{\code{ncol}}{An integer scalar specifying the number of columns in the vertex
 grid. If row and column counts are not specified, vertices will be laid out
 as close to a square as possible.}
+    \item{\code{xradius}}{A positive numeric scalar specifying the horizontal radius of
+the vertex layout ellipse when \code{layout = "ellipse"}.}
+    \item{\code{yradius}}{A positive numeric scalar specifying the vertical radius of
+the vertex layout ellipse when \code{layout = "ellipse"}.}
+    \item{\code{radian_start}}{A numeric scalar specifying the starting angle, in
+radians, for the first hypothesis when \code{layout = "ellipse"}. If \code{NULL},
+the default follows \code{gMCPLite::hGraph()}.}
+    \item{\code{clockwise}}{A logical scalar indicating whether hypotheses should be
+placed clockwise around the ellipse when \code{layout = "ellipse"}.}
     \item{\code{edge_curves}}{A named numeric vector specifying the curvature of
-specific edges. Edge pairs (Where two vertices share an edge in each
+specific edges. Edge pairs (where two vertices share an edge in each
 possible direction) are detected automatically and get 0.25 curvature.
-Adjust edges by adding an entry with name \verb{"vertex1|vertex2}, and adjust
-default edge pairs curvature by adding an entry with name \code{"pairs"} -
-\code{edge_curves = c("pairs" = 0.5, "H1|H3" = 0.25, "H3|H4" = 0.75)}.}
+Adjust edges by adding an entry with name \code{"vertex1|vertex2"}, and adjust
+default edge pairs curvature by adding an entry with name \code{"pairs"}.
+Adjust the base curvature for non-paired edges by adding an entry with name
+\code{"default"}, or by passing an unnamed numeric scalar. Paired edges keep the
+0.25 default unless \code{"pairs"} is also supplied -
+\code{edge_curves = c("default" = 0.1, "pairs" = 0.5, "H1|H3" = 0.25)}.}
     \item{\code{precision}}{An integer scalar indicating the number of decimal places to
 display.}
     \item{\code{eps}}{A numeric scalar. The transition weight of \code{eps} will be displayed
