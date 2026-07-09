@@ -1217,6 +1217,7 @@ It would be more beneficial to use the built-in `rpact` integration routines to 
 repeated p-values, because this would provide an alternative computation method. 
 Merely supplying another implementation of the same simple spending function formulas
 would not provide a meaningful alternative.
+
 ### User-Defined Spending Functions
 
 Users can define entirely custom spending functions as long as they accept
