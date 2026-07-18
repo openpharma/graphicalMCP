@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Common multiple comparison procedures illustrated using graphicalMCP">
 </head>
@@ -72,7 +72,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Common multiple comparison procedures illustrated using graphicalMCP</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/openpharma/graphicalMCP/blob/v0.2.9/vignettes/graph-examples.Rmd" class="external-link"><code>vignettes/graph-examples.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/openpharma/graphicalMCP/blob/main/vignettes/graph-examples.Rmd" class="external-link"><code>vignettes/graph-examples.Rmd</code></a></small>
       <div class="d-none name"><code>graph-examples.Rmd</code></div>
     </div>
 
@@ -527,8 +527,8 @@ but it should be much smaller than the smallest p-value observed.</p>
 </h3>
 <p>Parallel gatekeeping procedures also involve multiple ordered
 families of hypotheses, where any null hypotheses of a family of
-hypotheses must be rejected before proceeding in the test sequence <span class="citation">(Dmitrienko, Offen, and Westfall 2003)</span>. The
-example below considers a primary family consisting of two hypotheses
+hypotheses must be rejected before proceeding in the test sequence <span class="citation">(Dmitrienko et al. 2003)</span>. The example below
+considers a primary family consisting of two hypotheses
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>2</mn></msub><annotation encoding="application/x-tex">H_2</annotation></semantics></math>
@@ -653,9 +653,9 @@ receive the equal hypothesis weight of 0.5; secondary hypotheses
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>4</mn></msub><annotation encoding="application/x-tex">H_4</annotation></semantics></math>
 receive the hypothesis weight of 0. A secondary hypothesis
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>3</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>H</mi><mn>4</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H_3 (H_4)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>3</mn></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>H</mi><mn>4</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H_3 (H_4)</annotation></semantics></math>
 can be tested only if the corresponding primary hypothesis
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>1</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>H</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H_1 (H_2)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>H</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H_1 (H_2)</annotation></semantics></math>
 has been rejected. This represents the successive relationships between
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
@@ -664,8 +664,7 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>2</mn></msub><annotation encoding="application/x-tex">H_2</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>4</mn></msub><annotation encoding="application/x-tex">H_4</annotation></semantics></math>,
-respectively <span class="citation">(Maurer, Glimm, and Bretz
-2011)</span>. If both
+respectively <span class="citation">(Maurer et al. 2011)</span>. If both
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>3</mn></msub><annotation encoding="application/x-tex">H_3</annotation></semantics></math>
@@ -704,9 +703,9 @@ and vice versa.</p>
 <span><span class="co">#&gt;    H1    H2    H3    H4 </span></span>
 <span><span class="co">#&gt;  TRUE FALSE FALSE FALSE</span></span></code></pre></div>
 <p>The above graph could be generalized to allow propagation between
-primary hypotheses <span class="citation">(Maurer, Glimm, and Bretz
-2011)</span>. A general successive graph is illustrate below with a
-variable to determine the propagation between
+primary hypotheses <span class="citation">(Maurer et al. 2011)</span>. A
+general successive graph is illustrate below with a variable to
+determine the propagation between
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>2</mn></msub><annotation encoding="application/x-tex">H_2</annotation></semantics></math>.</p>
@@ -1004,7 +1003,7 @@ providing the correlation matrix.</p>
 <div class="section level2">
 <h2 class="unnumbered" id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-bretz-2009-graphical" class="csl-entry">
 Bretz, Frank, Willi Maurer, Werner Branath, and Martin Posch. 2009.
 <span>“A Graphical Approach to Sequentially Rejective Multiple Test
@@ -1014,12 +1013,12 @@ Procedures.”</span> <em>Statistics in Medicine</em> 53 (4): 586–604. <a href
 Dmitrienko, Alexei, Walter W. Offen, and Peter H. Westfall. 2003.
 <span>“Gatekeeping Strategies for Clinical Trials That Do Not Require
 All Primary Effects to Be Significant.”</span> <em>Statistics in
-Medicine</em> 22 (15): 2387–2400. <a href="https://doi.org/10.1002/sim.1526" class="external-link">https://doi.org/10.1002/sim.1526</a>.
+Medicine</em> 22 (15): 2387–400. <a href="https://doi.org/10.1002/sim.1526" class="external-link">https://doi.org/10.1002/sim.1526</a>.
 </div>
 <div id="ref-dunnett-1955-multiple" class="csl-entry">
 Dunnett, Charles W. 1955. <span>“A Multiple Comparison Procedure for
 Comparing Several Treatments with a Control.”</span> <em>Journal of the
-American Statistical Association</em> 50 (272): 1096–1121.
+American Statistical Association</em> 50 (272): 1096–121.
 </div>
 <div id="ref-hochberg-1988-sharper" class="csl-entry">
 Hochberg, Yosef. 1988. <span>“A Sharper Bonferroni Procedure for
@@ -1091,7 +1090,7 @@ Procedures.”</span> <em>Biometrical Journal</em> 59 (5): 918–31. <a href="ht
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

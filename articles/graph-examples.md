@@ -1,6 +1,7 @@
 # Common multiple comparison procedures illustrated using graphicalMCP
 
 ``` r
+
 library(graphicalMCP)
 ```
 
@@ -8,31 +9,33 @@ library(graphicalMCP)
 
 In confirmatory clinical trials, regulatory guidelines mandate the
 strong control of the family-wise error rate at a prespecified level
-$\alpha$. Many multiple comparison procedures (MCPs) have been proposed
-for this purpose. The graphical approaches are a general framework that
-include many common MCPs as special cases. In this vignette, we
-illustrate how to use graphicalMCP to perform some common MCPs.
+$`\alpha`$. Many multiple comparison procedures (MCPs) have been
+proposed for this purpose. The graphical approaches are a general
+framework that include many common MCPs as special cases. In this
+vignette, we illustrate how to use graphicalMCP to perform some common
+MCPs.
 
-To test $m$ hypotheses using a graphical MCP, each hypothesis $H_{i}$
-receives a weight $0 \leq w_{i} \leq 1$ (called hypothesis weight),
-where $\sum_{i = 1}^{m}w_{i} \leq 1$. From $H_{i}$ to $H_{j}$, there
-could be a directed and weighted edge $0 \leq g_{ij} \leq 1$, which
-means that when $H_{i}$ is rejected, its hypothesis weight will be
-propagated (or transferred) to $H_{j}$ and $g_{ij}$ determines how much
-of the propagation. We also require $\sum_{j = 1}^{m}g_{ij} \leq 1$ and
-$g_{ii} = 0$.
+To test $`m`$ hypotheses using a graphical MCP, each hypothesis $`H_i`$
+receives a weight $`0\leq w_i\leq 1`$ (called hypothesis weight), where
+$`\sum_{i=1}^{m}w_i\leq 1`$. From $`H_i`$ to $`H_j`$, there could be a
+directed and weighted edge $`0\leq g_{ij}\leq 1`$, which means that when
+$`H_i`$ is rejected, its hypothesis weight will be propagated (or
+transferred) to $`H_j`$ and $`g_{ij}`$ determines how much of the
+propagation. We also require $`\sum_{j=1}^{m}g_{ij}\leq 1`$ and
+$`g_{ii}=0`$.
 
 ## Bonferroni-based procedures
 
 ### Bonferroni test
 
-A Bonferroni test splits $\alpha$ equally among hypotheses by testing
-every hypothesis at a significance level of $\alpha$ divided by the
+A Bonferroni test splits $`\alpha`$ equally among hypotheses by testing
+every hypothesis at a significance level of $`\alpha`$ divided by the
 number of hypotheses. Thus it rejects a hypothesis if its p-value is
 less than or equal to its significance level. There is no propagation
 between any pair of hypothesis.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -54,6 +57,7 @@ plot(
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -70,14 +74,15 @@ test_results$outputs$rejected
 
 ### Weighted Bonferroni test
 
-A weighted Bonferroni test splits $\alpha$ among hypotheses by testing
-every hypothesis at a significance level of $w_{i}\alpha$. Thus it
+A weighted Bonferroni test splits $`\alpha`$ among hypotheses by testing
+every hypothesis at a significance level of $`w_i\alpha`$. Thus it
 rejects a hypothesis if its p-value is less than or equal to its
-significance level. When $w_{i} = w_{j}$ for all $i,j$, this means an
+significance level. When $`w_i=w_j`$ for all $`i,j`$, this means an
 equal split and the test is the Bonferroni test. There is no propagation
 between any pair of hypothesis.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -99,6 +104,7 @@ plot(
 ![](graph-examples_files/figure-html/weighted-bonferroni-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 
@@ -122,6 +128,7 @@ between hypotheses may not be zero. So it is uniformly more powerful
 than Bonferroni tests.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -143,6 +150,7 @@ plot(holm_graph,
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <- graph_test_shortcut(holm_graph, p = p_values, alpha = alpha)
@@ -160,6 +168,7 @@ words, transition weights between hypotheses may not be zero. So it is
 uniformly more powerful than weighted Bonferroni tests.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -182,6 +191,7 @@ plot(weighted_holm_graph,
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <- graph_test_shortcut(weighted_holm_graph, p = p_values, alpha = alpha)
@@ -195,12 +205,13 @@ test_results$outputs$rejected
 
 Fixed sequence (or hierarchical) procedures pre-specify an order of
 testing Westfall and Krishen (2001). For example, the procedure will
-test $H_{1}$ first. If it is rejected, it will test $H_{2}$; otherwise
-the testing stops. If $H_{2}$ is rejected, it will test $H_{3}$;
+test $`H_1`$ first. If it is rejected, it will test $`H_2`$; otherwise
+the testing stops. If $`H_2`$ is rejected, it will test $`H_3`$;
 otherwise the testing stops. For each hypothesis, it will be tested at
-the full $\alpha$ level, when it can be tested.
+the full $`\alpha`$ level, when it can be tested.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -218,6 +229,7 @@ plot(fixed_sequence_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 ![](graph-examples_files/figure-html/fixed-sequence-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 
@@ -240,6 +252,7 @@ procedures) but allow hypotheses to be tested at different significance
 levels (Wiens 2003).
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -258,6 +271,7 @@ plot(fallback_graph, nrow = 1, asp = 0.5, vertex.size = 50)
 ![](graph-examples_files/figure-html/fallback-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 
@@ -281,6 +295,7 @@ Dmitrienko (2005) and `fallback_improved_2` due to Bretz et al. (2009)
 respectively.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -311,6 +326,7 @@ plot(
 
 ``` r
 
+
 epsilon <- 0.0001
 fallback_improved_2_graph <- fallback_improved_2(hypotheses, epsilon)
 # transitions <- rbind(
@@ -339,6 +355,7 @@ plot(
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -358,21 +375,22 @@ test_results$outputs$rejected
 Serial gatekeeping procedures involve ordered multiple families of
 hypotheses, where all hypotheses of a family of hypotheses must be
 rejected before proceeding in the test sequence. The example below
-considers a primary family consisting of two hypotheses $H_{1}$ and
-$H_{2}$ and a secondary family consisting of a single hypothesis
-$H_{3}$. In the primary family, the Holm procedure is applied. If both
-$H_{1}$ and $H_{2}$ are rejected, $H_{3}$ can be tested at level
-$\alpha$; otherwise $H_{3}$ cannot be rejected. To allow the conditional
-propagation to $H_{3}$, an $\varepsilon$ edge is used from $H_{2}$ to
-$H_{3}$. It has a very small transition weight so that $H_{2}$
-propagates most of its hypothesis weight to $H_{1}$ (if not already
-rejected) and retains a small (non-zero) weight for $H_{3}$ so that if
-$H_{1}$ has been rejected, all hypothesis weight of $H_{2}$ will be
-propagated to $H_{3}$. Here $\varepsilon$ is assigned to be 0.0001 and
-in practice, the value could be adjusted but it should be much smaller
-than the smallest p-value observed.
+considers a primary family consisting of two hypotheses $`H_1`$ and
+$`H_2`$ and a secondary family consisting of a single hypothesis
+$`H_3`$. In the primary family, the Holm procedure is applied. If both
+$`H_1`$ and $`H_2`$ are rejected, $`H_3`$ can be tested at level
+$`\alpha`$; otherwise $`H_3`$ cannot be rejected. To allow the
+conditional propagation to $`H_3`$, an $`\varepsilon`$ edge is used from
+$`H_2`$ to $`H_3`$. It has a very small transition weight so that
+$`H_2`$ propagates most of its hypothesis weight to $`H_1`$ (if not
+already rejected) and retains a small (non-zero) weight for $`H_3`$ so
+that if $`H_1`$ has been rejected, all hypothesis weight of $`H_2`$ will
+be propagated to $`H_3`$. Here $`\varepsilon`$ is assigned to be 0.0001
+and in practice, the value could be adjusted but it should be much
+smaller than the smallest p-value observed.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -406,6 +424,7 @@ plot(
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -424,17 +443,18 @@ test_results$outputs$rejected
 
 Parallel gatekeeping procedures also involve multiple ordered families
 of hypotheses, where any null hypotheses of a family of hypotheses must
-be rejected before proceeding in the test sequence (Dmitrienko, Offen,
-and Westfall 2003). The example below considers a primary family
-consisting of two hypotheses $H_{1}$ and $H_{2}$ and a secondary family
-consisting of two hypotheses $H_{3}$ and $H_{4}$. In the primary family,
-the Bonferroni test is applied. If any of $H_{1}$ and $H_{2}$ is
-rejected, $H_{3}$ and $H_{4}$ can be tested at level $\alpha/2$ using
-the Holm procedure; if both $H_{1}$ and $H_{2}$ are rejected, $H_{3}$
-and $H_{4}$ can be tested at level $\alpha$ using the Holm procedure;
-otherwise $H_{3}$ and $H_{4}$ cannot be rejected.
+be rejected before proceeding in the test sequence (Dmitrienko et al.
+2003). The example below considers a primary family consisting of two
+hypotheses $`H_1`$ and $`H_2`$ and a secondary family consisting of two
+hypotheses $`H_3`$ and $`H_4`$. In the primary family, the Bonferroni
+test is applied. If any of $`H_1`$ and $`H_2`$ is rejected, $`H_3`$ and
+$`H_4`$ can be tested at level $`\alpha/2`$ using the Holm procedure; if
+both $`H_1`$ and $`H_2`$ are rejected, $`H_3`$ and $`H_4`$ can be tested
+at level $`\alpha`$ using the Holm procedure; otherwise $`H_3`$ and
+$`H_4`$ cannot be rejected.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 4
@@ -455,6 +475,7 @@ plot(parallel_gatekeeping_graph, vertex.size = 70)
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -470,12 +491,13 @@ test_results$outputs$rejected
 ```
 
 The above parallel gatekeeping procedure can be improved by adding
-$\varepsilon$ edges from secondary hypotheses to primary hypotheses,
+$`\varepsilon`$ edges from secondary hypotheses to primary hypotheses,
 because it is possible that both secondary hypotheses are rejected but
 there is still a remaining primary hypothesis not rejected (Bretz et al.
 2009).
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 4
@@ -498,6 +520,7 @@ plot(parallel_gatekeeping_improved_graph, eps = 0.0001, vertex.size = 70)
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -518,18 +541,19 @@ Successive procedures incorporate successive relationships between
 hypotheses. For example, the secondary hypothesis is not tested until
 the primary hypothesis has been rejected. This is similar to using the
 fixed sequence procedure as a component of a graph. The example below
-considers two primary hypotheses $H_{1}$ and $H_{2}$ and two secondary
-hypotheses $H_{3}$ and $H_{4}$. Primary hypotheses $H_{1}$ and $H_{2}$
-receive the equal hypothesis weight of 0.5; secondary hypotheses $H_{3}$
-and $H_{4}$ receive the hypothesis weight of 0. A secondary hypothesis
-$H_{3}\left( H_{4} \right)$ can be tested only if the corresponding
-primary hypothesis $H_{1}\left( H_{2} \right)$ has been rejected. This
-represents the successive relationships between $H_{1}$ and $H_{3}$, and
-$H_{2}$ and $H_{4}$, respectively (Maurer, Glimm, and Bretz 2011). If
-both $H_{1}$ and $H_{3}$ are rejected, their hypothesis weights are
-propagated to $H_{2}$ and $H_{4}$, and vice versa.
+considers two primary hypotheses $`H_1`$ and $`H_2`$ and two secondary
+hypotheses $`H_3`$ and $`H_4`$. Primary hypotheses $`H_1`$ and $`H_2`$
+receive the equal hypothesis weight of 0.5; secondary hypotheses $`H_3`$
+and $`H_4`$ receive the hypothesis weight of 0. A secondary hypothesis
+$`H_3 (H_4)`$ can be tested only if the corresponding primary hypothesis
+$`H_1 (H_2)`$ has been rejected. This represents the successive
+relationships between $`H_1`$ and $`H_3`$, and $`H_2`$ and $`H_4`$,
+respectively (Maurer et al. 2011). If both $`H_1`$ and $`H_3`$ are
+rejected, their hypothesis weights are propagated to $`H_2`$ and
+$`H_4`$, and vice versa.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 4
@@ -549,6 +573,7 @@ plot(simple_successive_graph, layout = "grid", nrow = 2, vertex.size = 70)
 
 ``` r
 
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -564,11 +589,12 @@ test_results$outputs$rejected
 ```
 
 The above graph could be generalized to allow propagation between
-primary hypotheses (Maurer, Glimm, and Bretz 2011). A general successive
-graph is illustrate below with a variable to determine the propagation
-between $H_{1}$ and $H_{2}$.
+primary hypotheses (Maurer et al. 2011). A general successive graph is
+illustrate below with a variable to determine the propagation between
+$`H_1`$ and $`H_2`$.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 4
@@ -592,6 +618,7 @@ plot(successive_var_graph, layout = "grid", nrow = 2, vertex.size = 70)
 ![](graph-examples_files/figure-html/simple-successive-var-1.png)
 
 ``` r
+
 p_values <- runif(m, 0, alpha)
 
 test_results <-
@@ -617,6 +644,7 @@ for Holm procedures. Thus to perform Hochberg procedure, we just need to
 specify `test_type` to be `hochberg`.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -635,6 +663,7 @@ plot(
 ![](graph-examples_files/figure-html/hochberg-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 
@@ -661,6 +690,7 @@ Holm procedures. Thus to perform Hommel procedure, we just need to
 specify `test_type` to be `simes`.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -679,6 +709,7 @@ plot(
 ![](graph-examples_files/figure-html/hommel-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 
@@ -705,6 +736,7 @@ correlation matrix. Its graph is the same as the graph for the equally
 weighted Bonferroni test.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -723,6 +755,7 @@ plot(
 ![](graph-examples_files/figure-html/sidak-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 corr <- diag(m)
@@ -750,6 +783,7 @@ Dunnett test by specifying `test_type` to be `parametric` and providing
 the correlation matrix.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 m <- 3
@@ -768,6 +802,7 @@ plot(
 ![](graph-examples_files/figure-html/dunnett-test-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 corr <- matrix(0.5, m, m)
@@ -796,6 +831,7 @@ perform the weighted single-step Dunnett test by specifying `test_type`
 to be `parametric` and providing the correlation matrix.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -814,6 +850,7 @@ plot(
 ![](graph-examples_files/figure-html/weighted-dunnett-test-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 corr <- matrix(0.5, m, m)
@@ -842,6 +879,7 @@ perform the step-down Dunnett procedure by specifying `test_type` to be
 `parametric` and providing the correlation matrix.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 hypotheses <- c(0.5, 0.3, 0.2)
@@ -860,6 +898,7 @@ plot(
 ![](graph-examples_files/figure-html/dunnett-procedure-1.png)
 
 ``` r
+
 
 p_values <- runif(m, 0, alpha)
 corr <- matrix(0.5, m, m)
@@ -887,11 +926,11 @@ Graphical Approach to Sequentially Rejective Multiple Test Procedures.”
 Dmitrienko, Alexei, Walter W. Offen, and Peter H. Westfall. 2003.
 “Gatekeeping Strategies for Clinical Trials That Do Not Require All
 Primary Effects to Be Significant.” *Statistics in Medicine* 22 (15):
-2387–2400. <https://doi.org/10.1002/sim.1526>.
+2387–400. <https://doi.org/10.1002/sim.1526>.
 
 Dunnett, Charles W. 1955. “A Multiple Comparison Procedure for Comparing
 Several Treatments with a Control.” *Journal of the American Statistical
-Association* 50 (272): 1096–1121.
+Association* 50 (272): 1096–121.
 
 Hochberg, Yosef. 1988. “A Sharper Bonferroni Procedure for Multiple
 Tests of Significance.” *Biometrika* 75 (4): 800–802.

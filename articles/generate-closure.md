@@ -3,40 +3,37 @@
 ## Motivating example
 
 Consider a simple successive graph with four hypotheses. It has two
-primary hypotheses $H_{1}$ and $H_{2}$ and two secondary hypotheses
-$H_{3}$ and $H_{4}$. Initially, hypothesis weights are split equally
-between $H_{1}$ and $H_{2}$ with 0.5. Hypotheses $H_{3}$ and $H_{4}$
-receive 0 hypothesis weights because $H_{3}\left( H_{4} \right)$ is
-tested only if $H_{1}\left( H_{2} \right)$ is rejected. Thus there is an
-edge from $H_{1}\left( H_{2} \right)$ to $H_{3}\left( H_{4} \right)$
-with a transition weight of 1. When both $H_{1}$ and $H_{3}$ are
-rejected, their hypothesis weights are propagated to $H_{2}$; similarly,
-when both $H_{2}$ and $H_{4}$ are rejected, their hypothesis weights are
-propagated to $H_{1}$. Thus there is an edge from
-$H_{3}\left( H_{4} \right)$ to $H_{2}\left( H_{1} \right)$ with a
-transition weight of 1. A graphical multiple comparison procedure is
-illustrated below.
+primary hypotheses $`H_1`$ and $`H_2`$ and two secondary hypotheses
+$`H_3`$ and $`H_4`$. Initially, hypothesis weights are split equally
+between $`H_1`$ and $`H_2`$ with 0.5. Hypotheses $`H_3`$ and $`H_4`$
+receive 0 hypothesis weights because $`H_3 (H_4)`$ is tested only if
+$`H_1 (H_2)`$ is rejected. Thus there is an edge from $`H_1 (H_2)`$ to
+$`H_3 (H_4)`$ with a transition weight of 1. When both $`H_1`$ and
+$`H_3`$ are rejected, their hypothesis weights are propagated to
+$`H_2`$; similarly, when both $`H_2`$ and $`H_4`$ are rejected, their
+hypothesis weights are propagated to $`H_1`$. Thus there is an edge from
+$`H_3 (H_4)`$ to $`H_2 (H_1)`$ with a transition weight of 1. A
+graphical multiple comparison procedure is illustrated below.
 
 ![](generate-closure_files/figure-html/base-graph-1-1.png)
 
 ## Generating the closure
 
 The closure of this multiple comparison procedure is a collection of
-intersection hypotheses $H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$,
-$H_{1} \cap H_{2} \cap H_{3}$, $H_{1} \cap H_{2} \cap H_{4}$,
-$H_{1} \cap H_{3} \cap H_{4}$,
-$H_{2} \cap H_{3} \cap H_{4}\ \ldots,H_{1},H_{2},H_{3}$, and $H_{4}$. In
-other words, these intersection hypotheses consist of intersections
-based on all non-empty subsets of $\{ 1,2,3,4\}$, e.g., $\{ 1,2,3\}$,
-$\{ 1,2,4\}$, $\{ 1,3,4\}$, $\{ 2,3,4\}$, $\ldots$. Thus there are
-$2^{4} - 1$ intersection hypotheses. An equivalent way to generate all
-intersection hypotheses is to use a binary representation. For example,
-the intersection hypothesis $H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$
-corresponds to $(1,1,1,1)$ and $H_{1} \cap H_{2} \cap H_{3}$ corresponds
-to $(1,1,1,0)$. Then the closure can be indexed by the power set of
-$\{ 1,2,3,4\}$ as below. In general, one can use
-`rev(expand.grid(rep(list(1:0), m)))` to general the closure, where $m$
-is the number of hypotheses.
+intersection hypotheses $`H_1\cap H_2\cap H_3\cap H_4`$,
+$`H_1\cap H_2\cap H_3`$, $`H_1\cap H_2\cap H_4`$,
+$`H_1\cap H_3\cap H_4`$, $`H_2\cap H_3\cap H_4\ \ldots, H_1, H_2, H_3`$,
+and $`H_4`$. In other words, these intersection hypotheses consist of
+intersections based on all non-empty subsets of $`\{1, 2, 3, 4\}`$,
+e.g., $`\{1, 2, 3\}`$, $`\{1, 2, 4\}`$, $`\{1, 3, 4\}`$,
+$`\{2, 3, 4\}`$, $`\ldots`$. Thus there are $`2^4-1`$ intersection
+hypotheses. An equivalent way to generate all intersection hypotheses is
+to use a binary representation. For example, the intersection hypothesis
+$`H_1\cap H_2\cap H_3\cap H_4`$ corresponds to $`(1, 1, 1, 1)`$ and
+$`H_1\cap H_2\cap H_3`$ corresponds to $`(1, 1, 1, 0)`$. Then the
+closure can be indexed by the power set of $`\{1, 2, 3, 4\}`$ as below.
+In general, one can use `rev(expand.grid(rep(list(1:0), m)))` to general
+the closure, where $`m`$ is the number of hypotheses.
 
     #>    H1 H2 H3 H4
     #> 1   1  1  1  1
@@ -61,20 +58,20 @@ Given the closure, one can calculate the hypothesis weight associated
 with every hypothesis in every intersection hypothesis using Algorithm 1
 (Bretz et al. 2011). The whole collection of hypothesis weights is
 called a weighting strategy. For example, hypothesis weights are
-$(0.5,0.5,0,0)$ for the intersection hypothesis
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$. Then hypothesis weights for
-the intersection hypothesis $H_{1} \cap H_{2} \cap H_{3}$ are
-$(0.5,0.5,0,0)$, which can be calculated by removing $H_{4}$ from the
-initial graph and applying Algorithm 1 (Bretz et al. 2011). The
+$`(0.5, 0.5, 0, 0)`$ for the intersection hypothesis
+$`H_1\cap H_2 \cap H_3\cap H_4`$. Then hypothesis weights for the
+intersection hypothesis $`H_1\cap H_2 \cap H_3`$ are
+$`(0.5, 0.5, 0, 0)`$, which can be calculated by removing $`H_4`$ from
+the initial graph and applying Algorithm 1 (Bretz et al. 2011). The
 algorithm calculates hypothesis weights in a step-by-step fashion. For
-example, for the intersection hypothesis $H_{1} \cap H_{2}$, it can
-start from $H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$ and calculates
-hypothesis weights for $H_{1} \cap H_{2} \cap H_{3}$ by removing $H_{4}$
-and then calculates hypothesis weights for $H_{1} \cap H_{2}$ by
-removing $H_{3}$; it can also start from $H_{1} \cap H_{2} \cap H_{3}$
-(assuming its hypotheses weights are stored) and calculates hypothesis
-weights for $H_{1} \cap H_{2}$ by removing $H_{3}$. Therefore, there are
-two strategies to calculate the weighting strategy.
+example, for the intersection hypothesis $`H_1\cap H_2`$, it can start
+from $`H_1\cap H_2 \cap H_3\cap H_4`$ and calculates hypothesis weights
+for $`H_1\cap H_2 \cap H_3`$ by removing $`H_4`$ and then calculates
+hypothesis weights for $`H_1\cap H_2`$ by removing $`H_3`$; it can also
+start from $`H_1\cap H_2 \cap H_3`$ (assuming its hypotheses weights are
+stored) and calculates hypothesis weights for $`H_1\cap H_2`$ by
+removing $`H_3`$. Therefore, there are two strategies to calculate the
+weighting strategy.
 
     #>      H1   H2   H3   H4
     #> 1  0.50 0.50 0.00 0.00
@@ -97,20 +94,19 @@ two strategies to calculate the weighting strategy.
 
 The first strategy utilizes the initial graph as the starting point and
 calculates hypothesis weights for all other intersection hypotheses. For
-example, to calculate hypothesis weights for $H_{1} \cap H_{2}$, it will
-start with the intersection hypothesis
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$ and sequentially remove $H_{4}$
-and $H_{3}$ (or in the other order). This approach is simple to
-implement since hypothesis weights for
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$ are determined by the initial
-graph and always available. This approach is similar to the one
-implemented in the `gMCP` R package. The drawback is that it does not
-use other information to reduce the number of calculations. For example,
-it is possible that hypothesis weights for $H_{1} \cap H_{2} \cap H_{3}$
-have been calculated when calculating for $H_{1} \cap H_{2}$. Using the
-information from $H_{1} \cap H_{2} \cap H_{3}$ would only need the
-one-step calculation, compared to the two-step calculation using
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$.
+example, to calculate hypothesis weights for $`H_1\cap H_2`$, it will
+start with the intersection hypothesis $`H_1\cap H_2 \cap H_3\cap H_4`$
+and sequentially remove $`H_4`$ and $`H_3`$ (or in the other order).
+This approach is simple to implement since hypothesis weights for
+$`H_1\cap H_2 \cap H_3\cap H_4`$ are determined by the initial graph and
+always available. This approach is similar to the one implemented in the
+`gMCP` R package. The drawback is that it does not use other information
+to reduce the number of calculations. For example, it is possible that
+hypothesis weights for $`H_1\cap H_2 \cap H_3`$ have been calculated
+when calculating for $`H_1\cap H_2`$. Using the information from
+$`H_1\cap H_2 \cap H_3`$ would only need the one-step calculation,
+compared to the two-step calculation using
+$`H_1\cap H_2 \cap H_3\cap H_4`$.
 
 #### Approach 2: Parent-child approach
 
@@ -119,32 +115,32 @@ intermediate graphs. Then it only performs one-step calculation which
 could save time. In general, an intersection hypothesis has a parent
 intersection hypothesis, which involves all hypotheses involved in the
 first intersection and has one extra hypothesis. For example, the second
-row of `matrix_intersections` is $H_{1} \cap H_{2} \cap H_{3}$ and its
-parent intersection is $H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$ in the
-first row; the third row of `matrix_intersections` is
-$H_{1} \cap H_{2} \cap H_{4}$ and its parent intersection is
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4}$ in the first row. Thus we can
-identify the parent intersection hypothesis for each row in
-`matrix_intersections` (except row 1) as the row number 1, 1, 2, 1, 2,
-3, 4, 1, 2, 3, 4, 5, 6, 7. Given this sequence of parent hypotheses, it
-is simple to obtain hypothesis weights for an intersection hypothesis
-based on its parent intersection hypothesis via one-step calculation.
+row of `matrix_intersections` is $`H_1\cap H_2 \cap H_3`$ and its parent
+intersection is $`H_1\cap H_2 \cap H_3\cap H_4`$ in the first row; the
+third row of `matrix_intersections` is $`H_1\cap H_2 \cap H_4`$ and its
+parent intersection is $`H_1\cap H_2 \cap H_3\cap H_4`$ in the first
+row. Thus we can identify the parent intersection hypothesis for each
+row in `matrix_intersections` (except row 1) as the row number 1, 1, 2,
+1, 2, 3, 4, 1, 2, 3, 4, 5, 6, 7. Given this sequence of parent
+hypotheses, it is simple to obtain hypothesis weights for an
+intersection hypothesis based on its parent intersection hypothesis via
+one-step calculation.
 
 It is of interest to understand this pattern and obtain it efficiently.
 First, between the bottom half (rows 9 - 15) and top half (rows 1 - 7),
 each row’s parent in the bottom half is the corresponding row in the top
 half, eight rows up, because the only difference is the flipping of
-$H_{1}$ from 1 in the top half to 0 in the bottom half. For example, row
+$`H_1`$ from 1 in the top half to 0 in the bottom half. For example, row
 15’s parent is in row 15 - 8 = 7. Using this observation, we can
 determine parent hypotheses for rows from 9 to 15 as 1, 2, 3, 4, 5, 6,
 7. A similar pattern can be observed for rows from 5 to 8. Their parent
-hypotheses are in rows 1, 2, 3, 4, respectively, by flipping $H_{2}$
+hypotheses are in rows 1, 2, 3, 4, respectively, by flipping $`H_2`$
 from 1 to 0. For rows 3 - 4, their parent hypotheses are in rows 1, 2,
-respectively, by flipping $H_{3}$ from 1 to 0. Lastly for row 2, its
+respectively, by flipping $`H_3`$ from 1 to 0. Lastly for row 2, its
 parent hypothesis is in row 1. The row number of the parent hypothesis
 can be efficiently generated by running
-`do.call(c, lapply(2^(seq_len(m) - 1), seq_len))[-2^m, ]`, where $m$ is
-the number of hypotheses.
+`do.call(c, lapply(2^(seq_len(m) - 1), seq_len))[-2^m, ]`, where $`m`$
+is the number of hypotheses.
 
 ### Comparing different approaches to calculating weighting strategies
 
@@ -152,17 +148,17 @@ To benchmark against existing approaches to calculating weighting
 strategies, we compare the following approaches:
 [`gMCP::generateWeights()`](https://rdrr.io/pkg/gMCP/man/generateWeights.html)
 (Rohmeyer and Klinglmueller 2024),
-[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html) (Lu
-2016), Approach 1 (graphicalMCP simple) and Approach 2 (graphicalMCP
+[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
+(Lu 2016), Approach 1 (graphicalMCP simple) and Approach 2 (graphicalMCP
 parent-child). Random graphs are generated for the numbers of hypotheses
 of 4, 8, 12, and 16. Computing time (in median log-10 milliseconds) is
 plotted below. We can see that
 [`gMCP::generateWeights()`](https://rdrr.io/pkg/gMCP/man/generateWeights.html)
 is the slowest and
-[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html) is
-the fastest. Approach 2 (graphicalMCP parent-child) is faster than
+[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
+is the fastest. Approach 2 (graphicalMCP parent-child) is faster than
 Approach 1 (graphicalMCP simple). Note that
-[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html)
+[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
 implements the calculation using C++, which is known to be faster than
 R. But it is less stable than other approaches, e.g., giving errors more
 often than others. Given that the computing time of R-based approaches
@@ -186,8 +182,8 @@ following process many times, e.g., 100,000 times.
     - Repeat until no more hypotheses can be rejected
 
 Note that the same step to update the graph may repeat in many
-replications, which may be repetitive. For $m$ hypotheses, there are at
-most $2^{m} - 1$ graphs depending on which hypotheses are rejected.
+replications, which may be repetitive. For $`m`$ hypotheses, there are
+at most $`2^m-1`$ graphs depending on which hypotheses are rejected.
 These graphs correspond to the closure and the weighting strategy. Thus
 an idea to avoid redundant updating of graphs is to utilize the
 weighting strategy.
@@ -198,15 +194,15 @@ The key to allow this approach is to efficiently identify the row of the
 weighting strategy, given which hypotheses are rejected. Remembering the
 pattern we found for Approach 2, the bottom half (rows 9 - 15) of
 `matrix_intersections` is the same as the top half (rows 1 - 7), except
-flipping $H_{1}$ from 1 to 0. This means that if $H_{1}$ has not been
-rejected (1 for $H_{1}$ in `matrix_intersections`), the row number of
-that index should be in the top half. For example, assume that $H_{2}$
-and $H_{4}$ have been rejected and the index in `matrix_intersections`
-should be $(1,0,1,0)$. Since $H_{1}$ is 1, the corresponding row should
-be in the top half (rows 1- 7). But $H_{2}$ is 0 and thus the
+flipping $`H_1`$ from 1 to 0. This means that if $`H_1`$ has not been
+rejected (1 for $`H_1`$ in `matrix_intersections`), the row number of
+that index should be in the top half. For example, assume that $`H_2`$
+and $`H_4`$ have been rejected and the index in `matrix_intersections`
+should be $`(1, 0, 1, 0)`$. Since $`H_1`$ is 1, the corresponding row
+should be in the top half (rows 1- 7). But $`H_2`$ is 0 and thus the
 corresponding row should be in the bottom half within the top half (rows
-5 - 7). Since $H_{3}$ is 1 and thus the corresponding row should be in
-the top half (rows 5 - 6). But $H_{4}$ is 0 and thus the corresponding
+5 - 7). Since $`H_3`$ is 1 and thus the corresponding row should be in
+the top half (rows 5 - 6). But $`H_4`$ is 0 and thus the corresponding
 row should be 6. A useful way to calculate the row number for an index
 of XXXX is `2^m - sum(XXXX * 2^(m:1 - 1))`. For example for XXXX=1010,
 its row number should be

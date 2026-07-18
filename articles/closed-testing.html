@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Graphical multiple comparison procedures based on the closure principle">
 </head>
@@ -72,7 +72,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Graphical multiple comparison procedures based on the closure principle</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/openpharma/graphicalMCP/blob/v0.2.9/vignettes/closed-testing.Rmd" class="external-link"><code>vignettes/closed-testing.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/openpharma/graphicalMCP/blob/main/vignettes/closed-testing.Rmd" class="external-link"><code>vignettes/closed-testing.Rmd</code></a></small>
       <div class="d-none name"><code>closed-testing.Rmd</code></div>
     </div>
 
@@ -81,7 +81,7 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://gt.rstudio.com" class="external-link">gt</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/kornl/gMCP" class="external-link">gMCP</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/kaifenglu/lrstat" class="external-link">lrstat</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://kaifenglu.github.io/lrstat/" class="external-link">lrstat</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/openpharma/graphicalMCP" class="external-link">graphicalMCP</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="motivating-example">Motivating example<a class="anchor" aria-label="anchor" href="#motivating-example"></a>
@@ -337,9 +337,9 @@ or
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mn>2</mn></msub><mo>≤</mo><mn>0.5</mn><mi>α</mi></mrow><annotation encoding="application/x-tex">p_2\leq 0.5\alpha</annotation></semantics></math>.
 Alternatively, a parametric test utilizes the correlation between test
 statistics
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub><mo>=</mo><msup><mi>Φ</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">t_1=\Phi^{-1}(1 - p_1)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub><mo>=</mo><msup><mi mathvariant="normal">Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">t_1=\Phi^{-1}(1 - p_1)</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>=</mo><msup><mi>Φ</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">t_2=\Phi^{-1}(1 - p_2)</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>=</mo><msup><mi mathvariant="normal">Φ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">t_2=\Phi^{-1}(1 - p_2)</annotation></semantics></math>.
 The intersection hypothesis can be rejected if
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mn>1</mn></msub><mo>≤</mo><mi>c</mi><mo>×</mo><mn>0.5</mn><mi>α</mi></mrow><annotation encoding="application/x-tex">p_1\leq c\times 0.5\alpha</annotation></semantics></math>
 or
@@ -353,7 +353,7 @@ and
 More specifically,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
 can be solved as a solution to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mi>r</mi><mo stretchy="false" form="prefix">{</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mn>1</mn></msub><mo>≤</mo><mi>c</mi><mo>×</mo><mn>0.5</mn><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>∪</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>p</mi><mn>2</mn></msub><mo>≤</mo><mi>c</mi><mo>×</mo><mn>0.5</mn><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo><mo>=</mo><mi>α</mi></mrow><annotation encoding="application/x-tex">Pr\{(p_1\leq c\times 0.5\alpha)\cup (p_2\leq c\times 0.5\alpha)\}=\alpha</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mi>r</mi><mo stretchy="false" form="prefix">{</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>p</mi><mn>1</mn></msub><mo>≤</mo><mi>c</mi><mo>×</mo><mn>0.5</mn><mi>α</mi><mo stretchy="false" form="postfix">)</mo><mo>∪</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>p</mi><mn>2</mn></msub><mo>≤</mo><mi>c</mi><mo>×</mo><mn>0.5</mn><mi>α</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo><mo>=</mo><mi>α</mi></mrow><annotation encoding="application/x-tex">Pr\{(p_1\leq c\times 0.5\alpha)\cup (p_2\leq c\times 0.5\alpha)\}=\alpha</annotation></semantics></math>.
 For a given correlation
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ρ</mi><mn>12</mn></msub><annotation encoding="application/x-tex">\rho_{12}</annotation></semantics></math>,
 the
@@ -372,7 +372,7 @@ as
 Alternatively, we can calculate the adjusted p-value for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>1</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>2</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>3</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>4</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>5</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>6</mn></msub></mrow><annotation encoding="application/x-tex">H_1\cap H_2\cap H_3\cap H_4\cap H_5\cap H_6</annotation></semantics></math>
 as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mi>r</mi><mo stretchy="false" form="prefix">{</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>P</mi><mn>1</mn></msub><mo>≤</mo><mo>min</mo><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mn>1</mn></msub><mo>,</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>∪</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>P</mi><mn>2</mn></msub><mo>≤</mo><mo>min</mo><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mn>1</mn></msub><mo>,</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">Pr\{(P_1\leq \min{\{p_1, p_2\}})\cup (P_2\leq \min{\{p_1, p_2\}})\}</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mi>r</mi><mo stretchy="false" form="prefix">{</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>P</mi><mn>1</mn></msub><mo>≤</mo><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mn>1</mn></msub><mo>,</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><mo stretchy="false" form="postfix">)</mo><mo>∪</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>P</mi><mn>2</mn></msub><mo>≤</mo><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mn>1</mn></msub><mo>,</mo><msub><mi>p</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">Pr\{(P_1\leq \min{\{p_1, p_2\}})\cup (P_2\leq \min{\{p_1, p_2\}})\}</annotation></semantics></math>.</p>
 <p>To implement this procedure, we need to create two subgroups: one for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
@@ -436,10 +436,11 @@ secondary hypotheses<a class="anchor" aria-label="anchor" href="#parametric-test
 </h4>
 <p>In addition to using parametric tests for primary hypotheses, there
 are other ways to improve the Bonferroni-based graphical approaches. One
-way is to apply Simes tests to secondary hypotheses<span class="citation">(Bretz et al. 2011; Lu 2016)</span>. Simes tests
-improve over Bonferroni tests because they may reject an intersection
-hypothesis if all p-values are relatively small, even if they’re larger
-than adjusted significance levels of Bonferroni tests.</p>
+way is to apply Simes tests to secondary hypotheses<span class="citation">(Bretz, Posch, et al. 2011; Lu 2016)</span>. Simes
+tests improve over Bonferroni tests because they may reject an
+intersection hypothesis if all p-values are relatively small, even if
+they’re larger than adjusted significance levels of Bonferroni
+tests.</p>
 <p>For the intersection hypothesis
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>3</mn></msub><mo>∩</mo><msub><mi>H</mi><mn>5</mn></msub></mrow><annotation encoding="application/x-tex">H_3\cap H_5</annotation></semantics></math>,
 hypothesis weights are 0.5 and 0.5, respectively for
@@ -729,11 +730,11 @@ multiple values to assess the sensitivity of this assumption. Regarding
 the correlation between test statistics for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>1</mn></msub><annotation encoding="application/x-tex">H_1</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>4</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>H</mi><mn>6</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H_4 (H_6)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>4</mn></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>H</mi><mn>6</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H_4 (H_6)</annotation></semantics></math>
 and for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mn>2</mn></msub><annotation encoding="application/x-tex">H_2</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>3</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>H</mi><mn>5</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H_3 (H_5)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>3</mn></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>H</mi><mn>5</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">H_3 (H_5)</annotation></semantics></math>,
 they are even more difficult to estimate. Here we use a simple product
 rule, which means that this correlation is a product of correlations of
 the two previously assumed correlations. For example,
@@ -1044,7 +1045,7 @@ with the default setting of <code>precision = 6</code></p>
 <div class="section level2">
 <h2 class="unnumbered" id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>
 </h2>
-<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-bretz-2009-graphical" class="csl-entry">
 Bretz, Frank, Willi Maurer, Werner Branath, and Martin Posch. 2009.
 <span>“A Graphical Approach to Sequentially Rejective Multiple Test
@@ -1054,7 +1055,7 @@ Procedures.”</span> <em>Statistics in Medicine</em> 53 (4): 586–604. <a href
 Bretz, Frank, Willi Maurer, and Gerhard Hommel. 2011. <span>“Test and
 Power Considerations for Multiple Endpoint Analyses Using Sequentially
 Rejective Graphical Procedures.”</span> <em>Statistics in Medicine</em>
-30 (13): 1489–1501. <a href="https://doi.org/10.1002/sim.3988" class="external-link">https://doi.org/10.1002/sim.3988</a>.
+30 (13): 1489–501. <a href="https://doi.org/10.1002/sim.3988" class="external-link">https://doi.org/10.1002/sim.3988</a>.
 </div>
 <div id="ref-bretz-2011-graphical" class="csl-entry">
 Bretz, Frank, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, Willi
@@ -1091,7 +1092,7 @@ Procedures.”</span> <em>Biometrical Journal</em> 59 (5): 918–31. <a href="ht
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

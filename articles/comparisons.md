@@ -1,6 +1,7 @@
 # Comparisons with other packages
 
 ``` r
+
 library(graphicalMCP)
 library(lrstat)
 library(gMCP)
@@ -50,6 +51,7 @@ This process is repeated 1000 times. Weighting strategies are matched
 for all 1000 cases.
 
 ``` r
+
 set.seed(1234)
 identical <- NULL
 for (i in 1:1000) {
@@ -82,6 +84,7 @@ process is repeated 10000 times. Adjusted p-values are matched for all
 10000 cases.
 
 ``` r
+
 set.seed(1234)
 alpha <- 0.025
 identical <- NULL
@@ -114,6 +117,7 @@ different. The maximum absolute difference in local power is 0.0051
 (0.51%) among 1000 cases, which is relatively small.
 
 ``` r
+
 diff <- read.csv(here::here("vignettes/comparisons_power_shortcut.csv"))
 graphicalmcp_power <- subset(diff, procedure == "graphicalMCP")
 gmcp_power <- subset(diff, procedure == "gMCP")
@@ -143,6 +147,7 @@ tests are used for two primary hypotheses. This process is repeated
 10000 times. Adjusted p-values are matched for all 10000 cases.
 
 ``` r
+
 hypotheses <- c(0.5, 0.5, 0, 0)
 transitions <- rbind(
   c(0, 0.5, 0.5, 0),
@@ -201,6 +206,7 @@ are slightly different. The maximum absolute difference in local power
 is 0.0142 (1.42%) among 100 cases, which is small.
 
 ``` r
+
 diff <- read.csv(here::here("vignettes/comparisons_power_parametric.csv"))
 graphicalmcp_power <- subset(diff, procedure == "graphicalMCP")
 gmcp_power <- subset(diff, procedure == "gMCP")
@@ -226,11 +232,12 @@ generated to be used for the graphical MCP. Adjusted p-values are
 calculated and compared using the following functions:
 [`graphicalMCP::graph_test_closure()`](https://openpharma.github.io/graphicalMCP/reference/graph_test_closure.md)
 and
-[`lrstat::fadjpsim()`](https://rdrr.io/pkg/lrstat/man/fadjpsim.html).
+[`lrstat::fadjpsim()`](https://kaifenglu.github.io/lrstat/reference/fadjpsim.html).
 Simes tests are used for two primary hypotheses. This process is
 repeated 10000 times. Adjusted p-values are matched for all 10000 cases.
 
 ``` r
+
 hypotheses <- c(0.5, 0.5, 0, 0)
 eps <- 0.0001
 transitions <- rbind(
@@ -281,8 +288,8 @@ Power simulations are not available in `lrstat` for Simes tests. Thus a
 comparison could be done to compare
 [`graphicalMCP::graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)
 and a manual repetition of
-[`lrstat::fadjpsim()`](https://rdrr.io/pkg/lrstat/man/fadjpsim.html) for
-many sets of marginal power. This process is the same as the above
+[`lrstat::fadjpsim()`](https://kaifenglu.github.io/lrstat/reference/fadjpsim.html)
+for many sets of marginal power. This process is the same as the above
 comparison of adjusted p-values, and thus omitted.
 
 ## Comparisons of closed test procedures with Hochberg tests
@@ -298,6 +305,7 @@ and `p.adjust`. This process is repeated 10000 times. Adjusted p-values
 are matched for all 10000 cases.
 
 ``` r
+
 graph <- hochberg(5)
 
 set.seed(1234)

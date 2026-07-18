@@ -4,8 +4,8 @@
 
 Graphical approaches for multiple comparison procedures (MCPs) are a
 general framework to control the family-wise error rate strongly at a
-pre-specified significance level $0 < \alpha < 1$. This approach
-includes many commonly used MCPs as special cases and is transparent in
+pre-specified significance level $`0<\alpha<1`$. This approach includes
+many commonly used MCPs as special cases and is transparent in
 visualizing MCPs for better communications. `graphicalMCP` is designed
 to design and analyze graphical MCPs in a flexible, informative and
 efficient way.
@@ -17,6 +17,7 @@ efficient way.
 You can install the current release version from *CRAN* with:
 
 ``` r
+
 install.packages("graphicalMCP")
 ```
 
@@ -25,6 +26,7 @@ install.packages("graphicalMCP")
 You can install the current development version from *GitHub* with:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("openpharma/graphicalMCP")
 ```

@@ -4,8 +4,8 @@
 
 Graphical approaches for multiple comparison procedures (MCPs) are a
 general framework to control the familywise error rate strongly as a
-pre-specified significance level $0 < \alpha < 1$. This approach
-includes many commonly used MCPs as special cases and is transparent in
+pre-specified significance level $`0<\alpha<1`$. This approach includes
+many commonly used MCPs as special cases and is transparent in
 visualizing MCPs for better communications. `graphicalMCP` is designed
 to design and analyze graphical MCPs in a flexible, informative and
 efficient way.
@@ -26,6 +26,7 @@ edge is weighted by a transition weight indicating the proportion of
 propagation.
 
 ``` r
+
 library(graphicalMCP)
 # A graph of two primary hypotheses (H1 and H2) and two secondary hypotheses (H3
 # and H4)
@@ -56,6 +57,7 @@ example_graph
 ```
 
 ``` r
+
 plot(example_graph, vertex.size = 60)
 ```
 
@@ -65,11 +67,12 @@ plot(example_graph, vertex.size = 60)
 
 When a hypothesis is removed from the graph, hypothesis and transition
 weights of remaining hypotheses should be updated according to Algorithm
-1 in Bretz et al. (2011). For example, assume that hypotheses H1, H2 and
-H4 are removed from the graph. The updated graph after removing three
-hypotheses is below.
+1 in Bretz, Posch, et al. (2011). For example, assume that hypotheses
+H1, H2 and H4 are removed from the graph. The updated graph after
+removing three hypotheses is below.
 
 ``` r
+
 updated_example <- graph_update(
   example_graph,
   delete = c(TRUE, TRUE, FALSE, TRUE)
@@ -110,6 +113,7 @@ updated_example
 ```
 
 ``` r
+
 plot(updated_example, vertex.size = 60)
 ```
 
@@ -128,6 +132,7 @@ can be found in
 [`vignette("shortcut-testing")`](https://openpharma.github.io/graphicalMCP/articles/shortcut-testing.md).
 
 ``` r
+
 test_results <- graph_test_shortcut(
   example_graph,
   p = c(0.01, 0.005, 0.03, 0.01),
@@ -146,6 +151,7 @@ above. Additional details about closed testing can be found in
 [`vignette("closed-testing")`](https://openpharma.github.io/graphicalMCP/articles/closed-testing.md).
 
 ``` r
+
 test_results_closed <- graph_test_closure(
   example_graph,
   p = c(0.01, 0.005, 0.03, 0.01),
@@ -167,7 +173,7 @@ level `alpha` without multiplicity adjustment. The marginal power is
 usually obtained from other pieces of statistical software.
 [`graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)
 performs power simulations to assess the power after adjusting for the
-graphical MCP (Bretz, Maurer, and Hommel 2011). Assume that the marginal
+graphical MCP (Bretz, Maurer, et al. 2011). Assume that the marginal
 power to reject H1-H4 is 90%, 90%, 80%, and 80% and all test statistics
 are independent of each other. The local power after the multiplicity
 adjustment is 87.7%, 87.7%, 67.2%, and 67.2% respectively for H1-H4.
@@ -177,6 +183,7 @@ and
 [`vignette("closed-testing")`](https://openpharma.github.io/graphicalMCP/articles/closed-testing.md).
 
 ``` r
+
 set.seed(1234)
 power_results <- graph_calculate_power(
   example_graph,
@@ -198,7 +205,7 @@ Graphical Approach to Sequentially Rejective Multiple Test Procedures.”
 Bretz, Frank, Willi Maurer, and Gerhard Hommel. 2011. “Test and Power
 Considerations for Multiple Endpoint Analyses Using Sequentially
 Rejective Graphical Procedures.” *Statistics in Medicine* 30 (13):
-1489–1501. <https://doi.org/10.1002/sim.3988>.
+1489–501. <https://doi.org/10.1002/sim.3988>.
 
 Bretz, Frank, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, Willi
 Maurer, and Kornelius Rohmeyer. 2011. “Graphical Approaches for Multiple

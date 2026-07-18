@@ -1,6 +1,7 @@
 # Graphical multiple comparison procedures based on the closure principle
 
 ``` r
+
 library(gt)
 library(gMCP)
 library(lrstat)
@@ -14,9 +15,9 @@ Consider a confirmatory clinical trial comparing a test treatment
 are two doses of treatment: the low dose and the high dose. There are
 three endpoints included in the multiplicity adjustment strategy, which
 are the primary endpoint (PE) and two secondary endpoints (SE1 and SE2).
-In total, there are six null hypotheses: $H_{1}$, $H_{3}$ and $H_{5}$
+In total, there are six null hypotheses: $`H_1`$, $`H_3`$ and $`H_5`$
 are the primary hypothesis and two secondary hypotheses respectively for
-the low dose versus control; $H_{2}$, $H_{4}$ and $H_{6}$ are the
+the low dose versus control; $`H_2`$, $`H_4`$ and $`H_6`$ are the
 primary hypothesis and two secondary hypotheses respectively for the
 high dose versus control.
 
@@ -27,11 +28,11 @@ considered equally important, which means that rejecting the primary
 hypothesis for either dose versus control leads to a successful trial.
 Regarding secondary hypotheses, each one is tested only if its
 corresponding primary hypothesis has been rejected. This means that
-$H_{3}$ and $H_{5}$ are tested only after $H_{1}$ has been rejected;
-$H_{4}$ and $H_{6}$ are tested only after $H_{2}$ has been rejected.
+$`H_3`$ and $`H_5`$ are tested only after $`H_1`$ has been rejected;
+$`H_4`$ and $`H_6`$ are tested only after $`H_2`$ has been rejected.
 
 In addition, there are some statistical considerations to complete the
-graph. The primary hypotheses $H_{1}$ and $H_{2}$ will have an equal
+graph. The primary hypotheses $`H_1`$ and $`H_2`$ will have an equal
 hypothesis weight of 0.5. The secondary hypotheses have a hypothesis
 weight of 0. When a primary hypothesis has been rejected, its weight
 will propagate along three outgoing edges: one to the other primary
@@ -40,15 +41,16 @@ the other primary hypothesis will have a transition weight of 0.5; the
 two edges to the descendant secondary hypotheses will have an equal
 transition weight of 0.25. Between the secondary hypotheses for each
 dose-control comparison, we will have an edge of a transition weight of
-1 (or very close to 1 to allow $\epsilon$ edges). The hypothesis weights
-for a dose-control comparison group will be propagated to the primary
-hypothesis for the other dose-control comparison, but only after all
-hypotheses in the first dose-control comparison group have been deleted.
-With these specifications, we can create the following graph.
+1 (or very close to 1 to allow $`\epsilon`$ edges). The hypothesis
+weights for a dose-control comparison group will be propagated to the
+primary hypothesis for the other dose-control comparison, but only after
+all hypotheses in the first dose-control comparison group have been
+deleted. With these specifications, we can create the following graph.
 
 ### Create a graph
 
 ``` r
+
 hypotheses <- c(0.5, 0.5, 0, 0, 0, 0)
 
 epsilon <- 1e-5
@@ -88,7 +90,7 @@ plot(
 
 ### Bonferroni tests
 
-Given a set of p-values for $H_{1},\ldots,H_{6}$, the graphical multiple
+Given a set of p-values for $`H_1, \ldots, H_6`$, the graphical multiple
 comparison procedure can be performed to control the family-wise error
 rate (FWER) at the significance level `alpha`. For one-sided p-values,
 `alpha` is often set to 0.025 (default). First, we perform a
@@ -98,6 +100,7 @@ rejected. These results are identical to using
 [`graph_test_shortcut()`](https://openpharma.github.io/graphicalMCP/reference/graph_test_shortcut.md).
 
 ``` r
+
 p_values <- c(0.015, 0.013, 0.01, 0.007, 0.1, 0.0124)
 test_results <- graph_test_closure(
   g,
@@ -137,6 +140,7 @@ equal to the maximum of adjusted p-values across intersections involving
 that hypothesis.
 
 ``` r
+
 test_results_verbose <-
   graph_test_closure(
     g,
@@ -167,6 +171,7 @@ it have been rejected. An intersection hypothesis is rejected if *any*
 null hypotheses within it have been rejected.
 
 ``` r
+
 test_results_test_values <-
   graph_test_closure(
     g,
@@ -202,53 +207,51 @@ hypotheses in addition to parametric tests to primary hypotheses.
 
 In this example, we assume that the test statistics for primary
 hypotheses follow an asymptotic bivariate normal distribution. Under
-their null hypotheses $H_{1}$ and $H_{2}$, the mean of the distribution
-is 0. The correlation between test statistics for $H_{1}$ and $H_{2}$
+their null hypotheses $`H_1`$ and $`H_2`$, the mean of the distribution
+is 0. The correlation between test statistics for $`H_1`$ and $`H_2`$
 can be calculated as a function of sample size. Assume that the sample
-size for the control, the low and the high doses is $n_{0}$, $n_{1}$ and
-$n_{2}$, respectively. Then the correlation between test statistics for
-$H_{1}$ and $H_{2}$ is
-$\rho_{12} = \left( \frac{n_{1}}{n_{1} + n_{0}} \right)^{1/2}\left( \frac{n_{2}}{n_{2} + n_{0}} \right)^{1/2}$.
+size for the control, the low and the high doses is $`n_0`$, $`n_1`$ and
+$`n_2`$, respectively. Then the correlation between test statistics for
+$`H_1`$ and $`H_2`$ is
+$`\rho_{12}=\left(\frac{n_1}{n_1+n_0}\right)^{1/2}\left(\frac{n_2}{n_2+n_0}\right)^{1/2}`$.
 Under the equal randomization, this correlation is 0.5.
 
 For the intersection hypothesis
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4} \cap H_{5} \cap H_{6}$,
-hypothesis weights are 0.5, 0.5, 0, 0, 0, and 0, respectively for
-$H_{1},\ldots,H_{6}$. Assume one-sided p-values for these hypotheses are
-$p_{1},\ldots,p_{6}$, respectively. The intersection hypothesis is
-rejected by the Bonferroni test if $p_{1} \leq 0.5\alpha$ or
-$p_{2} \leq 0.5\alpha$. Alternatively, a parametric test utilizes the
-correlation between test statistics
-$t_{1} = \Phi^{- 1}\left( 1 - p_{1} \right)$ and
-$t_{2} = \Phi^{- 1}\left( 1 - p_{2} \right)$. The intersection
-hypothesis can be rejected if $p_{1} \leq c \times 0.5\alpha$ or
-$p_{2} \leq c \times 0.5\alpha$, where the $c$ value is the adjustment
-due to the correlation between $t_{1}$ and $t_{2}$. More specifically,
-$c$ can be solved as a solution to
-$Pr\{\left( p_{1} \leq c \times 0.5\alpha \right) \cup \left( p_{2} \leq c \times 0.5\alpha \right)\} = \alpha$.
-For a given correlation $\rho_{12}$, the $c$ value can be solved using
-the `uniroot` function and the `mvtnorm` package. For example, if
-$\rho_{12} = 0.5$, the $c$ value is 1.078. Then we can obtain the
-adjusted significance level for $H_{1}$ and $H_{2}$ as
-$c \times 0.5\alpha$. Alternatively, we can calculate the adjusted
-p-value for
-$H_{1} \cap H_{2} \cap H_{3} \cap H_{4} \cap H_{5} \cap H_{6}$ as
-$Pr\{\left( P_{1} \leq \min{\{ p_{1},p_{2}\}} \right) \cup \left( P_{2} \leq \min{\{ p_{1},p_{2}\}} \right)\}$.
+$`H_1\cap H_2\cap H_3\cap H_4\cap H_5\cap H_6`$, hypothesis weights are
+0.5, 0.5, 0, 0, 0, and 0, respectively for $`H_1,\ldots, H_6`$. Assume
+one-sided p-values for these hypotheses are $`p_1,\ldots,p_6`$,
+respectively. The intersection hypothesis is rejected by the Bonferroni
+test if $`p_1\leq 0.5\alpha`$ or $`p_2\leq 0.5\alpha`$. Alternatively, a
+parametric test utilizes the correlation between test statistics
+$`t_1=\Phi^{-1}(1 - p_1)`$ and $`t_2=\Phi^{-1}(1 - p_2)`$. The
+intersection hypothesis can be rejected if $`p_1\leq c\times 0.5\alpha`$
+or $`p_2\leq c\times 0.5\alpha`$, where the $`c`$ value is the
+adjustment due to the correlation between $`t_1`$ and $`t_2`$. More
+specifically, $`c`$ can be solved as a solution to
+$`Pr\{(p_1\leq c\times 0.5\alpha)\cup (p_2\leq c\times 0.5\alpha)\}=\alpha`$.
+For a given correlation $`\rho_{12}`$, the $`c`$ value can be solved
+using the `uniroot` function and the `mvtnorm` package. For example, if
+$`\rho_{12}=0.5`$, the $`c`$ value is 1.078. Then we can obtain the
+adjusted significance level for $`H_1`$ and $`H_2`$ as
+$`c\times 0.5\alpha`$. Alternatively, we can calculate the adjusted
+p-value for $`H_1\cap H_2\cap H_3\cap H_4\cap H_5\cap H_6`$ as
+$`Pr\{(P_1\leq \min{\{p_1, p_2\}})\cup (P_2\leq \min{\{p_1, p_2\}})\}`$.
 
 To implement this procedure, we need to create two subgroups: one for
-$H_{1}$ and $H_{2}$, and one for the rest of the hypotheses. For the
+$`H_1`$ and $`H_2`$, and one for the rest of the hypotheses. For the
 first subgroup of hypotheses, we apply parametric tests; for the second
 subgroup (and its subsets), we apply Bonferroni tests. Three additional
 inputs are needed: to specify the grouping information with
 `test_groups`, to identify the types of tests for every subgroup with
 `test_types`, and to provide the correlation matrix for parametric tests
 with `test_corr`. Assume the correlation is 0.5 between test statistics
-for primary hypotheses. The procedure rejects $H_{1}$ and $H_{2}$, but
+for primary hypotheses. The procedure rejects $`H_1`$ and $`H_2`$, but
 no others. Compared with the Bonferroni-based graphical approach which
 didn’t rejected any hypothesis, this illustrates the power improvement
 of using parametric tests over Bonferroni tests.
 
 ``` r
+
 corr_12 <- matrix(0.5, nrow = 2, ncol = 2)
 diag(corr_12) <- 1
 
@@ -291,47 +294,49 @@ head(test_results_parametric$test_values$results)
 
 In addition to using parametric tests for primary hypotheses, there are
 other ways to improve the Bonferroni-based graphical approaches. One way
-is to apply Simes tests to secondary hypotheses(Bretz et al. 2011; Lu
-2016). Simes tests improve over Bonferroni tests because they may reject
-an intersection hypothesis if all p-values are relatively small, even if
-they’re larger than adjusted significance levels of Bonferroni tests.
+is to apply Simes tests to secondary hypotheses(Bretz, Posch, et al.
+2011; Lu 2016). Simes tests improve over Bonferroni tests because they
+may reject an intersection hypothesis if all p-values are relatively
+small, even if they’re larger than adjusted significance levels of
+Bonferroni tests.
 
-For the intersection hypothesis $H_{3} \cap H_{5}$, hypothesis weights
-are 0.5 and 0.5, respectively for $H_{3}$ and $H_{5}$. The intersection
-hypothesis is rejected by the Bonferroni test if $p_{3} \leq 0.5\alpha$
-or $p_{5} \leq 0.5\alpha$. In addition to these conditions, the Simes
-test can also reject the intersection hypothesis if both $p_{3}$ and
-$p_{5}$ are less than or equal to $\alpha$. In order to control the Type
-I error for the Simes test, a distributional requirement is needed,
-which is called $MTP_{2}$(Sarkar 1998). In this case, it means that the
-correlation between test statistics for $H_{3}$ and $H_{5}$ should be
+For the intersection hypothesis $`H_3\cap H_5`$, hypothesis weights are
+0.5 and 0.5, respectively for $`H_3`$ and $`H_5`$. The intersection
+hypothesis is rejected by the Bonferroni test if $`p_3\leq 0.5\alpha`$
+or $`p_5\leq 0.5\alpha`$. In addition to these conditions, the Simes
+test can also reject the intersection hypothesis if both $`p_3`$ and
+$`p_5`$ are less than or equal to $`\alpha`$. In order to control the
+Type I error for the Simes test, a distributional requirement is needed,
+which is called $`MTP_2`$(Sarkar 1998). In this case, it means that the
+correlation between test statistics for $`H_3`$ and $`H_5`$ should be
 non-negative.
 
 To illustrate the possibility of using mixed tests in this example, we
 keep parametric tests for primary hypotheses and apply Simes tests for
 secondary hypotheses. There are two sets of secondary hypotheses:
-$H_{3}$ and $H_{5}$ for the secondary hypotheses for the low dose versus
-control, and $H_{4}$ and $H_{6}$ for the secondary hypotheses for the
+$`H_3`$ and $`H_5`$ for the secondary hypotheses for the low dose versus
+control, and $`H_4`$ and $`H_6`$ for the secondary hypotheses for the
 high dose versus control. It is believed that the correlation between
-test statistics for $H_{3}$ and $H_{5}$ is non-negative and it is the
-same case for $H_{4}$ and $H_{6}$. Thus one can apply Simes tests to
-$H_{3}$ and $H_{5}$, and separately to $H_{4}$ and $H_{6}$. Note that
-this is different from applying Simes tests to all $H_{3}\ldots,H_{6}$
-which requires a stronger $MTP_{2}$ condition.
+test statistics for $`H_3`$ and $`H_5`$ is non-negative and it is the
+same case for $`H_4`$ and $`H_6`$. Thus one can apply Simes tests to
+$`H_3`$ and $`H_5`$, and separately to $`H_4`$ and $`H_6`$. Note that
+this is different from applying Simes tests to all $`H_3\ldots,H_6`$
+which requires a stronger $`MTP_2`$ condition.
 
-To implement this procedure, we create three subgroups: one for $H_{1}$
-and $H_{2}$, one for $H_{3}$ and $H_{5}$, and one for $H_{4}$ and
-$H_{6}$. For the first subgroup of hypotheses, we apply the parametric
+To implement this procedure, we create three subgroups: one for $`H_1`$
+and $`H_2`$, one for $`H_3`$ and $`H_5`$, and one for $`H_4`$ and
+$`H_6`$. For the first subgroup of hypotheses, we apply the parametric
 tests; for the second and the third subgroups, we apply separate Simes
 tests. Assume the correlation is 0.5 between test statistics for primary
-hypotheses. The procedure rejects $H_{1}$, $H_{2}$, $H_{4}$, $H_{6}$,
-and $H_{3}$. Compared to the results of only using parametric tests for
+hypotheses. The procedure rejects $`H_1`$, $`H_2`$, $`H_4`$, $`H_6`$,
+and $`H_3`$. Compared to the results of only using parametric tests for
 primary hypotheses (and Bonferroni tests for secondary hypotheses),
-$H_{3}$, $H_{4}$ and $H_{6}$ are the additional hypotheses rejected
+$`H_3`$, $`H_4`$ and $`H_6`$ are the additional hypotheses rejected
 because of using Simes tests, showing the power improvement of using
 Simes tests.
 
 ``` r
+
 test_results_parametric_simes <-
   graph_test_closure(
     g,
@@ -390,7 +395,7 @@ the better. Assume that the proportions are 0.181 for the low and the
 high doses, and 0.3 for control. Using the equal randomization among the
 three treatment groups, the clinical trial team chooses a total sample
 size of 600 with 200 per group. This leads to a marginal power of 80%
-for $H_{1}$ and $H_{2}$, respectively, using the two-sample test for
+for $`H_1`$ and $`H_2`$, respectively, using the two-sample test for
 difference in proportions with unpooled variance each at one-sided
 significance level 0.025. In this calculation, we use the marginal power
 to combine the information from the treatment effect, any nuisance
@@ -402,6 +407,7 @@ relationship with the noncentrality parameter, which is illustrated
 below.
 
 ``` r
+
 alpha <- 0.025
 prop <- c(0.3, 0.181, 0.181)
 sample_size <- rep(200, 3)
@@ -440,12 +446,13 @@ and 5 for control. Also assume that the mean change from baseline for
 SE2 is the reduction of 8 and 9, respectively for the low and the high
 doses, and 6 for control. Further assume a known common standard
 deviation of 10. Given the sample size of 200 per treatment group, the
-marginal power is 71% and 90% for $H_{3}$ and $H_{4}$, respectively and
-52% and 85% for $H_{5}$ and $H_{6}$, respectively using the two-sample
-$z$-test for the difference in means each at the one-sided significance
-level 0.025.
+marginal power is 71% and 90% for $`H_3`$ and $`H_4`$, respectively and
+52% and 85% for $`H_5`$ and $`H_6`$, respectively using the two-sample
+$`z`$-test for the difference in means each at the one-sided
+significance level 0.025.
 
 ``` r
+
 mean_change_se1 <- c(5, 7.5, 8.25)
 sd <- rep(10, 3)
 variance <- sd[-1]^2 / sample_size[-1] + sd[1]^2 / sample_size[1]
@@ -491,32 +498,32 @@ In addition to the marginal power, we also need to make assumptions
 about the joint distribution of test statistics. In this example, we
 assume that they follow a multivariate normal distribution which means
 they’re defined by the noncentrality parameters above and the
-correlation matrix $R$. To obtain the correlations, it is helpful to
+correlation matrix $`R`$. To obtain the correlations, it is helpful to
 understand that there are two types of correlations in this example. The
 correlation between two dose-control comparisons for the same endpoint
 and the correlation between endpoints. The former correlation can be
 calculated as a function of sample size. For example, the correlation
-between test statistics for $H_{1}$ and $H_{2}$ is
-$\rho_{12} = \left( \frac{n_{1}}{n_{1} + n_{0}} \right)^{1/2}\left( \frac{n_{2}}{n_{3} + n_{0}} \right)^{1/2}$.
+between test statistics for $`H_1`$ and $`H_2`$ is
+$`\rho_{12}=\left(\frac{n_1}{n_1+n_0}\right)^{1/2}\left(\frac{n_2}{n_3+n_0}\right)^{1/2}`$.
 Under the equal randomization, this correlation is 0.5. The correlation
-between test statistics for $H_{3}$ and $H_{4}$ and for $H_{5}$ and
-$H_{6}$ is the same as the above. On the other hand, the correlation
+between test statistics for $`H_3`$ and $`H_4`$ and for $`H_5`$ and
+$`H_6`$ is the same as the above. On the other hand, the correlation
 between endpoints for the same dose-control comparison is often
 estimated based on prior knowledge or from previous trials. Without the
 information, we assume it to be
-$\rho_{13} = \rho_{15} = \rho_{24} = \rho_{26} = \rho_{35} = \rho_{46} = 0.5$.
-In practice, one could set this correlation as a parameter and try
-multiple values to assess the sensitivity of this assumption. Regarding
-the correlation between test statistics for $H_{1}$ and
-$H_{4}\left( H_{6} \right)$ and for $H_{2}$ and
-$H_{3}\left( H_{5} \right)$, they are even more difficult to estimate.
+$`\rho_{13}=\rho_{15}=\rho_{24}=\rho_{26}=\rho_{35}=\rho_{46}=0.5`$. In
+practice, one could set this correlation as a parameter and try multiple
+values to assess the sensitivity of this assumption. Regarding the
+correlation between test statistics for $`H_1`$ and $`H_4 (H_6)`$ and
+for $`H_2`$ and $`H_3 (H_5)`$, they are even more difficult to estimate.
 Here we use a simple product rule, which means that this correlation is
 a product of correlations of the two previously assumed correlations.
-For example, $\rho_{14} = \rho_{12}*\rho_{24}$ and
-$\rho_{23} = \rho_{12}*\rho_{13}$. In practice, further assumptions may
+For example, $`\rho_{14}=\rho_{12}*\rho_{24}`$ and
+$`\rho_{23}=\rho_{12}*\rho_{13}`$. In practice, further assumptions may
 be made and tested, instead of using the product rule.
 
 ``` r
+
 corr <- matrix(0, nrow = 6, ncol = 6)
 
 corr[1, 2] <-
@@ -569,6 +576,7 @@ reject all hypotheses These are the default outputs from the
 success criteria to define other versions of “power”.
 
 ``` r
+
 success_fns <- list(
   # Probability to reject H1
   H1 = function(x) x[1],
@@ -601,7 +609,7 @@ graphical multiple comparison procedure at one-sided significance level
 procedure, the procedure using parametric tests for primary hypotheses,
 and the procedure using parametric tests for primary hypotheses and
 Simes tests for two sets of secondary hypotheses separately. The local
-power for hypotheses $H_{1},\ldots,H_{6}$ is - 0.760, 0.752, 0.510,
+power for hypotheses $`H_1, \ldots, H_6`$ is - 0.760, 0.752, 0.510,
 0.665, 0.391, and 0.625, respectively using the Bonferroni-based
 procedure, - 0.764, 0.756, 0.511, 0.668, 0.392, and 0.628, respectively
 using the procedure using parametric tests for primary hypotheses, -
@@ -612,6 +620,7 @@ power is improved for all hypotheses after parametric tests and Simes
 tests being applied over the Bonferroni-based procedure.
 
 ``` r
+
 set.seed(1234)
 power_bonferroni <- graph_calculate_power(
   g,
@@ -681,6 +690,7 @@ of `indent = 2` - The precision of numeric values (i.e., the number of
 decimal places) with the default setting of `precision = 6`
 
 ``` r
+
 set.seed(1234)
 power_verbose_output_parametric_simes <- graph_calculate_power(
   g,
@@ -825,7 +835,7 @@ Graphical Approach to Sequentially Rejective Multiple Test Procedures.”
 Bretz, Frank, Willi Maurer, and Gerhard Hommel. 2011. “Test and Power
 Considerations for Multiple Endpoint Analyses Using Sequentially
 Rejective Graphical Procedures.” *Statistics in Medicine* 30 (13):
-1489–1501. <https://doi.org/10.1002/sim.3988>.
+1489–501. <https://doi.org/10.1002/sim.3988>.
 
 Bretz, Frank, Martin Posch, Ekkehard Glimm, Florian Klinglmueller, Willi
 Maurer, and Kornelius Rohmeyer. 2011. “Graphical Approaches for Multiple

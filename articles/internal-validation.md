@@ -1,6 +1,7 @@
 # Power simulations using multiple approaches for internal validation
 
 ``` r
+
 library(graphicalMCP)
 ```
 
@@ -50,6 +51,7 @@ via respectively the adjusted p-value approach and the adjusted
 significance level approach.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_bonferroni.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))
@@ -70,6 +72,7 @@ significance level approach. Two test groups are used with randomly
 assigned hypotheses.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_hochberg.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))
@@ -90,6 +93,7 @@ significance level approach. Two test groups are used with randomly
 assigned hypotheses.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_simes.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))
@@ -110,6 +114,7 @@ significance level approach. Two test groups are used with randomly
 assigned hypotheses.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_parametric.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))
@@ -131,6 +136,7 @@ assigned hypotheses. Two test types are randomly picked among
 Bonferroni, Hochberg and Simes tests.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_mixed.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))
@@ -153,6 +159,7 @@ group and the test type for the second test group is randomly picked
 among Bonferroni, Hochberg and Simes tests.
 
 ``` r
+
 out <- read.csv(here::here("vignettes/internal-validation_parametric-mixed.csv"))
 # Matching power using the adjusted p-value approach
 all.equal(out$adjusted_p, rep(TRUE, nrow(out)))

@@ -1,6 +1,7 @@
 # Sequentially rejective graphical multiple comparison procedures based on Bonferroni tests
 
 ``` r
+
 library(gt)
 library(graphicalMCP)
 ```
@@ -12,9 +13,9 @@ Consider a confirmatory clinical trial comparing a test treatment
 are two doses of treatment: the low dose and the high dose. There are
 two endpoints included in the multiplicity adjustment strategy, which
 are the primary endpoint (PE) and the secondary endpoint (SE). In total,
-there are four null hypotheses: $H_{1}$ and $H_{3}$ are the primary and
+there are four null hypotheses: $`H_1`$ and $`H_3`$ are the primary and
 the secondary hypotheses respectively for the low dose versus control;
-$H_{2}$ and $H_{4}$ are the primary and the secondary hypotheses
+$`H_2`$ and $`H_4`$ are the primary and the secondary hypotheses
 respectively for the high dose versus control.
 
 There are clinical considerations which constrain the structure of
@@ -24,11 +25,11 @@ considered equally important, which means that rejecting the primary
 hypothesis for either dose versus control leads to a successful trial.
 Regarding secondary hypotheses, each one is tested only if its
 corresponding primary hypothesis has been rejected. This means that
-$H_{3}$ is tested only after $H_{1}$ has been rejected; $H_{4}$ is
-tested only after $H_{2}$ has been rejected.
+$`H_3`$ is tested only after $`H_1`$ has been rejected; $`H_4`$ is
+tested only after $`H_2`$ has been rejected.
 
 In addition, there are some statistical considerations to complete the
-graph. The primary hypotheses $H_{1}$ and $H_{2}$ will have an equal
+graph. The primary hypotheses $`H_1`$ and $`H_2`$ will have an equal
 hypothesis weight of 0.5. The secondary hypotheses will have a
 hypothesis weight of 0. When a primary hypothesis has been rejected, its
 weight will be propagated along two outgoing edges: One to the other
@@ -42,6 +43,7 @@ specifications, we can create the following graph.
 ## Create the graph
 
 ``` r
+
 hypotheses <- c(0.5, 0.5, 0, 0)
 transitions <- rbind(
   c(0, 0.5, 0.5, 0),
@@ -62,18 +64,19 @@ plot(g, vertex.size = 60)
 
 ### Adjusted p-values and rejections
 
-Given a set of p-values for $H_{1},\ldots,H_{4}$, the graphical multiple
+Given a set of p-values for $`H_1, \ldots, H_4`$, the graphical multiple
 comparison procedure can be performed to control the familywise error
 rate (FWER) at the significance level `alpha`. The `graph_test_shortcut`
 function is agnostic to one-sided or two-sided tests. For one-sided
 p-values, `alpha` is often set to 0.025 (default); for two-sided
 p-values, `alpha` is often set to 0.05. We consider one-sided tests
 here. A hypothesis is rejected if its adjusted p-value is less than or
-equal to `alpha`. After running the procedure, hypotheses $H_{1}$,
-$H_{2}$, and $H_{4}$ are rejected with their adjusted p-value
+equal to `alpha`. After running the procedure, hypotheses $`H_1`$,
+$`H_2`$, and $`H_4`$ are rejected with their adjusted p-value
 calculated.
 
 ``` r
+
 p_values <- c(0.018, 0.01, 0.105, 0.006)
 test_results <- graph_test_shortcut(g, p = p_values, alpha = 0.025)
 
@@ -87,8 +90,8 @@ test_results$outputs$rejected # Rejections
 
 ### Obtain final and intermediate graphs after rejections
 
-The final graph is the graph after removing rejected hypotheses $H_{1}$,
-$H_{2}$, and $H_{4}$. It can be obtained via
+The final graph is the graph after removing rejected hypotheses $`H_1`$,
+$`H_2`$, and $`H_4`$. It can be obtained via
 `test_results$outputs$graph`. Rejected hypotheses get a hypothesis
 weight of `NA` and a transition weight of `NA`. This is based on the
 printing method of `print.updated_graph`. We can also obtain the non-NA
@@ -99,19 +102,20 @@ hypotheses get a 0 hypothesis weight and a 0 transition weight. This is
 mainly for internal calculation and updating of graphs.
 
 If we are also interested in intermediate graphs - for example, the
-graph after $H_{2}$ and $H_{1}$ are rejected - we can specify
+graph after $`H_2`$ and $`H_1`$ are rejected - we can specify
 `verbose = TRUE` in `graph_test_shortcut`. Note that intermediate graphs
 depend on the order of rejections, i.e., the sequence of hypotheses
 being rejected. The default order is defined by the increasing adjusted
 p-values, followed by the earlier hypothesis numbering in the case of
 ties. In this example, the default order of rejection is
-$\left. H_{2}\rightarrow H_{1}\rightarrow H_{4} \right.$. To obtain
-intermediate graphs based on this order of rejection, one can specify
+$`H_2\rightarrow H_1\rightarrow H_4`$. To obtain intermediate graphs
+based on this order of rejection, one can specify
 `test_results_verbose$details$results`. For example, the graph after
-$H_{2}$ and $H_{1}$ being rejected is given by
+$`H_2`$ and $`H_1`$ being rejected is given by
 `test_results_verbose$details$results[[3]]`.
 
 ``` r
+
 test_results$outputs$graph # Final graph after H1, H2 and H4 rejected (as NA's)
 #> Updated graph
 #> 
@@ -165,18 +169,18 @@ test_results_verbose$details$results[[3]]
 ### Obtain possible orders of rejections
 
 The order of rejections may not be unique and not all orders are valid.
-For this example, the rejected hypotheses are $H_{1}$, $H_{2}$ and
-$H_{4}$. The default order of rejections is
-$\left. H_{2}\rightarrow H_{1}\rightarrow H_{4} \right.$. Another valid
-order of rejections is
-$\left. H_{2}\rightarrow H_{4}\rightarrow H_{1} \right.$. However, the
-first rejected hypothesis can not be $H_{1}$ or $H_{4}$. To obtain all
+For this example, the rejected hypotheses are $`H_1`$, $`H_2`$ and
+$`H_4`$. The default order of rejections is
+$`H_2 \rightarrow H_1 \rightarrow H_4`$. Another valid order of
+rejections is $`H_2 \rightarrow H_4 \rightarrow H_1`$. However, the
+first rejected hypothesis can not be $`H_1`$ or $`H_4`$. To obtain all
 possible rejection orders, one can use the function
 `graph_rejection_orderings`. Then intermediate and final graphs can be
 obtained by using the function `graph_update` with a particular order of
 rejections.
 
 ``` r
+
 # Obtain all valid orders of rejections
 orders <- graph_rejection_orderings(test_results)$valid_orderings
 orders
@@ -212,18 +216,18 @@ An equivalent way to obtain rejections is by adjusting significance
 levels. A hypothesis is rejected if its p-value is less than or equal to
 its adjusted significance level. The adjusted significance levels are
 calculated in the same order as adjusted p-values:
-$\left. H_{2}\rightarrow H_{1}\rightarrow H_{4} \right.$, and there are
-four steps of checking for rejections. First, $H_{2}$ is rejected at an
-adjusted significance level of `0.5 * alpha`. Second, $H_{1}$ is
-rejected at an adjusted significance level of `0.75 * alpha`, after
-$H_{2}$ is rejected. Third, $H_{4}$ is rejected at an adjusted
-significance level of `0.5 * alpha`, after $H_{1}$ and $H_{2}$ are
-rejected. Fourth and finally, $H_{3}$ cannot be rejected at an adjusted
-significance level of `alpha`, after $H_{1}$, $H_{2}$ and $H_{4}$ are
-rejected. These results can be obtained by specifying
-`test_values = TRUE`.
+$`H_2 \rightarrow H_1 \rightarrow H_4`$, and there are four steps of
+checking for rejections. First, $`H_2`$ is rejected at an adjusted
+significance level of `0.5 * alpha`. Second, $`H_1`$ is rejected at an
+adjusted significance level of `0.75 * alpha`, after $`H_2`$ is
+rejected. Third, $`H_4`$ is rejected at an adjusted significance level
+of `0.5 * alpha`, after $`H_1`$ and $`H_2`$ are rejected. Fourth and
+finally, $`H_3`$ cannot be rejected at an adjusted significance level of
+`alpha`, after $`H_1`$, $`H_2`$ and $`H_4`$ are rejected. These results
+can be obtained by specifying `test_values = TRUE`.
 
 ``` r
+
 test_results_test_values <- graph_test_shortcut(
   g,
   p = p_values,
@@ -263,7 +267,7 @@ proportion is preferred. Assume that the proportions are 0.181 for the
 low and the high doses, and 0.3 for control. Using the equal
 randomization among the three treatment groups, the clinical trial team
 chooses a total sample size of 600 with 200 per group. This leads to a
-marginal power of 80% for $H_{1}$ and $H_{2}$, respectively, using the
+marginal power of 80% for $`H_1`$ and $`H_2`$, respectively, using the
 two-sample test for difference in proportions with unpooled variance
 each at one-sided significance level 0.025. In this calculation, we use
 the marginal power to combine the information from the treatment effect,
@@ -275,6 +279,7 @@ relationship with the noncentrality parameter, which is illustrated
 below.
 
 ``` r
+
 alpha <- 0.025
 prop <- c(0.3, 0.181, 0.181)
 sample_size <- rep(200, 3)
@@ -308,11 +313,12 @@ greater reduction is preferred. Assume that the mean change from
 baseline is the reduction of 7.5 and 8.25, respectively for the low and
 the high doses, and 5 for control. Further assume a known common
 standard deviation of 10. Given the sample size of 200 per treatment
-group, the marginal power is 71% and 90% for $H_{3}$ and $H_{4}$,
-respectively, using the two-sample $z$-test for the difference in means
-each at the one-sided significance level 0.025.
+group, the marginal power is 71% and 90% for $`H_3`$ and $`H_4`$,
+respectively, using the two-sample $`z`$-test for the difference in
+means each at the one-sided significance level 0.025.
 
 ``` r
+
 mean_change <- c(5, 7.5, 8.25)
 sd <- rep(10, 3)
 variance <- sd[-1]^2 / sample_size[-1] + sd[1]^2 / sample_size[1]
@@ -339,30 +345,30 @@ In addition to the marginal power, we also need to make assumptions
 about the joint distribution of test statistics. In this example, we
 assume that they follow a multivariate normal distribution with means
 defined by the noncentrality parameters above and the correlation matrix
-$R$. To obtain the correlations, it is helpful to understand that there
-are two types of correlations in this example. The correlation between
-two dose-control comparisons for the same endpoint and the correlation
-between endpoints. The former correlation can be calculated as a
-function of sample size. For example, the correlation between test
-statistics for $H_{1}$ and $H_{2}$ is
-$\rho_{12} = \left( \frac{n_{1}}{n_{1} + n_{0}} \right)^{1/2}\left( \frac{n_{2}}{n_{3} + n_{0}} \right)^{1/2}$.
+$`R`$. To obtain the correlations, it is helpful to understand that
+there are two types of correlations in this example. The correlation
+between two dose-control comparisons for the same endpoint and the
+correlation between endpoints. The former correlation can be calculated
+as a function of sample size. For example, the correlation between test
+statistics for $`H_1`$ and $`H_2`$ is
+$`\rho_{12}=\left(\frac{n_1}{n_1+n_0}\right)^{1/2}\left(\frac{n_2}{n_3+n_0}\right)^{1/2}`$.
 Under the equal randomization, this correlation is 0.5. The correlation
-between test statistics for $H_{3}$ and $H_{4}$ is the same as the
+between test statistics for $`H_3`$ and $`H_4`$ is the same as the
 above. On the other hand, the correlation between endpoints for the same
 dose-control comparison is often estimated based on prior knowledge or
 from previous trials. Without the information, we assume it to be
-$\rho_{13} = \rho_{24} = 0.5$. In practice, one could set this
-correlation as a parameter and try multiple values to assess the
-sensitivity of this assumption. Regarding the correlation between test
-statistics for $H_{1}$ and $H_{4}$ and for $H_{2}$ and $H_{3}$, they are
-even more difficult to estimate. Here we use a simple product rule,
-which means that this correlation is a product of correlations of the
-two previously assumed correlations. For example,
-$\rho_{14} = \rho_{12}*\rho_{24}$ and $\rho_{23} = \rho_{12}*\rho_{13}$.
-In practice, one may make further assumptions instead of using the
-product rule.
+$`\rho_{13}=\rho_{24}=0.5`$. In practice, one could set this correlation
+as a parameter and try multiple values to assess the sensitivity of this
+assumption. Regarding the correlation between test statistics for
+$`H_1`$ and $`H_4`$ and for $`H_2`$ and $`H_3`$, they are even more
+difficult to estimate. Here we use a simple product rule, which means
+that this correlation is a product of correlations of the two previously
+assumed correlations. For example, $`\rho_{14}=\rho_{12}*\rho_{24}`$ and
+$`\rho_{23}=\rho_{12}*\rho_{13}`$. In practice, one may make further
+assumptions instead of using the product rule.
 
 ``` r
+
 corr <- matrix(0, nrow = 4, ncol = 4)
 
 corr[1, 2] <-
@@ -404,6 +410,7 @@ In addition, a user can customize success criteria to define other
 versions of “power”.
 
 ``` r
+
 success_fns <- list(
   # Probability to reject H1
   H1 = function(x) x[1],
@@ -431,16 +438,17 @@ Given the above inputs, we can estimate “power” via simulation for the
 graphical multiple comparison procedure at one-sided significance level
 `alpha = 0.025` using `sim_n = 1e5` simulations and the random seed
 1234. The local power is 0.758, 0.765, 0.689, and 0.570, respectively
-for $H_{1},\ldots,H_{4}$. Note that the local power is lower than the
+for $`H_1, \ldots, H_4`$. Note that the local power is lower than the
 marginal power because the former is adjusted for multiplicity. The
 power to reject at least one hypothesis is 0.856 and the power to reject
 all hypotheses is 0.512. The expected number of rejections is 2.782. For
 the last two user-defined success criteria, the probability to reject
-both $H_{1}$ and $H_{2}$ is 0.667, and the probability to reject at
-least one pair of $(H_{1}$ and $H_{3})$ and $(H_{2}$ and $H_{4})$ is
+both $`H_1`$ and $`H_2`$ is 0.667, and the probability to reject at
+least one pair of $`(H_1`$ and $`H_3)`$ and $`(H_2`$ and $`H_4)`$ is
 0.747.
 
 ``` r
+
 set.seed(1234)
 power_output <- graph_calculate_power(
   g,
@@ -484,6 +492,7 @@ can change the following:
   digits) with the default setting of `precision = 4`
 
 ``` r
+
 set.seed(1234)
 power_verbose_output <- graph_calculate_power(
   g,
@@ -584,4 +593,4 @@ Graphical Approach to Sequentially Rejective Multiple Test Procedures.”
 Bretz, Frank, Willi Maurer, and Gerhard Hommel. 2011. “Test and Power
 Considerations for Multiple Endpoint Analyses Using Sequentially
 Rejective Graphical Procedures.” *Statistics in Medicine* 30 (13):
-1489–1501. <https://doi.org/10.1002/sim.3988>.
+1489–501. <https://doi.org/10.1002/sim.3988>.
