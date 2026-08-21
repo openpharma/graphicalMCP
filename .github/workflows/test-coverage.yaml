@@ -58,6 +58,13 @@ jobs:
           print(cov)
           covr::to_cobertura(cov, filename = "coverage.xml")
           covr::report(cov, file = "coverage-report.html", browse = FALSE)
+          # Percentage for the badge, rounded to 2 decimals. coverage-action
+          # renders its own badge to 8 decimals with no rounding option, so we
+          # regenerate the badge below from this value.
+          writeLines(
+            formatC(covr::percent_coverage(cov), format = "f", digits = 2),
+            "coverage-percent.txt"
+          )
         shell: Rscript {0}
 
       - name: Show testthat output
@@ -82,6 +89,75 @@ jobs:
           diff: true
           diff-branch: main
           coverage-summary-title: "Code Coverage Summary"
+
+      # coverage-action bakes an 8-decimal percentage into badge.svg (its
+      # `Get total` step uses `printf "%.8f"`, with no rounding input, in every
+      # released version). Regenerate the badge from the 2-decimal value using
+      # the same generator (emibcn/badge-action) so the SVG geometry matches
+      # the shorter text, then overwrite the badge the action just pushed.
+      - name: Compute rounded coverage and badge color
+        id: badge
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          set -euo pipefail
+          pct="$(cat coverage-percent.txt)"
+          # Same color tiers as insightsengineering/coverage-action.
+          color="$(awk -v p="$pct" 'BEGIN{
+            if (p>90) print "green";
+            else if (p>80) print "yellow,green";
+            else if (p>70) print "yellow";
+            else if (p>60) print "orange,yellow";
+            else if (p>50) print "orange";
+            else if (p>40) print "red,orange";
+            else if (p>30) print "red,red,orange";
+            else if (p>20) print "red,red,red,orange";
+            else print "red";
+          }')"
+          echo "pct=$pct" >> "$GITHUB_OUTPUT"
+          echo "color=$color" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Generate rounded badge SVG
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8 # v2.0.3
+        with:
+          label: "Test Coverage"
+          status: "${{ steps.badge.outputs.pct }}%"
+          color: ${{ steps.badge.outputs.color }}
+          path: rounded-badge.svg
+
+      - name: Publish rounded badge to _xml_coverage_reports
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+          tmp="$(mktemp -d)"
+          git clone --quiet --depth 1 --branch _xml_coverage_reports \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "$tmp/cov"
+          install -D rounded-badge.svg "$tmp/cov/data/${branch}/badge.svg"
+          cd "$tmp/cov"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Badge already rounded; nothing to push."
+          else
+            git commit --quiet -am "Round Test Coverage badge to 2 decimal places"
+            # Retry once on top of a concurrent update to the storage branch.
+            git push origin _xml_coverage_reports || {
+              git pull --rebase origin _xml_coverage_reports
+              git push origin _xml_coverage_reports
+            }
+          fi
+        shell: bash
 
       - name: Stage HTML report for deployment
         if: github.event_name != 'pull_request'
