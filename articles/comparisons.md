@@ -232,7 +232,7 @@ generated to be used for the graphical MCP. Adjusted p-values are
 calculated and compared using the following functions:
 [`graphicalMCP::graph_test_closure()`](https://openpharma.github.io/graphicalMCP/reference/graph_test_closure.md)
 and
-[`lrstat::fadjpsim()`](https://kaifenglu.github.io/lrstat/reference/fadjpsim.html).
+[`lrstat::fadjpsim()`](https://rdrr.io/pkg/lrstat/man/fadjpsim.html).
 Simes tests are used for two primary hypotheses. This process is
 repeated 10000 times. Adjusted p-values are matched for all 10000 cases.
 
@@ -288,8 +288,8 @@ Power simulations are not available in `lrstat` for Simes tests. Thus a
 comparison could be done to compare
 [`graphicalMCP::graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)
 and a manual repetition of
-[`lrstat::fadjpsim()`](https://kaifenglu.github.io/lrstat/reference/fadjpsim.html)
-for many sets of marginal power. This process is the same as the above
+[`lrstat::fadjpsim()`](https://rdrr.io/pkg/lrstat/man/fadjpsim.html) for
+many sets of marginal power. This process is the same as the above
 comparison of adjusted p-values, and thus omitted.
 
 ## Comparisons of closed test procedures with Hochberg tests

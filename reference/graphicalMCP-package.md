@@ -15,6 +15,8 @@ visualization of graphical MCPs.
 
 Useful links:
 
+- <https://openpharma.github.io/graphicalMCP/>
+
 - <https://github.com/openpharma/graphicalMCP>
 
 - Report bugs at <https://github.com/openpharma/graphicalMCP/issues>

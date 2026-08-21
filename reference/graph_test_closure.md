@@ -205,11 +205,11 @@ graph_test_closure(g, p, alpha)
 #>   bonferroni: (H1, H2, H3, H4)
 #> 
 #> Test summary ($outputs) --------------------------------------------------------
-#>   Hypothesis Adj. P-value Reject
-#>           H1        0.024   TRUE
-#>           H2        0.020   TRUE
-#>           H3        0.105  FALSE
-#>           H4        0.024   TRUE
+#>   Hypothesis Adj.p Reject
+#>           H1 0.024   TRUE
+#>           H2 0.020   TRUE
+#>           H3 0.105  FALSE
+#>           H4 0.024   TRUE
 #> 
 #>   Final updated graph after removing rejected hypotheses
 #> 
@@ -270,11 +270,11 @@ graph_test_closure(
 #>   bonferroni: (H3, H4)
 #> 
 #> Test summary ($outputs) --------------------------------------------------------
-#>   Hypothesis Adj. P-value Reject
-#>           H1      0.02400   TRUE
-#>           H2      0.01871   TRUE
-#>           H3      0.10500  FALSE
-#>           H4      0.02400   TRUE
+#>   Hypothesis   Adj.p Reject
+#>           H1 0.02400   TRUE
+#>           H2 0.01871   TRUE
+#>           H3 0.10500  FALSE
+#>           H4 0.02400   TRUE
 #> 
 #>   Final updated graph after removing rejected hypotheses
 #> 
@@ -334,11 +334,11 @@ graph_test_closure(
 #>   bonferroni: (H3, H4)
 #> 
 #> Test summary ($outputs) --------------------------------------------------------
-#>   Hypothesis Adj. P-value Reject
-#>           H1      0.02400   TRUE
-#>           H2      0.01871   TRUE
-#>           H3      0.10500  FALSE
-#>           H4      0.02400   TRUE
+#>   Hypothesis   Adj.p Reject
+#>           H1 0.02400   TRUE
+#>           H2 0.01871   TRUE
+#>           H3 0.10500  FALSE
+#>           H4 0.02400   TRUE
 #> 
 #>   Final updated graph after removing rejected hypotheses
 #> 
@@ -398,11 +398,11 @@ graph_test_closure(
 #>        simes: (H3, H4)
 #> 
 #> Test summary ($outputs) --------------------------------------------------------
-#>   Hypothesis Adj. P-value Reject
-#>           H1      0.02400   TRUE
-#>           H2      0.01871   TRUE
-#>           H3      0.10500  FALSE
-#>           H4      0.02400   TRUE
+#>   Hypothesis   Adj.p Reject
+#>           H1 0.02400   TRUE
+#>           H2 0.01871   TRUE
+#>           H3 0.10500  FALSE
+#>           H4 0.02400   TRUE
 #> 
 #>   Final updated graph after removing rejected hypotheses
 #> 

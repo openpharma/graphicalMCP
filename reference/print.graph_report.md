@@ -91,11 +91,11 @@ graph_test_shortcut(g, p, alpha)
 #>   bonferroni: (H1, H2, H3, H4)
 #> 
 #> Test summary ($outputs) --------------------------------------------------------
-#>   Hypothesis Adj. P-value Reject
-#>           H1        0.020   TRUE
-#>           H2        0.020   TRUE
-#>           H3        0.105  FALSE
-#>           H4        0.020   TRUE
+#>   Hypothesis Adj.p Reject
+#>           H1 0.020   TRUE
+#>           H2 0.020   TRUE
+#>           H3 0.105  FALSE
+#>           H4 0.020   TRUE
 #> 
 #>   Final updated graph after removing rejected hypotheses
 #> 

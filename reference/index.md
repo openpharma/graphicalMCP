@@ -70,6 +70,42 @@
   [`adjust_weights_hochberg()`](https://openpharma.github.io/graphicalMCP/reference/adjust_weights.md)
   : Calculate adjusted hypothesis weights
 
+## Group sequential testing
+
+- [`graph_test_shortcut_gsd()`](https://openpharma.github.io/graphicalMCP/reference/graph_test_shortcut_gsd.md)
+  : Perform shortcut graphical multiple comparison procedures with group
+  sequential designs
+
+- [`print(`*`<gsd_graph_report>`*`)`](https://openpharma.github.io/graphicalMCP/reference/print.gsd_graph_report.md)
+  :
+
+  S3 print method for the class `gsd_graph_report`
+
+- [`repeated_p()`](https://openpharma.github.io/graphicalMCP/reference/repeated_p.md)
+  : Calculate the repeated p-value for a single hypothesis at a given
+  analysis
+
+- [`sequential_p()`](https://openpharma.github.io/graphicalMCP/reference/sequential_p.md)
+  : Calculate the sequential p-value for a single hypothesis
+
+- [`spending_of()`](https://openpharma.github.io/graphicalMCP/reference/spending_functions.md)
+  [`spending_pocock()`](https://openpharma.github.io/graphicalMCP/reference/spending_functions.md)
+  [`spending_hsd()`](https://openpharma.github.io/graphicalMCP/reference/spending_functions.md)
+  [`spending_linear()`](https://openpharma.github.io/graphicalMCP/reference/spending_functions.md)
+  : Alpha spending functions for group sequential designs
+
+- [`spending_wt()`](https://openpharma.github.io/graphicalMCP/reference/spending_wt.md)
+  : Wang-Tsiatis spending function
+
+- [`spending_with_time()`](https://openpharma.github.io/graphicalMCP/reference/spending_with_time.md)
+  : Create a spending function with a custom spending time
+
+- [`gs_boundaries()`](https://openpharma.github.io/graphicalMCP/reference/gs_boundaries.md)
+  : Compute group sequential boundaries from an alpha spending function
+
+- [`gs_corr()`](https://openpharma.github.io/graphicalMCP/reference/gs_corr.md)
+  : Compute the correlation matrix for group sequential test statistics
+
 ## Power simulation
 
 - [`graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)

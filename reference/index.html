@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">graphicalMCP</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,9 +22,11 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/shortcut-testing.html">Sequentially rejective graphical multiple comparison procedures based on Bonferroni tests</a></li>
     <li><a class="dropdown-item" href="../articles/closed-testing.html">Graphical multiple comparison procedures based on the closure principle</a></li>
+    <li><a class="dropdown-item" href="../articles/group-sequential-testing.html">Group Sequential Design with Graphical Approaches</a></li>
     <li><a class="dropdown-item" href="../articles/graph-examples.html">Common multiple comparison procedures illustrated using graphicalMCP</a></li>
     <li><a class="dropdown-item" href="../articles/internal-validation.html">Power simulations using multiple approaches for internal validation</a></li>
     <li><a class="dropdown-item" href="../articles/comparisons.html">Comparisons with other packages</a></li>
+    <li><a class="dropdown-item" href="../articles/gsd-validation.html">Validation of Group Sequential Functions Against gsDesign and rpact</a></li>
     <li><a class="dropdown-item" href="../articles/generate-closure.html">Rationales to generate the closure and the weighting strategy of a graph</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
@@ -177,6 +179,78 @@
 
         </dt>
         <dd>Calculate adjusted hypothesis weights</dd>
+      </dl></div><div class="section level2">
+      <h2 id="group-sequential-testing">Group sequential testing<a class="anchor" aria-label="anchor" href="#group-sequential-testing"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="graph_test_shortcut_gsd.html">graph_test_shortcut_gsd()</a></code>
+
+        </dt>
+        <dd>Perform shortcut graphical multiple comparison procedures with group sequential designs</dd>
+
+        <dt>
+
+          <code><a href="print.gsd_graph_report.html">print(<i>&lt;gsd_graph_report&gt;</i>)</a></code>
+
+        </dt>
+        <dd>S3 print method for the class <code>gsd_graph_report</code></dd>
+
+        <dt>
+
+          <code><a href="repeated_p.html">repeated_p()</a></code>
+
+        </dt>
+        <dd>Calculate the repeated p-value for a single hypothesis at a given analysis</dd>
+
+        <dt>
+
+          <code><a href="sequential_p.html">sequential_p()</a></code>
+
+        </dt>
+        <dd>Calculate the sequential p-value for a single hypothesis</dd>
+
+        <dt>
+
+          <code><a href="spending_functions.html">spending_of()</a></code> <code><a href="spending_functions.html">spending_pocock()</a></code> <code><a href="spending_functions.html">spending_hsd()</a></code> <code><a href="spending_functions.html">spending_linear()</a></code>
+
+        </dt>
+        <dd>Alpha spending functions for group sequential designs</dd>
+
+        <dt>
+
+          <code><a href="spending_wt.html">spending_wt()</a></code>
+
+        </dt>
+        <dd>Wang-Tsiatis spending function</dd>
+
+        <dt>
+
+          <code><a href="spending_with_time.html">spending_with_time()</a></code>
+
+        </dt>
+        <dd>Create a spending function with a custom spending time</dd>
+
+        <dt>
+
+          <code><a href="gs_boundaries.html">gs_boundaries()</a></code>
+
+        </dt>
+        <dd>Compute group sequential boundaries from an alpha spending function</dd>
+
+        <dt>
+
+          <code><a href="gs_corr.html">gs_corr()</a></code>
+
+        </dt>
+        <dd>Compute the correlation matrix for group sequential test statistics</dd>
       </dl></div><div class="section level2">
       <h2 id="power-simulation">Power simulation<a class="anchor" aria-label="anchor" href="#power-simulation"></a></h2>
 

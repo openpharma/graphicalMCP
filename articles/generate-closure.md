@@ -148,17 +148,17 @@ To benchmark against existing approaches to calculating weighting
 strategies, we compare the following approaches:
 [`gMCP::generateWeights()`](https://rdrr.io/pkg/gMCP/man/generateWeights.html)
 (Rohmeyer and Klinglmueller 2024),
-[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
-(Lu 2016), Approach 1 (graphicalMCP simple) and Approach 2 (graphicalMCP
+[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html) (Lu
+2016), Approach 1 (graphicalMCP simple) and Approach 2 (graphicalMCP
 parent-child). Random graphs are generated for the numbers of hypotheses
 of 4, 8, 12, and 16. Computing time (in median log-10 milliseconds) is
 plotted below. We can see that
 [`gMCP::generateWeights()`](https://rdrr.io/pkg/gMCP/man/generateWeights.html)
 is the slowest and
-[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
-is the fastest. Approach 2 (graphicalMCP parent-child) is faster than
+[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html) is
+the fastest. Approach 2 (graphicalMCP parent-child) is faster than
 Approach 1 (graphicalMCP simple). Note that
-[`lrstat::fwgtmat()`](https://kaifenglu.github.io/lrstat/reference/fwgtmat.html)
+[`lrstat::fwgtmat()`](https://rdrr.io/pkg/lrstat/man/fwgtmat.html)
 implements the calculation using C++, which is known to be faster than
 R. But it is less stable than other approaches, e.g., giving errors more
 often than others. Given that the computing time of R-based approaches

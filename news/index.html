@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">graphicalMCP</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,9 +22,11 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/shortcut-testing.html">Sequentially rejective graphical multiple comparison procedures based on Bonferroni tests</a></li>
     <li><a class="dropdown-item" href="../articles/closed-testing.html">Graphical multiple comparison procedures based on the closure principle</a></li>
+    <li><a class="dropdown-item" href="../articles/group-sequential-testing.html">Group Sequential Design with Graphical Approaches</a></li>
     <li><a class="dropdown-item" href="../articles/graph-examples.html">Common multiple comparison procedures illustrated using graphicalMCP</a></li>
     <li><a class="dropdown-item" href="../articles/internal-validation.html">Power simulations using multiple approaches for internal validation</a></li>
     <li><a class="dropdown-item" href="../articles/comparisons.html">Comparisons with other packages</a></li>
+    <li><a class="dropdown-item" href="../articles/gsd-validation.html">Validation of Group Sequential Functions Against gsDesign and rpact</a></li>
     <li><a class="dropdown-item" href="../articles/generate-closure.html">Rationales to generate the closure and the weighting strategy of a graph</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
@@ -110,6 +112,18 @@
 <h2 class="pkg-version" data-toc-text="0.2.9" id="graphicalmcp-029">graphicalMCP 0.2.9<a class="anchor" aria-label="anchor" href="#graphicalmcp-029"></a></h2><p class="text-muted">CRAN release: 2026-03-21</p>
 <ul><li>Closed Issue <a href="https://github.com/openpharma/graphicalMCP/issues/90" class="external-link">#90</a> by changing the precision for parametric tests</li>
 <li>Submission for CRAN release</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="graphicalmcp-030">graphicalMCP 0.3.0<a class="anchor" aria-label="anchor" href="#graphicalmcp-030"></a></h2>
+<ul><li>Added group sequential testing for graphical MCPs via <code><a href="../reference/graph_test_shortcut_gsd.html">graph_test_shortcut_gsd()</a></code>, which extends <code><a href="../reference/graph_test_shortcut.html">graph_test_shortcut()</a></code> to multiple analyses with per-hypothesis spending functions, information fractions, and a <code>look_back</code> option to use repeated or sequential p-values</li>
+<li>Added spending functions <code><a href="../reference/spending_functions.html">spending_of()</a></code>, <code><a href="../reference/spending_functions.html">spending_pocock()</a></code>, <code><a href="../reference/spending_functions.html">spending_hsd()</a></code>, <code><a href="../reference/spending_functions.html">spending_linear()</a></code>, <code><a href="../reference/spending_wt.html">spending_wt()</a></code> (Wang-Tsiatis), and <code><a href="../reference/spending_with_time.html">spending_with_time()</a></code> for a custom spending time</li>
+<li>Added <code><a href="../reference/gs_boundaries.html">gs_boundaries()</a></code>, <code><a href="../reference/gs_corr.html">gs_corr()</a></code>, <code><a href="../reference/repeated_p.html">repeated_p()</a></code>, and <code><a href="../reference/sequential_p.html">sequential_p()</a></code>
+</li>
+<li>Added vignettes on group sequential testing and on its validation against gsDesign and rpact</li>
+<li>Renamed the <code>Adj. P-value</code> column to <code>Adj.p</code> in <code><a href="../reference/print.graph_report.html">print.graph_report()</a></code>
+</li>
+<li>Added a warning in <code><a href="../reference/graph_create.html">graph_create()</a></code> for very small transition weights (Issue <a href="https://github.com/openpharma/graphicalMCP/issues/97" class="external-link">#97</a>)</li>
+<li>Plotting examples, vignettes, and tests are skipped when <code>igraph</code> or <code>gMCP</code> is not installed</li>
 </ul></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

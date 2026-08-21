@@ -54,11 +54,14 @@ transitions <- rbind(
 hyp_names <- c("H1", "H2", "H3", "H4")
 
 g <- graph_create(hypotheses, transitions, hyp_names)
+```
+
+``` r
 
 plot(g, vertex.size = 60)
 ```
 
-![](shortcut-testing_files/figure-html/create-graph-1.png)
+![](shortcut-testing_files/figure-html/plot-create-graph-1.png)
 
 ## Perform the graphical multiple comparison procedure
 

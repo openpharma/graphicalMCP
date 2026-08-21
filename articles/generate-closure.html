@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">graphicalMCP</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,9 +42,11 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/shortcut-testing.html">Sequentially rejective graphical multiple comparison procedures based on Bonferroni tests</a></li>
     <li><a class="dropdown-item" href="../articles/closed-testing.html">Graphical multiple comparison procedures based on the closure principle</a></li>
+    <li><a class="dropdown-item" href="../articles/group-sequential-testing.html">Group Sequential Design with Graphical Approaches</a></li>
     <li><a class="dropdown-item" href="../articles/graph-examples.html">Common multiple comparison procedures illustrated using graphicalMCP</a></li>
     <li><a class="dropdown-item" href="../articles/internal-validation.html">Power simulations using multiple approaches for internal validation</a></li>
     <li><a class="dropdown-item" href="../articles/comparisons.html">Comparisons with other packages</a></li>
+    <li><a class="dropdown-item" href="../articles/gsd-validation.html">Validation of Group Sequential Functions Against gsDesign and rpact</a></li>
     <li><a class="dropdown-item" href="../articles/generate-closure.html">Rationales to generate the closure and the weighting strategy of a graph</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
@@ -321,14 +323,14 @@ strategies<a class="anchor" aria-label="anchor" href="#comparing-different-appro
 <p>To benchmark against existing approaches to calculating weighting
 strategies, we compare the following approaches:
 <code><a href="https://rdrr.io/pkg/gMCP/man/generateWeights.html" class="external-link">gMCP::generateWeights()</a></code> <span class="citation">(Rohmeyer
-and Klinglmueller 2024)</span>, <code><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> <span class="citation">(Lu 2016)</span>, Approach 1 (graphicalMCP simple) and
+and Klinglmueller 2024)</span>, <code><a href="https://rdrr.io/pkg/lrstat/man/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> <span class="citation">(Lu 2016)</span>, Approach 1 (graphicalMCP simple) and
 Approach 2 (graphicalMCP parent-child). Random graphs are generated for
 the numbers of hypotheses of 4, 8, 12, and 16. Computing time (in median
 log-10 milliseconds) is plotted below. We can see that
 <code><a href="https://rdrr.io/pkg/gMCP/man/generateWeights.html" class="external-link">gMCP::generateWeights()</a></code> is the slowest and
-<code><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> is the fastest. Approach 2 (graphicalMCP
+<code><a href="https://rdrr.io/pkg/lrstat/man/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> is the fastest. Approach 2 (graphicalMCP
 parent-child) is faster than Approach 1 (graphicalMCP simple). Note that
-<code><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> implements the calculation using C++,
+<code><a href="https://rdrr.io/pkg/lrstat/man/fwgtmat.html" class="external-link">lrstat::fwgtmat()</a></code> implements the calculation using C++,
 which is known to be faster than R. But it is less stable than other
 approaches, e.g., giving errors more often than others. Given that the
 computing time of R-based approaches is acceptable, adding Rcpp
