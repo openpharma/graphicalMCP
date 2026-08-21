@@ -27,6 +27,7 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   test-coverage:
@@ -46,7 +47,6 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::covr, any::DT, any::htmltools, any::xml2
-          needs: coverage
 
       - name: Run coverage
         run: |
@@ -67,6 +67,12 @@ jobs:
         shell: bash
 
       - name: Publish coverage badge and XML to _xml_coverage_reports
+        # Runs on push to main and on same-repo PRs. Skipped for fork PRs,
+        # whose GITHUB_TOKEN is read-only and cannot push the storage branch
+        # or post the PR comment (both would 403 and fail the job).
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: insightsengineering/coverage-action@v3
         with:
           path: ./coverage.xml
