@@ -82,6 +82,16 @@ jobs:
         run: |
           mkdir -p coverage-report-site
           mv coverage-report.html coverage-report-site/index.html
+          # covr::report() -> htmltools::save_html() emits a sibling `lib/`
+          # directory (jQuery, DataTables, Bootstrap, ...) that index.html
+          # references with relative paths. It must ship alongside the report,
+          # or the deployed page renders unstyled and non-interactive.
+          if [ -d lib ]; then
+            mv lib coverage-report-site/lib
+          else
+            echo "::error::Expected covr report asset directory 'lib/' was not found"
+            exit 1
+          fi
         shell: bash
 
       - name: Deploy HTML coverage report to gh-pages (latest-tag)
