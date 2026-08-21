@@ -142,7 +142,10 @@ test_that("floating point accuracy - passing", {
     ),
     "initial_graph"
   )
-  expect_s3_class(graph_create(w_1, matrix(0 + epsilon / 2)), "initial_graph")
+  expect_s3_class(
+    suppressWarnings(graph_create(w_1, matrix(0 + epsilon / 2))),
+    "initial_graph"
+  )
 })
 
 test_that("rowSums() endpoint - mixed floating point and less than 1", {
@@ -198,7 +201,10 @@ test_that("floating point accuracy - passing", {
     ),
     "initial_graph"
   )
-  expect_s3_class(graph_create(w_1, matrix(0 + epsilon / 2)), "initial_graph")
+  expect_s3_class(
+    suppressWarnings(graph_create(w_1, matrix(0 + epsilon / 2))),
+    "initial_graph"
+  )
 })
 
 test_that("rowSums() endpoint - mixed floating point and less than 1", {

@@ -211,6 +211,15 @@ graph_create <- function(hypotheses, transitions, hyp_names = NULL) {
     }
   }
 
+  # Warn about very small transition weights that may cause numerical issues
+  if (any(transitions > 0 & transitions < 1e-6)) {
+    warning(
+      "Some transition weights are very small (< 1e-6). This may cause ",
+      "numerical instability in hypothesis weights due to floating-point ",
+      "precision. Consider using larger values."
+    )
+  }
+
   # Create an initial graph object ---------------------------------------------
   new_graph <- structure(
     list(hypotheses = hypotheses, transitions = transitions),
