@@ -37,6 +37,18 @@ reference:
   - adjust_weights_parametric
   - adjust_weights_simes
   - adjust_weights_hochberg
+- title: Group sequential testing
+- desc: Functions for group sequential designs with graphical MCPs
+- contents:
+  - graph_test_shortcut_gsd
+  - print.gsd_graph_report
+  - repeated_p
+  - sequential_p
+  - spending_of
+  - spending_wt
+  - spending_with_time
+  - gs_boundaries
+  - gs_corr
 - title: Power simulation
 - desc: Functions for performing power simulations
 - contents:
@@ -83,9 +95,11 @@ articles:
   contents:
   - shortcut-testing
   - closed-testing
+  - group-sequential-testing
   - graph-examples
   - internal-validation
   - comparisons
+  - gsd-validation
   - generate-closure
 
 - title: Glossary

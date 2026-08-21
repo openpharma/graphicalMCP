@@ -96,6 +96,7 @@ be shifted to a new position.
 }
 
 \examples{
+\dontshow{if (requireNamespace("igraph", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # A graphical multiple comparison procedure with two primary hypotheses (H1
 # and H2) and two secondary hypotheses (H3 and H4)
 # See Figure 4 in Bretz et al. (2011).
@@ -136,6 +137,7 @@ plot_layout <- rbind(
 )
 
 plot(g, layout = plot_layout, eps = epsilon, edge_curves = c(pairs = .5))
+\dontshow{\}) # examplesIf}
 }
 \references{
 Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W.,

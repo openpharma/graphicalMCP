@@ -11,7 +11,7 @@ status](https://www.r-pkg.org/badges/version/graphicalMCP)](https://cran.r-proje
 downloads](https://cranlogs.r-pkg.org/badges/graphicalMCP)](https://cranlogs.r-pkg.org/badges/graphicalMCP)
 [![CRAN total
 downloads](https://cranlogs.r-pkg.org/badges/grand-total/graphicalMCP)](https://cranlogs.r-pkg.org/badges/grand-total/graphicalMCP)
-<!-- [![Code Coverage](https://raw.githubusercontent.com/openpharma/graphicalMCP/_xml_coverage_reports/data/main/badge.svg)](https://openpharma.github.io/graphicalMCP/latest-tag/coverage-report/) -->
+[![Code Coverage](https://raw.githubusercontent.com/openpharma/graphicalMCP/_xml_coverage_reports/data/main/badge.svg)](https://openpharma.github.io/graphicalMCP/latest-tag/coverage-report/)
 
 <!-- badges: end -->
 

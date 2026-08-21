@@ -44,7 +44,7 @@ example_graph <- graph_create(hypotheses, transitions, hyp_names)
 example_graph
 ```
 
-```{r plot-graph, fig.dim=c(3, 3)}
+```{r plot-graph, fig.dim=c(3, 3), eval = requireNamespace("igraph", quietly = TRUE)}
 plot(example_graph, vertex.size = 60)
 ```
 
@@ -61,7 +61,7 @@ updated_example <- graph_update(
 updated_example
 ```
 
-```{r plot-updated-graph, fig.dim=c(3, 3)}
+```{r plot-updated-graph, fig.dim=c(3, 3), eval = requireNamespace("igraph", quietly = TRUE)}
 plot(updated_example, vertex.size = 60)
 ```
 

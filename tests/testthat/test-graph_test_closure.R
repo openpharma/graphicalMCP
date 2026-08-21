@@ -240,32 +240,32 @@ test_that("check assertions in testing vignette", {
 })
 
 test_that("compare adjusted p-values to gMCP - Bonferroni & parametric", {
+  skip_if_not(suppressWarnings(requireNamespace("gMCP", quietly = TRUE)), "gMCP not available")
+
   g <- random_graph(6)
   p <- pnorm(rnorm(6, 2.5), lower.tail = FALSE)
 
-  if (requireNamespace("gMCP", quietly = TRUE)) {
-    gmcp_g <- as_graphMCP(g)
+  gmcp_g <- as_graphMCP(g)
 
-    expect_equal(
-      graph_test_shortcut(g, p)$outputs$adjusted_p,
-      gMCP::gMCP(gmcp_g, p, "Bonferroni")@adjPValues
-    )
+  expect_equal(
+    graph_test_shortcut(g, p)$outputs$adjusted_p,
+    gMCP::gMCP(gmcp_g, p, "Bonferroni")@adjPValues
+  )
 
-    expect_equal(
-      graph_test_closure(g, p)$outputs$adjusted_p,
-      gMCP::gMCP(gmcp_g, p, "Bonferroni")@adjPValues
-    )
+  expect_equal(
+    graph_test_closure(g, p)$outputs$adjusted_p,
+    gMCP::gMCP(gmcp_g, p, "Bonferroni")@adjPValues
+  )
 
-    expect_equal(
-      graph_test_closure(
-        g,
-        p,
-        test_types = "p",
-        test_corr = list(diag(6))
-      )$outputs$adjusted_p,
-      gMCP::gMCP(gmcp_g, p, "parametric", correlation = diag(6))@adjPValues
-    )
-  }
+  expect_equal(
+    graph_test_closure(
+      g,
+      p,
+      test_types = "p",
+      test_corr = list(diag(6))
+    )$outputs$adjusted_p,
+    gMCP::gMCP(gmcp_g, p, "parametric", correlation = diag(6))@adjPValues
+  )
 })
 
 test_that("compare adjusted p-values to lrstat - Bonferroni & Simes", {

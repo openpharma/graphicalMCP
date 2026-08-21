@@ -24,7 +24,7 @@
 #'   procedures using weighted Bonferroni, Simes, or parametric tests.
 #'   \emph{Biometrical Journal}, 53(6), 894-913.
 #'
-#' @examples
+#' @examplesIf requireNamespace("igraph", quietly = TRUE)
 #' # A graphical multiple comparison procedure with two primary hypotheses (H1
 #' # and H2) and two secondary hypotheses (H3 and H4)
 #' # See Figure 1 in Bretz et al. (2011).

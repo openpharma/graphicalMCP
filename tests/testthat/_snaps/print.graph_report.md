@@ -29,11 +29,11 @@
         simes: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.01   TRUE
-                H2         0.01   TRUE
-                H3         0.01   TRUE
-                H4         0.01   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.01   TRUE
+                H2  0.01   TRUE
+                H3  0.01   TRUE
+                H4  0.01   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -82,11 +82,11 @@
         bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -149,11 +149,11 @@
         bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -223,11 +223,11 @@
         parametric: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1       0.0199   TRUE
-                H2       0.0199   TRUE
-                H3       0.0199   TRUE
-                H4       0.0199   TRUE
+        Hypothesis  Adj.p Reject
+                H1 0.0199   TRUE
+                H2 0.0199   TRUE
+                H3 0.0199   TRUE
+                H4 0.0199   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -283,11 +283,11 @@
              simes: (H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -395,11 +395,11 @@
         parametric: (H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -498,11 +498,11 @@
         bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -551,11 +551,11 @@
         bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -695,11 +695,11 @@
         bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1         0.02   TRUE
-                H2         0.02   TRUE
-                H3         0.02   TRUE
-                H4         0.02   TRUE
+        Hypothesis Adj.p Reject
+                H1  0.02   TRUE
+                H2  0.02   TRUE
+                H3  0.02   TRUE
+                H4  0.02   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -859,11 +859,11 @@
           bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-          Hypothesis Adj. P-value Reject
-                  H1         0.02   TRUE
-                  H2         0.02   TRUE
-                  H3         0.02   TRUE
-                  H4         0.02   TRUE
+          Hypothesis Adj.p Reject
+                  H1  0.02   TRUE
+                  H2  0.02   TRUE
+                  H3  0.02   TRUE
+                  H4  0.02   TRUE
       
           Final updated graph after removing rejected hypotheses
       
@@ -941,11 +941,11 @@
                bonferroni: (H1, H2, H3, H4)
       
       Test summary ($outputs) --------------------------------------------------------
-               Hypothesis Adj. P-value Reject
-                       H1         0.02   TRUE
-                       H2         0.02   TRUE
-                       H3         0.02   TRUE
-                       H4         0.02   TRUE
+               Hypothesis Adj.p Reject
+                       H1  0.02   TRUE
+                       H2  0.02   TRUE
+                       H3  0.02   TRUE
+                       H4  0.02   TRUE
       
                Final updated graph after removing rejected hypotheses
       
@@ -1097,13 +1097,13 @@
         bonferroni: (H1, H2, H3, H4, H5, H6)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1        0.025   TRUE
-                H2        0.030  FALSE
-                H3        0.030  FALSE
-                H4        0.020   TRUE
-                H5        0.020   TRUE
-                H6        0.020   TRUE
+        Hypothesis Adj.p Reject
+                H1 0.025   TRUE
+                H2 0.030  FALSE
+                H3 0.030  FALSE
+                H4 0.020   TRUE
+                H5 0.020   TRUE
+                H6 0.020   TRUE
       
         Final updated graph after removing rejected hypotheses
       
@@ -1293,13 +1293,13 @@
         bonferroni: (H1, H2, H3, H4, H5, H6)
       
       Test summary ($outputs) --------------------------------------------------------
-        Hypothesis Adj. P-value Reject
-                H1        0.015   TRUE
-                H2        0.020   TRUE
-                H3        0.020   TRUE
-                H4        0.015   TRUE
-                H5        0.015   TRUE
-                H6        0.015   TRUE
+        Hypothesis Adj.p Reject
+                H1 0.015   TRUE
+                H2 0.020   TRUE
+                H3 0.020   TRUE
+                H4 0.015   TRUE
+                H5 0.015   TRUE
+                H6 0.015   TRUE
       
         Final updated graph after removing rejected hypotheses
       

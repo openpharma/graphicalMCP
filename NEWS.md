@@ -64,3 +64,13 @@
 
 * Closed Issue #90 by changing the precision for parametric tests
 * Submission for CRAN release
+
+# graphicalMCP 0.3.0
+
+* Added group sequential testing for graphical MCPs via `graph_test_shortcut_gsd()`, which extends `graph_test_shortcut()` to multiple analyses with per-hypothesis spending functions, information fractions, and a `look_back` option to use repeated or sequential p-values
+* Added spending functions `spending_of()`, `spending_pocock()`, `spending_hsd()`, `spending_linear()`, `spending_wt()` (Wang-Tsiatis), and `spending_with_time()` for a custom spending time
+* Added `gs_boundaries()`, `gs_corr()`, `repeated_p()`, and `sequential_p()`
+* Added vignettes on group sequential testing and on its validation against gsDesign and rpact
+* Renamed the `Adj. P-value` column to `Adj.p` in `print.graph_report()`
+* Added a warning in `graph_create()` for very small transition weights (Issue #97)
+* Plotting examples, vignettes, and tests are skipped when `igraph` or `gMCP` is not installed
