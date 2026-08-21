@@ -22,7 +22,7 @@ test_that("smaller observed p-values give smaller repeated p-values", {
 
 test_that("repeated_p inverts the boundary correctly", {
   p_obs <- c(0.05, 0.02, 0.01)
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
 
   for (k in 1:3) {
     rp_k <- repeated_p(p_obs[1:k], t[1:k], spending_of)

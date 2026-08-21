@@ -8,7 +8,7 @@ test_that("gs_boundaries returns correct structure", {
 })
 
 test_that("Z boundaries are decreasing (OBF) or flat (Pocock-like)", {
-  b_of <- graphicalMCP:::gs_boundaries(0.025, c(1/3, 2/3, 1), spending_of)
+  b_of <- graphicalMCP:::gs_boundaries(0.025, c(1 / 3, 2 / 3, 1), spending_of)
   # OBF boundaries are strictly decreasing
   expect_true(all(diff(b_of$bounds_z) < 0))
 
@@ -26,14 +26,22 @@ test_that("gs_boundaries matches gsDesign", {
   skip_if_not_installed("gsDesign")
 
   test_cases <- list(
-    list(alpha = 0.025, t = c(1/3, 2/3, 1), sfu = gsDesign::sfLDOF,
-         fn = spending_of),
-    list(alpha = 0.025, t = c(0.5, 1), sfu = gsDesign::sfLDOF,
-         fn = spending_of),
-    list(alpha = 0.025, t = c(1/3, 2/3, 1), sfu = gsDesign::sfLDPocock,
-         fn = spending_pocock),
-    list(alpha = 0.01, t = c(0.2, 0.6, 1), sfu = gsDesign::sfLDOF,
-         fn = spending_of)
+    list(
+      alpha = 0.025, t = c(1 / 3, 2 / 3, 1), sfu = gsDesign::sfLDOF,
+      fn = spending_of
+    ),
+    list(
+      alpha = 0.025, t = c(0.5, 1), sfu = gsDesign::sfLDOF,
+      fn = spending_of
+    ),
+    list(
+      alpha = 0.025, t = c(1 / 3, 2 / 3, 1), sfu = gsDesign::sfLDPocock,
+      fn = spending_pocock
+    ),
+    list(
+      alpha = 0.01, t = c(0.2, 0.6, 1), sfu = gsDesign::sfLDOF,
+      fn = spending_of
+    )
   )
 
   for (tc in test_cases) {
@@ -58,9 +66,9 @@ test_that("gs_boundaries matches rpact", {
   skip_if_not_installed("rpact")
 
   rpact_cases <- list(
-    list(alpha = 0.025, t = c(1/3, 2/3, 1), type = "asOF", fn = spending_of),
+    list(alpha = 0.025, t = c(1 / 3, 2 / 3, 1), type = "asOF", fn = spending_of),
     list(alpha = 0.025, t = c(0.5, 1), type = "asOF", fn = spending_of),
-    list(alpha = 0.025, t = c(1/3, 2/3, 1), type = "asP", fn = spending_pocock)
+    list(alpha = 0.025, t = c(1 / 3, 2 / 3, 1), type = "asP", fn = spending_pocock)
   )
 
   for (tc in rpact_cases) {

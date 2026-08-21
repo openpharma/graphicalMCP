@@ -95,10 +95,10 @@ spending_of(0.025, 0.5)
 spending_of(0.025, c(0, 0.5, 1))
 
 # Compare spending functions at information fractions (1/3, 2/3, 1)
-spending_of(0.025, c(1/3, 2/3, 1))
-spending_pocock(0.025, c(1/3, 2/3, 1))
-spending_hsd(0.025, c(1/3, 2/3, 1), gamma = -4)
-spending_linear(0.025, c(1/3, 2/3, 1))
+spending_of(0.025, c(1 / 3, 2 / 3, 1))
+spending_pocock(0.025, c(1 / 3, 2 / 3, 1))
+spending_hsd(0.025, c(1 / 3, 2 / 3, 1), gamma = -4)
+spending_linear(0.025, c(1 / 3, 2 / 3, 1))
 
 # User-defined spending function: piecewise combination.
 # Use O'Brien-Fleming for the first half of alpha (conservative at
@@ -110,10 +110,10 @@ spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
   spending_of(pmin(alpha, threshold), info_frac) +
     spending_pocock(pmax(alpha - threshold, 0), info_frac)
 }
-spending_piecewise(0.025, c(1/3, 2/3, 1))
+spending_piecewise(0.025, c(1 / 3, 2 / 3, 1))
 # Compare: alpha = 0.0125 uses only OBF
-spending_piecewise(0.0125, c(1/3, 2/3, 1))
-spending_of(0.0125, c(1/3, 2/3, 1))
+spending_piecewise(0.0125, c(1 / 3, 2 / 3, 1))
+spending_of(0.0125, c(1 / 3, 2 / 3, 1))
 # Pocock spending at 50\% information
 spending_pocock(0.025, 0.5)
 # Hwang-Shih-DeCani spending at 50\% information

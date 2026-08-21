@@ -59,11 +59,11 @@ spending_wt(0.025, c(0.5, 1), delta = 0)
 spending_wt(0.025, c(0.5, 1), delta = 0.5)
 
 # Intermediate (delta = 0.25)
-spending_wt(0.025, c(1/3, 2/3, 1), delta = 0.25)
+spending_wt(0.025, c(1 / 3, 2 / 3, 1), delta = 0.25)
 
 # Compare with Lan-DeMets approximations
-spending_of(0.025, c(1/3, 2/3, 1))     # Lan-DeMets OBF approximation
-spending_wt(0.025, c(1/3, 2/3, 1), 0)  # Exact OBF
+spending_of(0.025, c(1 / 3, 2 / 3, 1)) # Lan-DeMets OBF approximation
+spending_wt(0.025, c(1 / 3, 2 / 3, 1), 0) # Exact OBF
 
 # Use in graph_test_shortcut_gsd (wrap to fix delta)
 \donttest{

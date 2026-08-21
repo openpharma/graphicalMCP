@@ -26,7 +26,7 @@ the specific test or endpoint.
 }
 \examples{
 # Three equally spaced analyses
-gs_corr(c(1/3, 2/3, 1))
+gs_corr(c(1 / 3, 2 / 3, 1))
 
 # Two analyses at 50\% and 100\%
 gs_corr(c(0.5, 1))

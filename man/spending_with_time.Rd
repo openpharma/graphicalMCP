@@ -52,14 +52,14 @@ for the correlation structure.
 \examples{
 # --- Subgroup spending time ---
 # Without spending_with_time, spending_of() uses info_frac for spending:
-info_frac_all <- c(529 / 800, 700 / 800, 1)  # all-subjects fractions
+info_frac_all <- c(529 / 800, 700 / 800, 1) # all-subjects fractions
 spending_of(0.01, info_frac_all)
 
 # With spending_with_time, spending uses subgroup fractions instead.
 # The info_frac passed at runtime is ignored by the spending function;
 # it is only used by gs_boundaries()/graph_test_shortcut_gsd() for
 # the correlation structure.
-spending_time_sub <- c(185 / 295, 245 / 295, 1)  # subgroup fractions
+spending_time_sub <- c(185 / 295, 245 / 295, 1) # subgroup fractions
 spending_with_time(spending_of, spending_time_sub)
 
 # --- Monitoring with changed final information ---

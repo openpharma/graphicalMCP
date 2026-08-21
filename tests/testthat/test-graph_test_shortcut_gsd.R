@@ -14,9 +14,9 @@ gsd_graph <- function() {
 gsd_p <- function() {
   rbind(
     H1 = c(0.0062, 0.0002),
-    H2 = c(0.017,  0.0035),
-    H3 = c(0.009,  0.002),
-    H4 = c(0.13,   0.06)
+    H2 = c(0.017, 0.0035),
+    H3 = c(0.009, 0.002),
+    H4 = c(0.13, 0.06)
   )
 }
 
@@ -25,8 +25,9 @@ test_that("graph_test_shortcut_gsd returns correct class and structure", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_s3_class(result, "gsd_graph_report")
@@ -53,8 +54,9 @@ test_that("test_values output has correct structure", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     test_values = TRUE
   )
 
@@ -65,8 +67,10 @@ test_that("test_values output has correct structure", {
     tv <- result$test_values[[k]]
     if (!is.null(tv)) {
       expect_s3_class(tv, "data.frame")
-      expect_true(all(c("Analysis", "Hypothesis", "Weight", "p",
-                        "Boundary", "Reject") %in% names(tv)))
+      expect_true(all(c(
+        "Analysis", "Hypothesis", "Weight", "p",
+        "Boundary", "Reject"
+      ) %in% names(tv)))
     }
   }
 })
@@ -76,8 +80,9 @@ test_that("Maurer-Bretz case study: look_back = FALSE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = FALSE
   )
 
@@ -99,8 +104,9 @@ test_that("Maurer-Bretz case study: look_back = TRUE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = TRUE
   )
 
@@ -115,21 +121,23 @@ test_that("look_back = TRUE vs FALSE can differ", {
   g <- gsd_graph()
 
   p <- rbind(
-    H1 = c(0.02,   0.0002),
-    H2 = c(0.02,   0.003),
+    H1 = c(0.02, 0.0002),
+    H2 = c(0.02, 0.003),
     H3 = c(0.0008, 0.006),
-    H4 = c(0.3,    0.2)
+    H4 = c(0.3, 0.2)
   )
 
   result_no_lb <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = FALSE
   )
 
   result_lb <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = TRUE
   )
 
@@ -149,7 +157,8 @@ test_that("look_back = TRUE: first_rejected_at looks back to earlier analysis", 
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_linear,
     look_back = TRUE
   )
@@ -170,8 +179,9 @@ test_that("repeated_p and sequential_p matrices are correct dimensions", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_equal(dim(result$outputs$repeated_p), c(4, 2))
@@ -184,8 +194,9 @@ test_that("sequential_p <= repeated_p elementwise", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_true(all(result$outputs$sequential_p <= result$outputs$repeated_p + 1e-6))
@@ -196,8 +207,9 @@ test_that("sequential_p is cummin of repeated_p per hypothesis", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   for (j in 1:4) {
@@ -214,7 +226,8 @@ test_that("different spending functions per hypothesis", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1),
     spending_fn = list(spending_of, spending_pocock)
   )
@@ -228,7 +241,8 @@ test_that("different info fractions per hypothesis", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = rbind(c(0.5, 1), c(0.6, 1)),
     spending_fn = spending_of
   )
@@ -242,7 +256,8 @@ test_that("no rejections when p-values are large", {
   p <- rbind(H1 = c(0.5, 0.5), H2 = c(0.5, 0.5))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_of
   )
 
@@ -258,7 +273,8 @@ test_that("all rejected when p-values are very small", {
   p <- rbind(H1 = c(0.0001, 0.0001), H2 = c(0.0001, 0.0001))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_pocock
   )
 
@@ -272,12 +288,14 @@ test_that("look_back = FALSE and TRUE agree when repeated_p are monotone", {
   p <- rbind(H1 = c(0.1, 0.001), H2 = c(0.1, 0.001))
 
   r_no <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_of,
     look_back = FALSE
   )
   r_lb <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_of,
     look_back = TRUE
   )
@@ -325,12 +343,14 @@ test_that("invalid inputs throw errors", {
 
   # Invalid look_back
   expect_error(graph_test_shortcut_gsd(
-    g, p, 0.025, c(0.5, 1), spending_of, look_back = "yes"
+    g, p, 0.025, c(0.5, 1), spending_of,
+    look_back = "yes"
   ))
 
   # Invalid test_values
   expect_error(graph_test_shortcut_gsd(
-    g, p, 0.025, c(0.5, 1), spending_of, test_values = 1
+    g, p, 0.025, c(0.5, 1), spending_of,
+    test_values = 1
   ))
 })
 
@@ -339,8 +359,9 @@ test_that("print method works without error", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     test_values = TRUE
   )
 
@@ -352,8 +373,9 @@ test_that("print method works for look_back = TRUE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = TRUE, test_values = TRUE
   )
 
@@ -365,8 +387,9 @@ test_that("print method works without test_values", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_output(print(result))
@@ -380,8 +403,9 @@ test_that("three analyses work correctly", {
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3, 1), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3, 1), spending_fn = spending_of
   )
 
   expect_equal(dim(result$outputs$repeated_p), c(2, 3))
@@ -394,8 +418,9 @@ test_that("info_frac not ending at 1 works (interim-only)", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3),
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3),
     spending_fn = spending_of
   )
 
@@ -411,11 +436,12 @@ test_that("NA padding: H1 has 2 analyses, H2 has 3", {
   )
   info_frac <- rbind(
     c(0.5, 1, NA),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   )
@@ -442,8 +468,9 @@ test_that("NA padding: vector info_frac with NA in p errors", {
 
   expect_error(
     graph_test_shortcut_gsd(
-      g, p, alpha = 0.025,
-      info_frac = c(1/3, 2/3, 1),
+      g, p,
+      alpha = 0.025,
+      info_frac = c(1 / 3, 2 / 3, 1),
       spending_fn = spending_of
     ),
     "info_frac must be a matrix"
@@ -458,11 +485,12 @@ test_that("NA padding: info_frac as matrix with matching NAs", {
   )
   info_frac <- rbind(
     c(0.5, 1, NA),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   )
@@ -477,12 +505,13 @@ test_that("NA padding: mismatched NAs in p and info_frac matrix errors", {
     H2 = c(0.015, 0.005, 0.001)
   )
   info_frac <- rbind(
-    c(0.5, 1, 0.9),   # not NA where p is NA
-    c(1/3, 2/3, 1)
+    c(0.5, 1, 0.9), # not NA where p is NA
+    c(1 / 3, 2 / 3, 1)
   )
 
   expect_error(graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   ))
@@ -496,11 +525,12 @@ test_that("NA padding: non-contiguous NAs work (tested at analyses 1 and 3)", {
   )
   info_frac <- rbind(
     c(0.5, NA, 1),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   )
@@ -519,11 +549,12 @@ test_that("NA padding: leading NA works (H tested at later analyses)", {
   )
   info_frac <- rbind(
     c(NA, 0.5, 1),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   )
@@ -545,7 +576,8 @@ test_that("NA padding: all-NA row errors", {
   )
 
   expect_error(graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of
   ))
@@ -559,11 +591,12 @@ test_that("NA padding: look_back = TRUE works with different K", {
   )
   info_frac <- rbind(
     c(0.5, 1, NA),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of,
     look_back = TRUE
@@ -582,11 +615,12 @@ test_that("NA padding: test_values works with different K", {
   )
   info_frac <- rbind(
     c(0.5, 1, NA),
-    c(1/3, 2/3, 1)
+    c(1 / 3, 2 / 3, 1)
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = info_frac,
     spending_fn = spending_of,
     test_values = TRUE
@@ -601,7 +635,8 @@ test_that("NA padding: no NA gives same results as before", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1),
     spending_fn = spending_of
   )
@@ -621,8 +656,9 @@ test_that("decision_at reports last tested analysis for non-rejected hypotheses"
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   # H4 is not rejected but tested at analysis 2
@@ -638,8 +674,9 @@ test_that("first_rejected_at is NA for non-rejected hypotheses", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_true(is.na(result$outputs$first_rejected_at[["H4"]]))
@@ -654,8 +691,9 @@ test_that("first_rejected_at equals decision_at when look_back = FALSE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = FALSE
   )
 
@@ -669,11 +707,12 @@ test_that("first_rejected_at equals decision_at when look_back = FALSE", {
 test_that("first_rejected_at can differ from decision_at with look_back = TRUE", {
   g <- gsd_graph()
   p <- gsd_p()
-  p["H3", ] <- c(0.0008, 0.006)  # strong at IA1, weak at IA2
+  p["H3", ] <- c(0.0008, 0.006) # strong at IA1, weak at IA2
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = TRUE
   )
 
@@ -688,8 +727,9 @@ test_that("rejection_sequence is in outputs and has correct length", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_true("rejection_sequence" %in% names(result$outputs))
@@ -708,7 +748,8 @@ test_that("rejection_sequence is empty when nothing is rejected", {
   p <- rbind(H1 = c(0.5, 0.5), H2 = c(0.5, 0.5))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_of
   )
 
@@ -722,8 +763,9 @@ test_that("per-hypothesis look_back as vector works", {
 
   # Only H3 and H4 use look_back
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = c(FALSE, FALSE, TRUE, TRUE)
   )
 
@@ -740,8 +782,9 @@ test_that("per-hypothesis look_back: only look_back hypotheses can have first_re
   p["H3", ] <- c(0.0008, 0.006)
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = c(FALSE, FALSE, TRUE, TRUE)
   )
 
@@ -763,13 +806,15 @@ test_that("scalar look_back = FALSE is equivalent to vector of all FALSE", {
   p <- gsd_p()
 
   r_scalar <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = FALSE
   )
   r_vector <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = c(FALSE, FALSE, FALSE, FALSE)
   )
 
@@ -783,13 +828,15 @@ test_that("scalar look_back = TRUE is equivalent to vector of all TRUE", {
   p <- gsd_p()
 
   r_scalar <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = TRUE
   )
   r_vector <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = c(TRUE, TRUE, TRUE, TRUE)
   )
 
@@ -804,8 +851,9 @@ test_that("verbose = TRUE produces boundary_table", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     verbose = TRUE
   )
 
@@ -830,8 +878,9 @@ test_that("verbose = FALSE does not produce boundary_table", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     verbose = FALSE
   )
 
@@ -843,7 +892,8 @@ test_that("boundary_table has correct values", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1), spending_fn = spending_of,
     verbose = TRUE
   )
@@ -871,8 +921,9 @@ test_that("boundary_table matches test_values boundaries", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     verbose = TRUE, test_values = TRUE
   )
 
@@ -881,7 +932,7 @@ test_that("boundary_table matches test_values boundaries", {
   for (k in seq_along(result$test_values)) {
     tv <- result$test_values[[k]]
     if (is.null(tv)) next
-    tv <- tv[!tv$Look_back, ]  # skip look_back rows
+    tv <- tv[!tv$Look_back, ] # skip look_back rows
 
     for (i in seq_len(nrow(tv))) {
       hyp <- tv$Hypothesis[i]
@@ -893,8 +944,10 @@ test_that("boundary_table matches test_values boundaries", {
 
       if (nrow(bt_row) > 0) {
         col_name <- paste0("Boundary.", k)
-        expect_equal(boundary, bt_row[[col_name]], tolerance = 1e-6,
-                     label = paste(hyp, "weight", w, "analysis", k))
+        expect_equal(boundary, bt_row[[col_name]],
+          tolerance = 1e-6,
+          label = paste(hyp, "weight", w, "analysis", k)
+        )
       }
     }
   }
@@ -906,8 +959,9 @@ test_that("test_values include Look_back rows when look_back = TRUE", {
   p["H3", ] <- c(0.0008, 0.006)
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = TRUE, test_values = TRUE
   )
 
@@ -934,8 +988,9 @@ test_that("test_values have no Look_back rows when look_back = FALSE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     look_back = FALSE, test_values = TRUE
   )
 
@@ -953,8 +1008,9 @@ test_that("print method works with verbose = TRUE", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of,
     verbose = TRUE
   )
 
@@ -966,8 +1022,9 @@ test_that("print method works with per-hypothesis look_back", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = c(FALSE, FALSE, TRUE, TRUE)
   )
 
@@ -980,8 +1037,9 @@ test_that("print method shows look_back footnote in test_values", {
   p["H3", ] <- c(0.0008, 0.006)
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_pocock,
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_pocock,
     look_back = TRUE, test_values = TRUE
   )
 
@@ -993,8 +1051,9 @@ test_that("print method shows rejection sequence", {
   p <- gsd_p()
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
-    info_frac = c(1/3, 2/3), spending_fn = spending_of
+    g, p,
+    alpha = 0.025,
+    info_frac = c(1 / 3, 2 / 3), spending_fn = spending_of
   )
 
   expect_output(print(result), "Rejection sequence")
@@ -1048,11 +1107,13 @@ test_that("H4-type look_back: data at both analyses, crosses only at earlier", {
   )
 
   r_no <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = FALSE
   )
   r_yes <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = TRUE, test_values = TRUE
   )
 
@@ -1096,11 +1157,13 @@ test_that("H5-type look_back: single-analysis hypothesis, rejected via look_back
   )
 
   r_no <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = FALSE
   )
   r_yes <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = TRUE, test_values = TRUE
   )
 
@@ -1144,7 +1207,8 @@ test_that("H5-type: without look_back, single-analysis hypothesis not reconsider
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = FALSE, test_values = TRUE
   )
 
@@ -1173,7 +1237,8 @@ test_that("look_back with single-analysis hypothesis: not rejected when p too la
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = TRUE
   )
 
@@ -1195,7 +1260,8 @@ test_that("look_back carries forward sequential p for hypotheses with no current
   )
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025, info_frac = info_frac,
+    g, p,
+    alpha = 0.025, info_frac = info_frac,
     spending_fn = spending_of, look_back = TRUE
   )
 

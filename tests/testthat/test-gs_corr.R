@@ -1,5 +1,5 @@
 test_that("gs_corr matches analytical formula", {
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
   corr <- graphicalMCP:::gs_corr(t)
   expected <- outer(t, t, function(ti, tj) sqrt(pmin(ti, tj) / pmax(ti, tj)))
 

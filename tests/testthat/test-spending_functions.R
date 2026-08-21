@@ -3,7 +3,7 @@ test_that("spending functions return correct cumulative spending at boundaries",
 
   # At info_frac = 1, spending = alpha
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
 
   expect_equal(spending_of(alpha, 1), alpha)
   expect_equal(spending_pocock(alpha, 1), alpha)
@@ -28,7 +28,7 @@ test_that("spending functions are monotonically non-decreasing", {
 
 test_that("spending_linear returns alpha * t", {
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
   expect_equal(spending_linear(alpha, t), alpha * t)
 })
 
@@ -53,7 +53,7 @@ test_that("spending_hsd gamma parameter works", {
 
 test_that("OBF is more conservative than Pocock at early analyses", {
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
 
   of_spend <- spending_of(alpha, t)
   poc_spend <- spending_pocock(alpha, t)
@@ -68,7 +68,7 @@ test_that("spending functions match gsDesign", {
   skip_if_not_installed("gsDesign")
 
   alpha <- 0.025
-  t_list <- list(c(1/3, 2/3, 1), c(0.5, 1), c(0.2, 0.6, 1))
+  t_list <- list(c(1 / 3, 2 / 3, 1), c(0.5, 1), c(0.2, 0.6, 1))
 
   for (t in t_list) {
     expect_equal(
@@ -116,7 +116,8 @@ test_that("spending_wt is monotonically non-decreasing", {
   for (delta in c(0, 0.1, 0.25, 0.5)) {
     sp <- spending_wt(alpha, t, delta = delta)
     expect_true(all(diff(sp) >= -1e-10),
-                label = paste("delta =", delta))
+      label = paste("delta =", delta)
+    )
   }
 })
 
@@ -128,7 +129,7 @@ test_that("spending_wt caps at alpha for info_frac > 1", {
 
 test_that("spending_wt delta=0 gives OBF-like boundaries (conservative at early analyses)", {
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
   sp_obf <- spending_wt(alpha, t, delta = 0)
   # OBF spends very little at early analyses
   expect_true(sp_obf[1] < 0.001)
@@ -137,7 +138,7 @@ test_that("spending_wt delta=0 gives OBF-like boundaries (conservative at early 
 
 test_that("spending_wt delta=0.5 gives Pocock-like boundaries (more uniform spending)", {
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
   sp_poc <- spending_wt(alpha, t, delta = 0.5)
   # Pocock spends more at early analyses than OBF
   sp_obf <- spending_wt(alpha, t, delta = 0)
@@ -148,24 +149,29 @@ test_that("spending_wt delta=0.5 gives Pocock-like boundaries (more uniform spen
 test_that("spending_wt produces Wang-Tsiatis boundary shape", {
   # c_k * t_k^(0.5 - delta) should be approximately constant
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
   for (delta in c(0, 0.25, 0.5)) {
-    b <- gs_boundaries(alpha, t,
-                       function(a, tf) spending_wt(a, tf, delta = delta))
+    b <- gs_boundaries(
+      alpha, t,
+      function(a, tf) spending_wt(a, tf, delta = delta)
+    )
     C_values <- b$bounds_z * t^(0.5 - delta)
     expect_true(max(C_values) - min(C_values) < 0.01,
-                label = paste("delta =", delta))
+      label = paste("delta =", delta)
+    )
   }
 })
 
 test_that("spending_wt matches rpact Wang-Tsiatis boundaries", {
   skip_if_not_installed("rpact")
   alpha <- 0.025
-  t <- c(1/3, 2/3, 1)
+  t <- c(1 / 3, 2 / 3, 1)
 
   for (delta in c(0.1, 0.25, 0.4)) {
-    b <- gs_boundaries(alpha, t,
-                       function(a, tf) spending_wt(a, tf, delta = delta))
+    b <- gs_boundaries(
+      alpha, t,
+      function(a, tf) spending_wt(a, tf, delta = delta)
+    )
     rpact_gsd <- rpact::getDesignGroupSequential(
       sided = 1, alpha = alpha,
       informationRates = t,
@@ -173,8 +179,9 @@ test_that("spending_wt matches rpact Wang-Tsiatis boundaries", {
       deltaWT = delta
     )
     expect_equal(b$bounds_z, rpact_gsd$criticalValues,
-                 tolerance = 1e-3,
-                 label = paste("delta =", delta))
+      tolerance = 1e-3,
+      label = paste("delta =", delta)
+    )
   }
 })
 
@@ -183,8 +190,10 @@ test_that("spending_wt delta=0 matches rpact OBF boundaries", {
   alpha <- 0.025
   t <- c(0.5, 1)
 
-  b <- gs_boundaries(alpha, t,
-                     function(a, tf) spending_wt(a, tf, delta = 0))
+  b <- gs_boundaries(
+    alpha, t,
+    function(a, tf) spending_wt(a, tf, delta = 0)
+  )
   rpact_gsd <- rpact::getDesignGroupSequential(
     sided = 1, alpha = alpha,
     informationRates = t,
@@ -198,8 +207,10 @@ test_that("spending_wt delta=0.5 matches rpact Pocock boundaries", {
   alpha <- 0.025
   t <- c(0.5, 1)
 
-  b <- gs_boundaries(alpha, t,
-                     function(a, tf) spending_wt(a, tf, delta = 0.5))
+  b <- gs_boundaries(
+    alpha, t,
+    function(a, tf) spending_wt(a, tf, delta = 0.5)
+  )
   rpact_gsd <- rpact::getDesignGroupSequential(
     sided = 1, alpha = alpha,
     informationRates = t,
@@ -218,7 +229,8 @@ test_that("spending_wt works in graph_test_shortcut_gsd", {
   p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
 
   result <- graph_test_shortcut_gsd(
-    g, p, alpha = 0.025,
+    g, p,
+    alpha = 0.025,
     info_frac = c(0.5, 1),
     spending_fn = function(a, t) spending_wt(a, t, delta = 0.25)
   )

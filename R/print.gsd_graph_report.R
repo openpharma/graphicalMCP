@@ -124,8 +124,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   exceed_1 <- adj_p > 1
   adj_p_format <- character(length(adj_p))
   adj_p_format[exceed_1] <- gsub(".00000001", "+", adj_p[exceed_1])
-  adj_p_format[!exceed_1] <- formatC(adj_p[!exceed_1], format = "f",
-                                     digits = precision)
+  adj_p_format[!exceed_1] <- formatC(adj_p[!exceed_1],
+    format = "f",
+    digits = precision
+  )
 
   decision_at <- x$outputs$decision_at
 
@@ -157,15 +159,19 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   print(df_summary, row.names = FALSE)
 
   cat(pad, "(*) Adjusted p-values account for both the group sequential",
-      " design and the\n", pad, "    graphical multiple comparison procedure.",
-      " Based on repeated p-values when\n", pad, "    look_back = FALSE,",
-      " and sequential p-values when look_back = TRUE.\n", sep = "")
+    " design and the\n", pad, "    graphical multiple comparison procedure.",
+    " Based on repeated p-values when\n", pad, "    look_back = FALSE,",
+    " and sequential p-values when look_back = TRUE.\n",
+    sep = ""
+  )
 
   # Rejection sequence
   rej_seq <- x$outputs$rejection_sequence
   if (length(rej_seq) > 0) {
     cat("\n", pad, "Rejection sequence: ",
-        paste(rej_seq, collapse = " -> "), "\n", sep = "")
+      paste(rej_seq, collapse = " -> "), "\n",
+      sep = ""
+    )
   }
   cat("\n")
 
@@ -214,9 +220,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       # Print footnote for look_back hypotheses
       if (has_look_back) {
         cat(pad, "(*) Rejected via look_back: the nominal p-value crossed",
-            " the boundary at an\n", pad, "    earlier analysis with the",
-            " hypothesis weight updated via graph propagation.\n",
-            sep = "")
+          " the boundary at an\n", pad, "    earlier analysis with the",
+          " hypothesis weight updated via graph propagation.\n",
+          sep = ""
+        )
       }
       cat("\n")
     }
@@ -242,9 +249,10 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
     section_break("Boundary table ($boundary_table)")
 
     cat(pad, "Nominal p-value boundaries for all possible hypothesis weights\n",
-        pad, "from the graph's closure. Use to verify rejection decisions:\n",
-        pad, "a hypothesis is rejected when its p-value <= boundary.\n\n",
-        sep = "")
+      pad, "from the graph's closure. Use to verify rejection decisions:\n",
+      pad, "a hypothesis is rejected when its p-value <= boundary.\n\n",
+      sep = ""
+    )
 
     for (hyp in names(x$boundary_table)) {
       cat(pad, hyp, "\n", sep = "")
@@ -253,7 +261,8 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       # Format numeric columns with consistent fixed notation
       for (col in names(bt_display)) {
         bt_display[[col]] <- formatC(bt_display[[col]],
-                                     format = "f", digits = precision)
+          format = "f", digits = precision
+        )
       }
       bt_out <- utils::capture.output(print(bt_display, row.names = FALSE))
       cat(paste0(pad, bt_out), sep = "\n")

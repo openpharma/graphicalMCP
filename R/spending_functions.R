@@ -83,10 +83,10 @@
 #' spending_of(0.025, c(0, 0.5, 1))
 #'
 #' # Compare spending functions at information fractions (1/3, 2/3, 1)
-#' spending_of(0.025, c(1/3, 2/3, 1))
-#' spending_pocock(0.025, c(1/3, 2/3, 1))
-#' spending_hsd(0.025, c(1/3, 2/3, 1), gamma = -4)
-#' spending_linear(0.025, c(1/3, 2/3, 1))
+#' spending_of(0.025, c(1 / 3, 2 / 3, 1))
+#' spending_pocock(0.025, c(1 / 3, 2 / 3, 1))
+#' spending_hsd(0.025, c(1 / 3, 2 / 3, 1), gamma = -4)
+#' spending_linear(0.025, c(1 / 3, 2 / 3, 1))
 #'
 #' # User-defined spending function: piecewise combination.
 #' # Use O'Brien-Fleming for the first half of alpha (conservative at
@@ -98,10 +98,10 @@
 #'   spending_of(pmin(alpha, threshold), info_frac) +
 #'     spending_pocock(pmax(alpha - threshold, 0), info_frac)
 #' }
-#' spending_piecewise(0.025, c(1/3, 2/3, 1))
+#' spending_piecewise(0.025, c(1 / 3, 2 / 3, 1))
 #' # Compare: alpha = 0.0125 uses only OBF
-#' spending_piecewise(0.0125, c(1/3, 2/3, 1))
-#' spending_of(0.0125, c(1/3, 2/3, 1))
+#' spending_piecewise(0.0125, c(1 / 3, 2 / 3, 1))
+#' spending_of(0.0125, c(1 / 3, 2 / 3, 1))
 spending_of <- function(alpha, info_frac) {
   stopifnot(
     "info_frac must be non-negative" = all(info_frac >= 0),
@@ -214,14 +214,14 @@ spending_linear <- function(alpha, info_frac) {
 #' @examples
 #' # --- Subgroup spending time ---
 #' # Without spending_with_time, spending_of() uses info_frac for spending:
-#' info_frac_all <- c(529 / 800, 700 / 800, 1)  # all-subjects fractions
+#' info_frac_all <- c(529 / 800, 700 / 800, 1) # all-subjects fractions
 #' spending_of(0.01, info_frac_all)
 #'
 #' # With spending_with_time, spending uses subgroup fractions instead.
 #' # The info_frac passed at runtime is ignored by the spending function;
 #' # it is only used by gs_boundaries()/graph_test_shortcut_gsd() for
 #' # the correlation structure.
-#' spending_time_sub <- c(185 / 295, 245 / 295, 1)  # subgroup fractions
+#' spending_time_sub <- c(185 / 295, 245 / 295, 1) # subgroup fractions
 #' spending_with_time(spending_of, spending_time_sub)
 #'
 #' # --- Monitoring with changed final information ---
@@ -350,11 +350,11 @@ spending_with_time <- function(spending_fn, spending_time, info_frac = NULL) {
 #' spending_wt(0.025, c(0.5, 1), delta = 0.5)
 #'
 #' # Intermediate (delta = 0.25)
-#' spending_wt(0.025, c(1/3, 2/3, 1), delta = 0.25)
+#' spending_wt(0.025, c(1 / 3, 2 / 3, 1), delta = 0.25)
 #'
 #' # Compare with Lan-DeMets approximations
-#' spending_of(0.025, c(1/3, 2/3, 1))     # Lan-DeMets OBF approximation
-#' spending_wt(0.025, c(1/3, 2/3, 1), 0)  # Exact OBF
+#' spending_of(0.025, c(1 / 3, 2 / 3, 1)) # Lan-DeMets OBF approximation
+#' spending_wt(0.025, c(1 / 3, 2 / 3, 1), 0) # Exact OBF
 #'
 #' # Use in graph_test_shortcut_gsd (wrap to fix delta)
 #' \donttest{
@@ -368,7 +368,6 @@ spending_with_time <- function(spending_fn, spending_time, info_frac = NULL) {
 #' }
 spending_wt <- function(alpha, info_frac, delta = 0.5,
                         maxpts = 25000, abseps = 1e-6) {
-
   stopifnot(
     "info_frac must be non-negative" = all(info_frac >= 0),
     "At most one info_frac value can be >= 1" = sum(info_frac >= 1) <= 1,
@@ -380,8 +379,12 @@ spending_wt <- function(alpha, info_frac, delta = 0.5,
   K <- length(info_frac)
 
   # Handle edge cases
-  if (alpha <= 0) return(rep(0, K))
-  if (K == 1) return(pmin(alpha, alpha))
+  if (alpha <= 0) {
+    return(rep(0, K))
+  }
+  if (K == 1) {
+    return(pmin(alpha, alpha))
+  }
 
   # Correlation matrix
   corr <- gs_corr(info_frac)

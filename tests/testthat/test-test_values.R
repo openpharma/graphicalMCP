@@ -5,9 +5,11 @@ test_that("test_values_bonferroni returns correct structure", {
   result <- graphicalMCP:::test_values_bonferroni(p, w, alpha = 0.025)
 
   expect_s3_class(result, "data.frame")
-  expect_true(all(c("Intersection", "Hypothesis", "Test", "p",
-                     "c_value", "Weight", "Alpha", "Inequality_holds") %in%
-                    names(result)))
+  expect_true(all(c(
+    "Intersection", "Hypothesis", "Test", "p",
+    "c_value", "Weight", "Alpha", "Inequality_holds"
+  ) %in%
+    names(result)))
   expect_equal(nrow(result), 2)
   expect_equal(result$Test, c("bonferroni", "bonferroni"))
 })
@@ -24,7 +26,8 @@ test_that("test_values_bonferroni inequality logic is correct", {
 
 test_that("test_values_bonferroni returns NULL for empty input", {
   result <- graphicalMCP:::test_values_bonferroni(
-    numeric(0), numeric(0), alpha = 0.025
+    numeric(0), numeric(0),
+    alpha = 0.025
   )
   expect_null(result)
 })
@@ -61,7 +64,8 @@ test_that("test_values_simes cumulative weight logic is correct", {
 
 test_that("test_values_simes returns NULL for empty input", {
   result <- graphicalMCP:::test_values_simes(
-    numeric(0), numeric(0), alpha = 0.025
+    numeric(0), numeric(0),
+    alpha = 0.025
   )
   expect_null(result)
 })
@@ -99,7 +103,8 @@ test_that("test_values_hochberg weight quotient logic is correct", {
 
 test_that("test_values_hochberg returns NULL for empty input", {
   result <- graphicalMCP:::test_values_hochberg(
-    numeric(0), numeric(0), alpha = 0.025
+    numeric(0), numeric(0),
+    alpha = 0.025
   )
   expect_null(result)
 })
@@ -110,7 +115,8 @@ test_that("test_values_parametric returns correct structure", {
   w <- c(H1 = 0.5, H2 = 0.5)
   corr <- diag(2)
   result <- graphicalMCP:::test_values_parametric(
-    p, w, alpha = 0.025, test_corr = corr
+    p, w,
+    alpha = 0.025, test_corr = corr
   )
 
   expect_s3_class(result, "data.frame")
@@ -120,7 +126,8 @@ test_that("test_values_parametric returns correct structure", {
 
 test_that("test_values_parametric returns NULL for empty input", {
   result <- graphicalMCP:::test_values_parametric(
-    numeric(0), numeric(0), alpha = 0.025, test_corr = matrix(0, 0, 0)
+    numeric(0), numeric(0),
+    alpha = 0.025, test_corr = matrix(0, 0, 0)
   )
   expect_null(result)
 })

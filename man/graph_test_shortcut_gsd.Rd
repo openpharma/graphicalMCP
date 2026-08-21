@@ -224,10 +224,10 @@ graph_test_shortcut_gsd(
 g4 <- graph_create(
   rep(0.25, 4),
   rbind(
-    c(0, 1/3, 1/3, 1/3),
-    c(1/3, 0, 1/3, 1/3),
-    c(1/3, 1/3, 0, 1/3),
-    c(1/3, 1/3, 1/3, 0)
+    c(0, 1 / 3, 1 / 3, 1 / 3),
+    c(1 / 3, 0, 1 / 3, 1 / 3),
+    c(1 / 3, 1 / 3, 0, 1 / 3),
+    c(1 / 3, 1 / 3, 1 / 3, 0)
   )
 )
 p4 <- rbind(
@@ -239,7 +239,7 @@ p4 <- rbind(
 # info_frac must be a matrix with NA matching p
 info_frac4 <- rbind(
   H1 = c(0.5, 1, NA),
-  H2 = c(1/3, 2/3, 1),
+  H2 = c(1 / 3, 2 / 3, 1),
   H3 = c(NA, 0.5, 1),
   H4 = c(0.4, NA, 1)
 )

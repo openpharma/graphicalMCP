@@ -205,10 +205,10 @@
 #' g4 <- graph_create(
 #'   rep(0.25, 4),
 #'   rbind(
-#'     c(0, 1/3, 1/3, 1/3),
-#'     c(1/3, 0, 1/3, 1/3),
-#'     c(1/3, 1/3, 0, 1/3),
-#'     c(1/3, 1/3, 1/3, 0)
+#'     c(0, 1 / 3, 1 / 3, 1 / 3),
+#'     c(1 / 3, 0, 1 / 3, 1 / 3),
+#'     c(1 / 3, 1 / 3, 0, 1 / 3),
+#'     c(1 / 3, 1 / 3, 1 / 3, 0)
 #'   )
 #' )
 #' p4 <- rbind(
@@ -220,7 +220,7 @@
 #' # info_frac must be a matrix with NA matching p
 #' info_frac4 <- rbind(
 #'   H1 = c(0.5, 1, NA),
-#'   H2 = c(1/3, 2/3, 1),
+#'   H2 = c(1 / 3, 2 / 3, 1),
 #'   H3 = c(NA, 0.5, 1),
 #'   H4 = c(0.4, NA, 1)
 #' )
@@ -284,8 +284,10 @@ graph_test_shortcut_gsd <- function(graph,
   names(look_back) <- hyp_names
 
   # Input validation -----------------------------------------------------------
-  gsd_input_val(graph, p, alpha, info_frac, spending_fn, look_back,
-                verbose, test_values)
+  gsd_input_val(
+    graph, p, alpha, info_frac, spending_fn, look_back,
+    verbose, test_values
+  )
 
   # Determine analysis names from column names of p and info_frac.
   # If both have column names, they must match. If only one has them, use those.
@@ -348,8 +350,10 @@ graph_test_shortcut_gsd <- function(graph,
       ),
       test_values = if (test_values) result$test_values,
       boundary_table = if (verbose) {
-        gsd_boundary_table(graph, alpha, info_frac, spending_fn,
-                           num_hyps, hyp_names)
+        gsd_boundary_table(
+          graph, alpha, info_frac, spending_fn,
+          num_hyps, hyp_names
+        )
       }
     ),
     class = "gsd_graph_report"
@@ -588,8 +592,8 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
       # first_rejected_at < k (boundary crossed at an earlier analysis).
       for (hyp_name in newly_rejected_names) {
         if (look_back[hyp_name] &&
-            !is.na(first_rejected_at[hyp_name]) &&
-            first_rejected_at[hyp_name] < k) {
+          !is.na(first_rejected_at[hyp_name]) &&
+          first_rejected_at[hyp_name] < k) {
           rej_idx <- which(del_seq_k == hyp_name)
           w_at_rej <-
             shortcut_k$details$results[[rej_idx]]$hypotheses[hyp_name]
@@ -600,7 +604,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
 
           # Check if this hypothesis has a standard row at analysis k
           hyp_row <- which(tv_details[[k]]$Hypothesis == hyp_name &
-                           tv_details[[k]]$Analysis == k)
+            tv_details[[k]]$Analysis == k)
 
           if (length(hyp_row) > 0) {
             # Has data at analysis k: check if the nominal p-value at
@@ -614,7 +618,8 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
             before <- tv_details[[k]][seq_len(hyp_row), , drop = FALSE]
             after <- if (hyp_row < nrow(tv_details[[k]])) {
               tv_details[[k]][(hyp_row + 1):nrow(tv_details[[k]]), ,
-                              drop = FALSE]
+                drop = FALSE
+              ]
             }
             tv_details[[k]] <- rbind(before, lb_rows, after)
           } else {
@@ -656,9 +661,9 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
 #'
 #' @keywords internal
 gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
-                                  spending_fn, rejection_seq_k,
-                                  hyp_names, rejected_after,
-                                  has_data_k = rep(TRUE, length(hyp_names))) {
+                                    spending_fn, rejection_seq_k,
+                                    hyp_names, rejected_after,
+                                    has_data_k = rep(TRUE, length(hyp_names))) {
   num_hyps <- length(hyp_names)
   # Active hypotheses at the start of this analysis: have data at analysis k,
   # and either not yet rejected or rejected at this analysis
@@ -667,13 +672,17 @@ gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
 
   # Early return if no hypotheses are active (e.g., all rejected at earlier
   # analyses) or if rejection_seq_k is empty and no active hypotheses remain
-  if (!any(active_before)) return(NULL)
+  if (!any(active_before)) {
+    return(NULL)
+  }
 
   # Helper: compute the nominal boundary at analysis k for hypothesis j
   # using the current graph's allocated alpha (weight * alpha)
   compute_boundary <- function(j, current_graph) {
     total_alpha_j <- current_graph$hypotheses[j] * alpha
-    if (total_alpha_j <= 0) return(0)
+    if (total_alpha_j <= 0) {
+      return(0)
+    }
     # Use non-NA entries up to and including analysis k
     non_na_up_to_k <- which(!is.na(info_frac[j, ]) & seq_len(ncol(info_frac)) <= k)
     if_j <- info_frac[j, non_na_up_to_k]
@@ -727,7 +736,9 @@ gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
     )
   }
 
-  if (length(detail_rows) == 0) return(NULL)
+  if (length(detail_rows) == 0) {
+    return(NULL)
+  }
 
   data.frame(
     Analysis = k,
@@ -788,7 +799,7 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
   for (a in prior_analyses) {
     # Find the position of analysis a within the non-NA analyses up to k
     a_pos <- which(non_na_up_to_k == a)
-    if (length(a_pos) == 0) next  # hypothesis has no data at this analysis
+    if (length(a_pos) == 0) next # hypothesis has no data at this analysis
 
     nominal_p <- p[j, a]
     boundary <- bounds_result$bounds_nominal[a_pos]
@@ -806,7 +817,9 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
     )
   }
 
-  if (length(detail_rows) == 0) return(NULL)
+  if (length(detail_rows) == 0) {
+    return(NULL)
+  }
   do.call(rbind, detail_rows)
 }
 
@@ -848,7 +861,7 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
       length(if_non_na) == 0 || all(if_non_na > 0),
     "Spending functions must be a list of functions" =
       is.list(spending_fn) &&
-      all(vapply(spending_fn, is.function, logical(1))),
+        all(vapply(spending_fn, is.function, logical(1))),
     "Number of spending functions must match the number of hypotheses" =
       length(spending_fn) == num_hyps,
     "look_back must be a logical vector of length matching hypotheses" =
