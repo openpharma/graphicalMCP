@@ -325,7 +325,7 @@ be generated and used for the comparison. A set of p-values is randomly
 generated to be used for the graphical MCP. Adjusted p-values are
 calculated and compared using the following functions:
 <code><a href="../reference/graph_test_closure.html">graphicalMCP::graph_test_closure()</a></code> and
-<code><a href="https://rdrr.io/pkg/lrstat/man/fadjpsim.html" class="external-link">lrstat::fadjpsim()</a></code>. Simes tests are used for two primary
+<code><a href="https://kaifenglu.github.io/lrstat/reference/fadjpsim.html" class="external-link">lrstat::fadjpsim()</a></code>. Simes tests are used for two primary
 hypotheses. This process is repeated 10000 times. Adjusted p-values are
 matched for all 10000 cases.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -358,8 +358,8 @@ matched for all 10000 cases.</p>
 <span>  <span class="op">)</span><span class="op">$</span><span class="va">outputs</span><span class="op">$</span><span class="va">adjusted_p</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">graphicalmcp_test_simes</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
 <span>  <span class="va">lrstat_test_simes</span> <span class="op">&lt;-</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/lrstat/man/fadjpsim.html" class="external-link">fadjpsim</a></span><span class="op">(</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/pkg/lrstat/man/fwgtmat.html" class="external-link">fwgtmat</a></span><span class="op">(</span><span class="va">graph</span><span class="op">$</span><span class="va">hypotheses</span>, <span class="va">graph</span><span class="op">$</span><span class="va">transitions</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://kaifenglu.github.io/lrstat/reference/fadjpsim.html" class="external-link">fadjpsim</a></span><span class="op">(</span></span>
+<span>      <span class="fu"><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">fwgtmat</a></span><span class="op">(</span><span class="va">graph</span><span class="op">$</span><span class="va">hypotheses</span>, <span class="va">graph</span><span class="op">$</span><span class="va">transitions</span><span class="op">)</span>,</span>
 <span>      <span class="va">p</span>,</span>
 <span>      <span class="va">family</span></span>
 <span>    <span class="op">)</span></span>
@@ -378,7 +378,7 @@ matched for all 10000 cases.</p>
 <p>Power simulations are not available in <code>lrstat</code> for Simes
 tests. Thus a comparison could be done to compare
 <code><a href="../reference/graph_calculate_power.html">graphicalMCP::graph_calculate_power()</a></code> and a manual
-repetition of <code><a href="https://rdrr.io/pkg/lrstat/man/fadjpsim.html" class="external-link">lrstat::fadjpsim()</a></code> for many sets of marginal
+repetition of <code><a href="https://kaifenglu.github.io/lrstat/reference/fadjpsim.html" class="external-link">lrstat::fadjpsim()</a></code> for many sets of marginal
 power. This process is the same as the above comparison of adjusted
 p-values, and thus omitted.</p>
 </div>
