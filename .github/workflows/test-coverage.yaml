@@ -1,0 +1,94 @@
+# Test coverage workflow.
+#
+# Runs covr on pushes to and pull requests against main, then:
+#   * publishes the coverage badge and Cobertura XML to the orphan
+#     `_xml_coverage_reports` branch via insightsengineering/coverage-action
+#     (this is the source of the "Code Coverage" badge in README.md), and
+#   * deploys the HTML coverage report to the pkgdown site under
+#     `latest-tag/coverage-report/` (the badge's link target).
+#
+# The covr steps are derived from
+# https://github.com/r-lib/actions/tree/v2/examples ; the badge/report
+# publishing follows the openpharma coverage convention.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+name: test-coverage
+
+# Serialize gh-pages writes with the pkgdown workflow (which shares this group)
+# so the two deploy actions never push the gh-pages branch concurrently.
+concurrency:
+  group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::covr, any::DT, any::htmltools, any::xml2
+          needs: coverage
+
+      - name: Run coverage
+        run: |
+          cov <- covr::package_coverage(
+            quiet = FALSE,
+            clean = FALSE,
+            install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
+          )
+          print(cov)
+          covr::to_cobertura(cov, filename = "coverage.xml")
+          covr::report(cov, file = "coverage-report.html", browse = FALSE)
+        shell: Rscript {0}
+
+      - name: Show testthat output
+        if: always()
+        run: |
+          find '${{ runner.temp }}/package' -name 'testthat.Rout*' -exec cat '{}' \; || true
+        shell: bash
+
+      - name: Publish coverage badge and XML to _xml_coverage_reports
+        uses: insightsengineering/coverage-action@v3
+        with:
+          path: ./coverage.xml
+          threshold: 0
+          fail: false
+          publish: true
+          diff: true
+          diff-branch: main
+          coverage-summary-title: "Code Coverage Summary"
+
+      - name: Stage HTML report for deployment
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p coverage-report-site
+          mv coverage-report.html coverage-report-site/index.html
+        shell: bash
+
+      - name: Deploy HTML coverage report to gh-pages (latest-tag)
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4.4.1
+        with:
+          clean: false
+          branch: gh-pages
+          folder: coverage-report-site
+          target-folder: latest-tag/coverage-report
