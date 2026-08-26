@@ -195,7 +195,7 @@ g <- graph_create(hypotheses, transitions)
 ```
 
 ```{r graph-plot, eval = requireNamespace("igraph", quietly = TRUE)}
-plot(g, vertex.size = 60)
+plot(g, vertex.size = 40)
 ```
 
 ### Observed P-values
