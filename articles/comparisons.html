@@ -359,10 +359,10 @@ matched for all 10000 cases.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">graphicalmcp_test_simes</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
 <span>  <span class="va">lrstat_test_simes</span> <span class="op">&lt;-</span></span>
 <span>    <span class="fu"><a href="https://kaifenglu.github.io/lrstat/reference/fadjpsim.html" class="external-link">fadjpsim</a></span><span class="op">(</span></span>
-<span>      <span class="fu"><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">fwgtmat</a></span><span class="op">(</span><span class="va">graph</span><span class="op">$</span><span class="va">hypotheses</span>, <span class="va">graph</span><span class="op">$</span><span class="va">transitions</span><span class="op">)</span>,</span>
 <span>      <span class="va">p</span>,</span>
+<span>      <span class="fu"><a href="https://kaifenglu.github.io/lrstat/reference/fwgtmat.html" class="external-link">fwgtmat</a></span><span class="op">(</span><span class="va">graph</span><span class="op">$</span><span class="va">hypotheses</span>, <span class="va">graph</span><span class="op">$</span><span class="va">transitions</span><span class="op">)</span>,</span>
 <span>      <span class="va">family</span></span>
-<span>    <span class="op">)</span></span>
+<span>    <span class="op">)</span><span class="op">$</span><span class="va">padj</span></span>
 <span></span>
 <span>  <span class="va">identical</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    <span class="va">identical</span>,</span>

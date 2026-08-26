@@ -268,10 +268,10 @@ for (i in 1:10000) {
   names(graphicalmcp_test_simes) <- NULL
   lrstat_test_simes <-
     fadjpsim(
-      fwgtmat(graph$hypotheses, graph$transitions),
       p,
+      fwgtmat(graph$hypotheses, graph$transitions),
       family
-    )
+    )$padj
 
   identical <- c(
     identical,
