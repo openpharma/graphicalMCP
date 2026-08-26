@@ -219,7 +219,7 @@ g <- graph_create(hypotheses, transitions)
 
 ``` r
 
-plot(g, vertex.size = 60)
+plot(g, vertex.size = 40)
 ```
 
 ![](group-sequential-testing_files/figure-html/graph-plot-1.png)
