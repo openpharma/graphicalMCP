@@ -278,50 +278,58 @@ test_that("compare adjusted p-values to lrstat - Bonferroni & Simes", {
 
   p <- pnorm(rnorm(6, 2.5), lower.tail = FALSE)
 
-  if (requireNamespace("lrstat", quietly = TRUE)) {
-    fwgtmat_will_run <- tryCatch(
-      {
-        lrstat::fwgtmat(g$hypotheses, g$transitions)
-        TRUE
-      },
-      error = function(cond) FALSE
+  # lrstat 0.3.3 reworked the fadjp* interface: the raw p-values are now the
+  # first argument, the graph weights are supplied as the fwgtmat() list
+  # (`inthyp` + `wgtmat`) rather than as separate `w`/`G` (Bonferroni) or a
+  # bare weight matrix (Simes), and the functions return a list whose `$padj`
+  # holds the adjusted elementary-hypothesis p-values. Require >= 0.3.3 so the
+  # comparison targets the current interface; on older lrstat the test skips.
+  skip_if_not_installed("lrstat", "0.3.3")
+
+  fwgtmat_will_run <- tryCatch(
+    {
+      lrstat::fwgtmat(g$hypotheses, g$transitions)
+      TRUE
+    },
+    error = function(cond) FALSE
+  )
+
+  if (fwgtmat_will_run) {
+    # fwgtmat() now returns list(inthyp, wgtmat); pass it straight through as
+    # the `wgtmat` argument to both fadjpbon() and fadjpsim().
+    gw <- lrstat::fwgtmat(g$hypotheses, g$transitions)
+
+    fam1 <- matrix(1, ncol = 6)
+    fam2 <- rbind(c(1, 1, 1, 0, 0, 0), c(0, 0, 0, 1, 1, 1))
+
+    expect_equal(
+      graph_test_shortcut(g, p)$outputs$adjusted_p,
+      lrstat::fadjpbon(p, gw)$padj,
+      ignore_attr = TRUE
     )
 
-    if (fwgtmat_will_run) {
-      gw <- lrstat::fwgtmat(g$hypotheses, g$transitions)
+    expect_equal(
+      graph_test_closure(g, p)$outputs$adjusted_p,
+      lrstat::fadjpbon(p, gw)$padj,
+      ignore_attr = TRUE
+    )
 
-      fam1 <- matrix(1, ncol = 6)
-      fam2 <- rbind(c(1, 1, 1, 0, 0, 0), c(0, 0, 0, 1, 1, 1))
+    expect_equal(
+      graph_test_closure(g, p, test_types = "s")$outputs$adjusted_p,
+      lrstat::fadjpsim(p, gw, fam1)$padj,
+      ignore_attr = TRUE
+    )
 
-      expect_equal(
-        graph_test_shortcut(g, p)$outputs$adjusted_p,
-        lrstat::fadjpbon(g$hypotheses, g$transitions, matrix(p, ncol = 6)),
-        ignore_attr = TRUE
-      )
-
-      expect_equal(
-        graph_test_closure(g, p)$outputs$adjusted_p,
-        lrstat::fadjpbon(g$hypotheses, g$transitions, matrix(p, ncol = 6)),
-        ignore_attr = TRUE
-      )
-
-      expect_equal(
-        graph_test_closure(g, p, test_types = "s")$outputs$adjusted_p,
-        lrstat::fadjpsim(gw, p, fam1),
-        ignore_attr = TRUE
-      )
-
-      expect_equal(
-        graph_test_closure(
-          g,
-          p,
-          test_groups = list(1:3, 4:6),
-          test_types = "s"
-        )$outputs$adjusted_p,
-        lrstat::fadjpsim(gw, p, fam2),
-        ignore_attr = TRUE
-      )
-    }
+    expect_equal(
+      graph_test_closure(
+        g,
+        p,
+        test_groups = list(1:3, 4:6),
+        test_types = "s"
+      )$outputs$adjusted_p,
+      lrstat::fadjpsim(p, gw, fam2)$padj,
+      ignore_attr = TRUE
+    )
   }
 })
 
