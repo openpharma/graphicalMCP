@@ -34,7 +34,7 @@ Suggests:
     htmltools,
     igraph,
     knitr,
-    lrstat,
+    lrstat (>= 0.3.3),
     prompt,
     rmarkdown,
     rpact,

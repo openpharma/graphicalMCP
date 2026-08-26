@@ -1,3 +1,19 @@
+# Version 0.3.0
+
+- This is the tenth submission to CRAN.
+- This release adds group sequential testing for graphical multiple comparison
+  procedures via `graph_test_shortcut_gsd()`, with spending functions and the
+  supporting functions `gs_boundaries()`, `gs_corr()`, `repeated_p()`, and
+  `sequential_p()`, plus two new vignettes (including validation against the
+  gsDesign and rpact packages).
+- A Suggests-only test comparing adjusted p-values against the lrstat package
+  was updated for the lrstat 0.3.3 interface (coordinated with its maintainer);
+  it runs only when lrstat (>= 0.3.3) is installed.
+
+## R CMD check results
+
+0 errors | 0 warnings | 0 notes
+
 # Version 0.2.9
 
 - This is the ninth submission to CRAN.
