@@ -88,9 +88,10 @@ without losing computational efficiency.
 Along with the authors and contributors, thanks to the following people
 for their suggestions and inspirations on the package:
 
-Frank Bretz, Willi Maurer, Ekkehard Glimm, Nan Chen, Jeremy Wildfire,
-Spencer Childress, Colleen McLaughlin, Matt Roumaya, Chelsea Dickens,
-Nan Xiao, Keaven Anderson, and Ron Yu
+Keaven Anderson, Frank Bretz, Nan Chen, Yao Chen, Spencer Childress,
+Chelsea Dickens, Ekkehard Glimm, Willi Maurer, Colleen McLaughlin,
+Friedrich Pahlke, Matt Roumaya, Daniel Sabanés Bové, Alex Spiers, Gernot
+Wassmer, Jeremy Wildfire, Nan Xiao, Yanyao Yi, Ron Yu, and Ying Zhang
 
 We owe a debt of gratitude to the authors of
 [gMCP](https://cran.r-project.org/package=gMCP) for their pioneering
