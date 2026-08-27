@@ -85,11 +85,12 @@ success_fns <- list(
 )
 set.seed(1234)
 # Bonferroni tests
+# Reduce the number of simulations to save time for package compilation
 power_output <- graph_calculate_power(
   g,
   alpha,
   sim_corr = corr,
-  sim_n = 1e5,
+  sim_n = 1e2,
   power_marginal = marginal_power,
   sim_success = success_fns
 )

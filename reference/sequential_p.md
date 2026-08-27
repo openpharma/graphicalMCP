@@ -164,5 +164,5 @@ sequential_p(
   info_frac = c(0.3, 0.7, 1),
   spending_fn = spending_of
 )
-#> [1] 0.01071828
+#> [1] 0.01071832
 ```

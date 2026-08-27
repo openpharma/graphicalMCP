@@ -134,11 +134,12 @@ graphical procedures. <em>Statistics in Medicine</em>, 30(13), 1489-1501.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1234</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Bonferroni tests</span></span></span>
+<span class="r-in"><span><span class="co"># Reduce the number of simulations to save time for package compilation</span></span></span>
 <span class="r-in"><span><span class="va">power_output</span> <span class="op">&lt;-</span> <span class="fu"><a href="graph_calculate_power.html">graph_calculate_power</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">g</span>,</span></span>
 <span class="r-in"><span>  <span class="va">alpha</span>,</span></span>
 <span class="r-in"><span>  sim_corr <span class="op">=</span> <span class="va">corr</span>,</span></span>
-<span class="r-in"><span>  sim_n <span class="op">=</span> <span class="fl">1e5</span>,</span></span>
+<span class="r-in"><span>  sim_n <span class="op">=</span> <span class="fl">1e2</span>,</span></span>
 <span class="r-in"><span>  power_marginal <span class="op">=</span> <span class="va">marginal_power</span>,</span></span>
 <span class="r-in"><span>  sim_success <span class="op">=</span> <span class="va">success_fns</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
