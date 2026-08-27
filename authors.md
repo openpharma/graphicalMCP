@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/openpharma/graphicalMCP/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/openpharma/graphicalMCP/blob/v0.3.0/inst/CITATION)
 
 Xi D, Brockmann E (2024). *graphicalMCP: Graphical multiple comparison
 procedures*, version 0.2.6 edition.

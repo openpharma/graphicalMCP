@@ -82,6 +82,8 @@ CRAN release: 2026-03-21
 
 ## graphicalMCP 0.3.0
 
+CRAN release: 2026-08-27
+
 - Added group sequential testing for graphical MCPs via
   [`graph_test_shortcut_gsd()`](https://openpharma.github.io/graphicalMCP/reference/graph_test_shortcut_gsd.md),
   which extends
