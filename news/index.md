@@ -116,3 +116,5 @@ CRAN release: 2026-08-27
   [\#97](https://github.com/openpharma/graphicalMCP/issues/97))
 - Plotting examples, vignettes, and tests are skipped when `igraph` or
   `gMCP` is not installed
+
+## graphicalMCP (development version)
