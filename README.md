@@ -89,9 +89,10 @@ Along with the authors and contributors, thanks to the following people
 for their suggestions and inspirations on the package:
 
 Keaven Anderson, Frank Bretz, Nan Chen, Yao Chen, Spencer Childress,
-Chelsea Dickens, Ekkehard Glimm, Willi Maurer, Colleen McLaughlin,
-Friedrich Pahlke, Matt Roumaya, Daniel Sabanés Bové, Alex Spiers, Gernot
-Wassmer, Jeremy Wildfire, Nan Xiao, Yanyao Yi, Ron Yu, and Ying Zhang
+Chelsea Dickens, Ekkehard Glimm, Michael Grayling, Willi Maurer, Colleen
+McLaughlin, Friedrich Pahlke, Matt Roumaya, Daniel Sabanés Bové, Alex
+Spiers, Gernot Wassmer, Jeremy Wildfire, Nan Xiao, Yanyao Yi, Ron Yu,
+and Ying Zhang
 
 We owe a debt of gratitude to the authors of
 [gMCP](https://cran.r-project.org/package=gMCP) for their pioneering
