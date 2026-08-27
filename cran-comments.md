@@ -1,14 +1,20 @@
 # Version 0.3.0
 
-- This is the tenth submission to CRAN.
+- This is the tenth submission to CRAN. This is a resubmission: the previous
+  submission's incoming check flagged one NOTE for the `print.power_report`
+  example running longer than 10 seconds. The number of simulations in that
+  example has been reduced (matching the `graph_calculate_power` example), so it
+  now runs in a fraction of a second.
 - This release adds group sequential testing for graphical multiple comparison
   procedures via `graph_test_shortcut_gsd()`, with spending functions and the
   supporting functions `gs_boundaries()`, `gs_corr()`, `repeated_p()`, and
   `sequential_p()`, plus two new vignettes (including validation against the
   gsDesign and rpact packages).
-- A Suggests-only test comparing adjusted p-values against the lrstat package
-  was updated for the lrstat 0.3.3 interface (coordinated with its maintainer);
-  it runs only when lrstat (>= 0.3.3) is installed.
+- The check errors currently shown for the released version (0.2.9) come from a
+  Suggests-only unit test comparing adjusted p-values against the lrstat
+  package, which broke when lrstat 0.3.3 changed its `fadjp*` interface. This
+  release updates that test for the lrstat 0.3.3 interface (coordinated with its
+  maintainer); it runs only when lrstat (>= 0.3.3) is installed.
 
 ## R CMD check results
 
