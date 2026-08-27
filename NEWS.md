@@ -74,3 +74,5 @@
 * Renamed the `Adj. P-value` column to `Adj.p` in `print.graph_report()`
 * Added a warning in `graph_create()` for very small transition weights (Issue #97)
 * Plotting examples, vignettes, and tests are skipped when `igraph` or `gMCP` is not installed
+
+# graphicalMCP (development version)
