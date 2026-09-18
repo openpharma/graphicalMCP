@@ -11,7 +11,7 @@ gsd_test_values_look_back(
   alpha,
   p,
   info_frac,
-  spending_fn,
+  engine,
   hyp_names,
   w_at_rejection
 )
@@ -29,7 +29,7 @@ gsd_test_values_look_back(
 
 \item{info_frac}{Information fraction matrix.}
 
-\item{spending_fn}{List of spending functions.}
+\item{engine}{A group sequential engine; see \code{\link[=gsd_engine_mvtnorm]{gsd_engine_mvtnorm()}}.}
 
 \item{hyp_names}{Character vector of hypothesis names.}
 

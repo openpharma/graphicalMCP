@@ -4,7 +4,7 @@
 \alias{gsd_boundary_table}
 \title{Compute boundary table for all possible hypothesis weights}
 \usage{
-gsd_boundary_table(graph, alpha, info_frac, spending_fn, num_hyps, hyp_names)
+gsd_boundary_table(graph, alpha, info_frac, engine, num_hyps, hyp_names)
 }
 \arguments{
 \item{graph}{An \code{initial_graph} object.}
@@ -13,7 +13,7 @@ gsd_boundary_table(graph, alpha, info_frac, spending_fn, num_hyps, hyp_names)
 
 \item{info_frac}{Information fraction matrix (m x K).}
 
-\item{spending_fn}{List of spending functions.}
+\item{engine}{A group sequential engine; see \code{\link[=gsd_engine_mvtnorm]{gsd_engine_mvtnorm()}}.}
 
 \item{num_hyps}{Number of hypotheses.}
 
