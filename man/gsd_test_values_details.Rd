@@ -10,7 +10,7 @@ gsd_test_values_details(
   k,
   alpha,
   info_frac,
-  spending_fn,
+  engine,
   rejection_seq_k,
   hyp_names,
   rejected_after,

@@ -9,7 +9,7 @@ gsd_test(
   p,
   alpha,
   info_frac,
-  spending_fn,
+  engine,
   look_back,
   num_analyses,
   num_hyps,
