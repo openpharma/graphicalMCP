@@ -472,6 +472,86 @@ test_that("sfupar given as a single non-list value applies to all hypotheses", {
   expect_equal(scalar$inputs$sfupar, list(H1 = -2, H2 = -2))
 })
 
+test_that("a list-valued spending parameter is wrapped per hypothesis", {
+  skip_if_not_installed("gsDesign")
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
+  trunc_par <- list(trange = c(0.2, 0.8), sf = gsDesign::sfHSD, param = 1)
+
+  result <- graph_test_shortcut_gsDesign(
+    g, p, 0.025, c(0.5, 1),
+    sfu = gsDesign::sfTruncated, sfupar = rep(list(trunc_par), 2),
+    verbose = TRUE
+  )
+  expect_equal(result$inputs$sfupar, list(H1 = trunc_par, H2 = trunc_par))
+  # The boundaries are those of the truncated design built by gsDesign
+  design <- gsDesign::gsDesign(
+    k = 2, test.type = 1, alpha = 0.025,
+    sfu = gsDesign::sfTruncated, sfupar = trunc_par,
+    n.I = c(0.5, 1), maxn.IPlan = 1
+  )
+  bt <- result$boundary_table$H1
+  expect_equal(
+    c(bt$Boundary.1[bt$Weight == 1], bt$Boundary.2[bt$Weight == 1]),
+    stats::pnorm(design$upper$bound, lower.tail = FALSE)
+  )
+  # The label names the family without deparsing the list parameter
+  out <- capture.output(print(result))
+  expect_true(any(grepl("H1: Truncated$", out)))
+  expect_false(any(grepl("checkScalar", out)))
+})
+
+test_that("user-defined spending functions are used consistently by gsDesign", {
+  skip_if_not_installed("gsDesign")
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(H1 = c(0.024, 0.01), H2 = c(0.015, 0.005))
+
+  # Piecewise spending on gsDesign's template: O'Brien-Fleming for the first
+  # `param` of alpha and Pocock for the remainder
+  sf_piecewise <- function(alpha, t, param) {
+    x <- gsDesign::spendingFunction(alpha, t, param)
+    x$name <- "Piecewise"
+    x$sf <- sf_piecewise
+    x$spend <- gsDesign::sfLDOF(min(alpha, param), t)$spend +
+      if (alpha > param) gsDesign::sfLDPocock(alpha - param, t)$spend else 0
+    x
+  }
+  # The same function without the self-reference in `sf` that gsDesign's own
+  # spending functions carry and that sequentialPValue() evaluates
+  sf_piecewise_no_ref <- function(alpha, t, param) {
+    x <- sf_piecewise(alpha, t, param)
+    x$sf <- gsDesign::spendingFunction
+    x
+  }
+
+  with_ref <- graph_test_shortcut_gsDesign(
+    g, p, 0.025, c(0.5, 1),
+    sfu = sf_piecewise, sfupar = 0.0125
+  )
+  without_ref <- graph_test_shortcut_gsDesign(
+    g, p, 0.025, c(0.5, 1),
+    sfu = sf_piecewise_no_ref, sfupar = 0.0125
+  )
+  expect_equal(with_ref$outputs$repeated_p, without_ref$outputs$repeated_p)
+
+  # Agrees with the same piecewise spending in graph_test_shortcut_gsd()
+  spending_piecewise <- function(alpha, info_frac) {
+    spending_of(pmin(alpha, 0.0125), info_frac) +
+      spending_pocock(pmax(alpha - 0.0125, 0), info_frac)
+  }
+  reference <- suppressMessages(graph_test_shortcut_gsd(
+    g, p, 0.025, c(0.5, 1),
+    spending_fn = spending_piecewise
+  ))
+  expect_lt(
+    max(abs(with_ref$outputs$repeated_p - reference$outputs$repeated_p)),
+    1e-4
+  )
+  expect_identical(with_ref$outputs$rejected, reference$outputs$rejected)
+  out <- capture.output(print(with_ref))
+  expect_true(any(grepl("Piecewise \\(parameter = 0.0125\\)", out)))
+})
+
 test_that("analysis names default to Analysis_k", {
   skip_if_not_installed("gsDesign")
   g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
@@ -506,6 +586,28 @@ test_that("invalid gsDesign inputs throw errors", {
       sfu = gsDesign::sfHSD, sfupar = list(-2, -2, -2)
     ),
     "Number of spending function parameters"
+  )
+  expect_error(
+    graph_test_shortcut_gsDesign(
+      g, p, 0.025, c(0.5, 1),
+      sfu = list(gsDesign::sfLDOF)
+    ),
+    "Number of spending functions"
+  )
+  expect_error(
+    graph_test_shortcut_gsDesign(
+      g, p, 0.025, c(0.5, 1),
+      sfu = gsDesign::sfHSD, sfupar = list(-2)
+    ),
+    "Number of spending function parameters"
+  )
+  # sfPoints() cannot be evaluated on a partial analysis schedule
+  expect_error(
+    graph_test_shortcut_gsDesign(
+      g, p, 0.025, c(0.5, 1),
+      sfu = gsDesign::sfPoints, sfupar = c(0.3, 1)
+    ),
+    "sfPoints"
   )
   # usTime shape and content
   expect_error(

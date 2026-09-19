@@ -321,7 +321,9 @@ gsd_spending_label <- function(sfu, sfupar) {
   if (is.null(sf_name)) {
     return(paste(deparse(body(sfu)), collapse = " "))
   }
-  if (is.null(sfupar)) {
+  # A list-valued parameter (as for sfTruncated) is not shown: it contains
+  # functions and would deparse to several lines
+  if (is.null(sfupar) || !is.atomic(sfupar)) {
     sf_name
   } else {
     paste0(sf_name, " (parameter = ", paste(sfupar, collapse = ", "), ")")

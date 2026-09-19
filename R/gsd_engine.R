@@ -126,7 +126,14 @@ gsd_engine_gsDesign <- function(alpha, info_frac, sfu, sfupar, usTime) {
     )
     # Spending time only applies to spending-function designs
     if (!s$classical) args$usTime <- s$ust
-    do.call(gsDesign::gsDesign, args)
+    d <- do.call(gsDesign::gsDesign, args)
+    # sequentialPValue() evaluates the spending function stored in the design
+    # (`upper$sf`), which gsDesign's own sf* functions set to themselves. Store
+    # the supplied function so that a user-defined spending function built on
+    # gsDesign::spendingFunction() is used consistently even if it leaves that
+    # element at the template's default.
+    if (!s$classical) d$upper$sf <- sfu[[j]]
+    d
   }
 
   # sequentialPValue() only reads the spending function and schedule from the

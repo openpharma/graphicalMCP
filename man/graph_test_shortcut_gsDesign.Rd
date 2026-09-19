@@ -58,7 +58,15 @@ the procedure to be applied up to an interim analysis.}
 for the classical O'Brien-Fleming, Pocock, and Wang-Tsiatis boundaries;
 applied to all hypotheses.
 \item A list of \eqn{m} such values, one per hypothesis.
-}}
+}
+
+A spending function must be evaluable at any leading subset of a
+hypothesis's spending times, as \code{\link[gsDesign:sequentiaPValue]{gsDesign::sequentialPValue()}} requires.
+This excludes \code{\link[gsDesign:sfPoints]{gsDesign::sfPoints()}}; the same spending can be specified
+with \code{\link[gsDesign:sfLinear]{gsDesign::sfLinear()}}. User-defined spending functions follow
+gsDesign's template \code{\link[gsDesign:spendingFunction]{gsDesign::spendingFunction()}}: they take
+\verb{(alpha, t, param)} and return a \code{spendfn} object whose \code{spend} element
+is the cumulative alpha spent at \code{t}.}
 
 \item{sfupar}{Parameter(s) of the spending function(s), passed to gsDesign
 as \code{sfupar}. A non-list value (including \code{NULL}, gsDesign's default) is
@@ -66,7 +74,9 @@ applied to all hypotheses; a list of \eqn{m} values gives one per
 hypothesis, with \code{NULL} entries using gsDesign's default. For example,
 \code{sfupar = -4} with \code{sfu = gsDesign::sfHSD}, \code{sfupar = 1} with
 \code{sfu = gsDesign::sfPower} for linear spending, or \code{sfupar = 0.25} with
-\code{sfu = "WT"}.}
+\code{sfu = "WT"}. A parameter that is itself a list, as for
+\code{\link[gsDesign:sfSpecial]{gsDesign::sfTruncated()}}, must be wrapped in a list of \eqn{m} copies so
+that it is not read as one parameter per hypothesis.}
 
 \item{usTime}{Optional spending time, passed to gsDesign as \code{usTime}. Can
 be \code{NULL} (the default, in which case the spending time is

@@ -24,13 +24,23 @@
 #'     for the classical O'Brien-Fleming, Pocock, and Wang-Tsiatis boundaries;
 #'     applied to all hypotheses.
 #'   * A list of \eqn{m} such values, one per hypothesis.
+#'
+#'   A spending function must be evaluable at any leading subset of a
+#'   hypothesis's spending times, as [gsDesign::sequentialPValue()] requires.
+#'   This excludes [gsDesign::sfPoints()]; the same spending can be specified
+#'   with [gsDesign::sfLinear()]. User-defined spending functions follow
+#'   gsDesign's template [gsDesign::spendingFunction()]: they take
+#'   `(alpha, t, param)` and return a `spendfn` object whose `spend` element
+#'   is the cumulative alpha spent at `t`.
 #' @param sfupar Parameter(s) of the spending function(s), passed to gsDesign
 #'   as `sfupar`. A non-list value (including `NULL`, gsDesign's default) is
 #'   applied to all hypotheses; a list of \eqn{m} values gives one per
 #'   hypothesis, with `NULL` entries using gsDesign's default. For example,
 #'   `sfupar = -4` with `sfu = gsDesign::sfHSD`, `sfupar = 1` with
 #'   `sfu = gsDesign::sfPower` for linear spending, or `sfupar = 0.25` with
-#'   `sfu = "WT"`.
+#'   `sfu = "WT"`. A parameter that is itself a list, as for
+#'   [gsDesign::sfTruncated()], must be wrapped in a list of \eqn{m} copies so
+#'   that it is not read as one parameter per hypothesis.
 #' @param usTime Optional spending time, passed to gsDesign as `usTime`. Can
 #'   be `NULL` (the default, in which case the spending time is
 #'   `pmin(info_frac, 1)`), a numeric vector of length \eqn{K} applied to all
@@ -246,8 +256,9 @@ graph_test_shortcut_gsDesign <- function(graph,
       ncol = num_analyses
     )
   }
-  if (is.list(sfu)) names(sfu) <- hyp_names
-  if (is.list(sfupar)) names(sfupar) <- hyp_names
+  # Lists of the wrong length are reported by the validation below
+  if (is.list(sfu) && length(sfu) == num_hyps) names(sfu) <- hyp_names
+  if (is.list(sfupar) && length(sfupar) == num_hyps) names(sfupar) <- hyp_names
   if (!is.null(usTime)) rownames(usTime) <- hyp_names
 
   # Input validation -----------------------------------------------------------
@@ -354,6 +365,22 @@ gsd_input_val_gsDesign <- function(sfu, sfupar, usTime, info_frac, num_hyps) {
     "Number of spending function parameters (sfupar) must match the number of hypotheses" =
       length(sfupar) == num_hyps
   )
+
+  # sfPoints() insists on one parameter per analysis time at every call, but
+  # gsDesign::sequentialPValue() evaluates the spending function on the
+  # analyses observed so far
+  uses_points <- vapply(
+    sfu, function(f) is.function(f) && identical(f, gsDesign::sfPoints),
+    logical(1)
+  )
+  if (any(uses_points)) {
+    stop(
+      "gsDesign::sfPoints() cannot be evaluated at a partial analysis ",
+      "schedule and is not supported by graph_test_shortcut_gsDesign(); ",
+      "specify the same spending with gsDesign::sfLinear() instead.",
+      call. = FALSE
+    )
+  }
 
   if (!is.null(usTime)) {
     ust_non_na <- usTime[!is.na(usTime)]
