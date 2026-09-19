@@ -80,6 +80,7 @@ der
 doi
 equi
 et
+evaluable
 familywise
 frac
 funder
@@ -87,11 +88,13 @@ gMCP
 gMCPLite
 gatekeeping
 gsDesign
+gsDesign's
 igraph
 ij
 ldots
 leq
 lrstat
+mvtnorm
 nd
 noncentrality
 openpharma
@@ -103,9 +106,12 @@ priori
 rJava
 rejective
 repo
+rescale
+rescales
 rightarrow
 rpact
 stagewise
+successiveness
 th
 unadjusted
 unpooled

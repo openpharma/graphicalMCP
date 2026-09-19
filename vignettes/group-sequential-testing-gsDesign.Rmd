@@ -1,11 +1,11 @@
 ---
-title: "Group Sequential Design with Graphical Approaches"
+title: "Group Sequential Design with Graphical Approaches Using gsDesign"
 output:
   rmarkdown::html_vignette:
     number_sections: true
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Group Sequential Design with Graphical Approaches}
+  %\VignetteIndexEntry{Group Sequential Design with Graphical Approaches Using gsDesign}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -27,43 +27,67 @@ error rate (FWER). When combined with graphical multiple comparison procedures,
 these designs can test multiple hypotheses across multiple analyses in a
 structured and transparent way.
 
-The `graph_test_shortcut_gsd()` function extends the shortcut graphical testing
-procedure to group sequential designs. This vignette illustrates the
-methodology through two case studies: a diabetes trial from Section 4 of
-Maurer and Bretz (2013), and an oncology trial adapted from the
-[gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
-different endpoints have different numbers of analyses.
+The `graph_test_shortcut_gsDesign()` function performs the same group
+sequential graphical procedure as `graph_test_shortcut_gsd()`, but obtains
+every group sequential quantity — cumulative spending, boundaries, and repeated
+p-values — from the [gsDesign package](https://CRAN.R-project.org/package=gsDesign)
+(Anderson, 2026). Spending functions and spending time are specified in
+gsDesign's own terms (`sfu`, `sfupar`, and `usTime`), so that a group
+sequential design worked out with gsDesign can be carried over to the
+graphical procedure unchanged. The graphical part of the procedure — the
+shortcut testing, graph updates, and the `look_back` option — is identical to
+`graph_test_shortcut_gsd()`, and the results have the same structure.
 
-```{r setup}
+This vignette reproduces the two case studies of the
+[Group Sequential Design with Graphical Approaches](group-sequential-testing.html)
+vignette with `graph_test_shortcut_gsDesign()`: a diabetes trial from Section
+4 of Maurer and Bretz (2013), and an oncology trial adapted from the
+[gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
+different endpoints have different numbers of analyses. Along the way it shows
+how gsDesign is used inside the function. gsDesign is a suggested package of
+graphicalMCP and must be installed to use `graph_test_shortcut_gsDesign()`.
+
+```{r gsdesign-guard, echo = FALSE, results = "asis"}
+if (!requireNamespace("gsDesign", quietly = TRUE)) {
+  cat(
+    "**The gsDesign package is not installed, so the code in this vignette",
+    "was not run.**\n"
+  )
+  knitr::knit_exit()
+}
+```
+
+```{r setup, message = FALSE}
 library(graphicalMCP)
+library(gsDesign)
 ```
 
 ## Alpha Spending Functions
 
 Alpha spending functions determine how the total significance level is allocated
-across interim and final analyses. The package provides four built-in spending
-functions:
+across interim and final analyses. gsDesign provides a large collection of
+spending functions. Each takes three arguments — `alpha` (total significance
+level), `t` (spending time, usually the information fraction), and `param` (a
+parameter, where applicable) — and returns a `spendfn` object whose `$spend`
+element contains the cumulative alpha spent at each value of `t`. The most
+common choices are:
 
-- `spending_of()` — Lan-DeMets O'Brien-Fleming approximation (very conservative
-  at early analyses)
-- `spending_pocock()` — Lan-DeMets Pocock approximation (more uniform spending)
-- `spending_hsd()` — Hwang-Shih-DeCani family (flexible, controlled by `gamma`)
-- `spending_linear()` — Linear (uniform) spending
-
-Each function takes at least two arguments: `alpha` (total significance level)
-and `info_frac` (information fraction), and returns the cumulative alpha spent
-at each information fraction. Some functions accept additional parameters, e.g.,
-`spending_hsd()` takes a `gamma` parameter controlling the spending rate.
+- `sfLDOF()` — Lan-DeMets O'Brien-Fleming approximation (very conservative at
+  early analyses)
+- `sfLDPocock()` — Lan-DeMets Pocock approximation (more uniform spending)
+- `sfHSD()` — Hwang-Shih-DeCani family (flexible, controlled by `param`)
+- `sfPower()` — Kim-DeMets power family; `param = 1` gives linear (uniform)
+  spending
 
 ```{r spending-comparison}
 # Compare spending at information fractions (1/3, 2/3, 1) for alpha = 0.025
 t_values <- c(1/3, 2/3, 1)
 spending_comparison <- data.frame(
   `Info Fraction` = t_values,
-  `O'Brien-Fleming` = spending_of(0.025, t_values),
-  Pocock = spending_pocock(0.025, t_values),
-  `HSD (gamma=-4)` = spending_hsd(0.025, t_values, -4),
-  Linear = spending_linear(0.025, t_values),
+  `O'Brien-Fleming` = sfLDOF(0.025, t_values)$spend,
+  Pocock = sfLDPocock(0.025, t_values)$spend,
+  `HSD (gamma=-4)` = sfHSD(0.025, t_values, param = -4)$spend,
+  Linear = sfPower(0.025, t_values, param = 1)$spend,
   check.names = FALSE
 )
 knitr::kable(spending_comparison, digits = 6,
@@ -71,9 +95,23 @@ knitr::kable(spending_comparison, digits = 6,
 ```
 
 The O'Brien-Fleming spending function is very conservative at early analyses
-(spending only `r sprintf("%.5f", spending_of(0.025, 1/3))` at the first
+(spending only `r sprintf("%.5f", sfLDOF(0.025, 1/3)$spend)` at the first
 interim), making it a popular choice when early stopping should require very
 strong evidence.
+
+In `graph_test_shortcut_gsDesign()`, the spending function is passed as `sfu`
+and its parameter as `sfupar`, exactly as in `gsDesign::gsDesign()`. The
+built-in spending functions of graphicalMCP correspond to gsDesign's as
+follows:
+
+| graphicalMCP (`spending_fn`) | gsDesign (`sfu`, `sfupar`)       |
+|------------------------------|----------------------------------|
+| `spending_of()`              | `sfLDOF`                         |
+| `spending_pocock()`          | `sfLDPocock`                     |
+| `spending_hsd(gamma)`        | `sfHSD`, `sfupar = gamma`        |
+| `spending_linear()`          | `sfPower`, `sfupar = 1`          |
+| `spending_wt(delta)`         | `"WT"`, `sfupar = delta`         |
+| `spending_with_time()`       | `usTime`                         |
 
 ## From Spending to Boundaries
 
@@ -92,16 +130,27 @@ At analysis $k$, the null hypothesis is rejected if $Z_k \ge b_k$, or
 equivalently, if the observed p-value $p_k \le \Phi(-b_k)$ where $\Phi$ is
 the standard normal CDF.
 
+In gsDesign, the boundaries are obtained by constructing a design with
+`gsDesign()`. The call below is the one that `graph_test_shortcut_gsDesign()`
+makes for each hypothesis: `test.type = 1` requests a one-sided design with an
+efficacy boundary only, and `n.I` together with `maxn.IPlan = 1` gives the
+information at each analysis directly as a fraction of the planned maximum, so
+that the correlation between analyses is the one implied by the information
+fractions.
+
 ```{r boundaries-example}
 # Compute boundaries for OBF spending at alpha = 0.025 with 3 equally spaced analyses
-bounds <- graphicalMCP:::gs_boundaries(0.025, c(1/3, 2/3, 1), spending_of)
+design_obf <- gsDesign(
+  k = 3, test.type = 1, alpha = 0.025,
+  sfu = sfLDOF, n.I = t_values, maxn.IPlan = 1
+)
 
 boundary_table <- data.frame(
   Analysis = 1:3,
-  `Info Fraction` = c(1/3, 2/3, 1),
-  `Cumulative Spending` = spending_of(0.025, c(1/3, 2/3, 1)),
-  `Z Boundary` = bounds$bounds_z,
-  `Nominal p Boundary` = bounds$bounds_nominal,
+  `Info Fraction` = t_values,
+  `Cumulative Spending` = sfLDOF(0.025, t_values)$spend,
+  `Z Boundary` = design_obf$upper$bound,
+  `Nominal p Boundary` = pnorm(design_obf$upper$bound, lower.tail = FALSE),
   check.names = FALSE
 )
 knitr::kable(boundary_table, digits = 6,
@@ -123,36 +172,69 @@ sequential p-value at analysis $k$.
   crossed. It equals the cumulative minimum of repeated p-values:
   $\tilde{p}_k = \min_{l=1}^{k} \hat{p}_l$.
 
-The package provides `repeated_p()` and `sequential_p()` to compute these
-for a single hypothesis:
+gsDesign computes sequential p-values with `sequentialPValue()`, which takes a
+design, the information (`n.I`) and Z-statistics (`Z`) at the analyses
+conducted so far, and the spending time (`usTime`), and searches for the
+smallest level at which any boundary is crossed. It does not provide repeated
+p-values directly. `graph_test_shortcut_gsDesign()` obtains them from
+`sequentialPValue()` with a simple device: the Z-statistics at analyses
+$1, \ldots, k-1$ are replaced by $-20$. A Z-statistic of $-20$ can never cross
+an efficacy boundary (gsDesign itself uses $-20$ internally as the value of
+"no lower bound"), so the search then only involves the boundary at analysis
+$k$ — which is precisely the definition of the repeated p-value. Because the
+same design and the same integration are used, this is exact rather than an
+approximation.
+
+The following code shows the mechanism for a single hypothesis with the design
+from the previous section. This is what `graph_test_shortcut_gsDesign()` does
+internally for each hypothesis at each analysis; you never need to call
+`sequentialPValue()` yourself.
 
 ```{r rep-seq-p-example}
 # A hypothesis tested at three analyses with OBF spending
 p_h1 <- c(0.05, 0.02, 0.01)
 info <- c(1/3, 2/3, 1)
-
-# Repeated p-value at analysis 3 (considers only the boundary at analysis 3)
-rep_p_3 <- repeated_p(p = p_h1, info_frac = info, spending_fn = spending_of)
-cat("Repeated p-value at analysis 3:", rep_p_3, "\n")
+z_h1 <- qnorm(1 - p_h1)
 
 # Sequential p-value at analysis 3 (considers boundaries at all three analyses)
-seq_p_3 <- sequential_p(p = p_h1, info_frac = info, spending_fn = spending_of)
+seq_p_3 <- sequentialPValue(design_obf, n.I = info, Z = z_h1, usTime = info)
 cat("Sequential p-value at analysis 3:", seq_p_3, "\n")
 
-# The sequential p-value is the minimum of repeated p-values across analyses
-rep_p_1 <- repeated_p(p = p_h1[1], info_frac = info[1], spending_fn = spending_of)
-rep_p_2 <- repeated_p(p = p_h1[1:2], info_frac = info[1:2], spending_fn = spending_of)
+# Repeated p-value at analysis 3 (considers only the boundary at analysis 3):
+# the earlier Z-statistics are replaced by -20
+rep_p_3 <- sequentialPValue(
+  design_obf, n.I = info, Z = c(-20, -20, z_h1[3]), usTime = info
+)
+cat("Repeated p-value at analysis 3:", rep_p_3, "\n")
+
+# Repeated p-values at analyses 1 and 2 in the same way
+rep_p_1 <- sequentialPValue(
+  design_obf, n.I = info[1], Z = z_h1[1], usTime = info[1]
+)
+rep_p_2 <- sequentialPValue(
+  design_obf, n.I = info[1:2], Z = c(-20, z_h1[2]), usTime = info[1:2]
+)
 cat("Repeated p-values:", rep_p_1, rep_p_2, rep_p_3, "\n")
 cat("min(rep_p_1, rep_p_2, rep_p_3) =", min(rep_p_1, rep_p_2, rep_p_3), "\n")
 ```
 
-The sequential p-value is always less than or equal to the repeated p-value,
-since it considers all prior analyses. A hypothesis that nearly crossed its
-boundary at an earlier analysis will have a much smaller sequential p-value
-than its repeated p-value at the current analysis.
+The sequential p-value is the minimum of the repeated p-values across analyses
+(up to the tolerance of gsDesign's root-finding). It is always less than or
+equal to the repeated p-value, since it considers all prior analyses. A
+hypothesis that nearly crossed its boundary at an earlier analysis will have a
+much smaller sequential p-value than its repeated p-value at the current
+analysis.
 
-The `graph_test_shortcut_gsd()` function supports two modes controlled by the
-`look_back` parameter. When `look_back = FALSE` (the default), rejection
+Note that the spending time `usTime` is passed explicitly in each call. When
+it is omitted, `sequentialPValue()` rescales the spending time by the last
+information supplied, which coincides with the information fraction here but
+not when a trial over-runs its planned information (see the section on
+monitoring below). `graph_test_shortcut_gsDesign()` therefore always passes
+the spending time explicitly: `usTime` if supplied, and otherwise the
+information fractions capped at 1.
+
+The `graph_test_shortcut_gsDesign()` function supports two modes controlled by
+the `look_back` parameter. When `look_back = FALSE` (the default), rejection
 decisions at each analysis are based on repeated p-values only — i.e., only
 the boundary at the current analysis is considered. When `look_back = TRUE`,
 rejection decisions are based on sequential p-values, which "look back" at
@@ -201,10 +283,11 @@ plot(g, vertex.size = 40)
 ### Observed P-values
 
 The trial has three planned analyses at equally spaced information fractions
-$(1/3, 2/3, 1)$. The O'Brien-Fleming spending function is used for all
-hypotheses. We assume the trial stops after the second interim analysis (based
-on the results obtained). Since only two analyses are conducted, we pass the
-p-values and information fractions for those two analyses only.
+$(1/3, 2/3, 1)$. The Lan-DeMets O'Brien-Fleming spending function `sfLDOF` is
+used for all hypotheses. We assume the trial stops after the second interim
+analysis (based on the results obtained). Since only two analyses are
+conducted, we pass the p-values and information fractions for those two
+analyses only.
 
 ```{r p-values}
 # P-values from Table 1 of Maurer and Bretz (2013)
@@ -251,23 +334,27 @@ views of the same procedure.
 
 #### Repeated p-values
 
-A repeated p-value at analysis $k$ is computed using `repeated_p()`:
+`graph_test_shortcut_gsDesign()` computes the repeated p-value of each
+hypothesis at each analysis from gsDesign as shown in the previous section,
+and returns them in `$outputs$repeated_p`. The spending function is passed as
+`sfu = sfLDOF`, which is also the default:
+
+```{r run-gsd-no-lb}
+info_frac <- c(1/3, 2/3)
+result <- graph_test_shortcut_gsDesign(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = info_frac,
+  sfu = sfLDOF,
+  look_back = FALSE,
+  test_values = TRUE
+)
+```
 
 ```{r repeated-p-matrix}
-info_frac <- c(1/3, 2/3)
-rep_p_matrix <- matrix(NA, nrow = 4, ncol = 2,
-                       dimnames = list(rownames(p), c("Analysis 1", "Analysis 2")))
-
-for (j in 1:4) {
-  for (k in 1:2) {
-    rep_p_matrix[j, k] <- repeated_p(
-      p = p[j, 1:k],
-      info_frac = info_frac[1:k],
-      spending_fn = spending_of
-    )
-  }
-}
-
+rep_p_matrix <- result$outputs$repeated_p
+colnames(rep_p_matrix) <- c("Analysis 1", "Analysis 2")
 knitr::kable(rep_p_matrix, digits = 4,
              caption = "Repeated p-values at each analysis")
 ```
@@ -288,18 +375,12 @@ propagate $H_1$'s weight, then rejects $H_2$, followed by $H_3$. $H_4$'s
 repeated p-value remains too large, so it is retained. The rejection sequence
 at analysis 2 is: $H_1 \to H_2 \to H_3$.
 
-Running `graph_test_shortcut_gsd()` performs these steps automatically:
+The printed result summarizes these steps. The line
+`Group sequential engine: gsDesign` records that the group sequential
+quantities were obtained from gsDesign, and the spending functions are
+labeled with gsDesign's own names:
 
-```{r run-gsd-no-lb}
-result <- graph_test_shortcut_gsd(
-  graph = g,
-  p = p,
-  alpha = 0.025,
-  info_frac = info_frac,
-  spending_fn = spending_of,
-  look_back = FALSE,
-  test_values = TRUE
-)
+```{r print-gsd-no-lb}
 print(result)
 ```
 
@@ -318,11 +399,13 @@ analysis 2.
 
 The same rejection decisions can be understood by comparing observed p-values
 against nominal boundaries at each analysis. The `test_values` output from
-`graph_test_shortcut_gsd()` provides these boundaries. The rejection sequence
-is determined by increasing adjusted repeated p-values. After each rejection,
-the graph is updated and boundaries for remaining hypotheses are recomputed
-with their new (increased) weights, potentially enabling further rejections
-at the same analysis.
+`graph_test_shortcut_gsDesign()` provides these boundaries. Each boundary is
+the upper bound of a gsDesign design constructed at the level currently
+allocated to the hypothesis (its weight times $\alpha$), converted to the
+p-value scale. The rejection sequence is determined by increasing adjusted
+repeated p-values. After each rejection, the graph is updated and boundaries
+for remaining hypotheses are recomputed with their new (increased) weights,
+potentially enabling further rejections at the same analysis.
 
 ```{r test-values-tables}
 format_test_values <- function(tv) {
@@ -348,18 +431,22 @@ An important note: the nominal boundary computed at a fraction of alpha is
 For example, the boundary at the first analysis with the OBF spending function:
 
 ```{r key-inequality}
-b_half <- gs_boundaries(0.0125, c(1/3, 2/3, 1), spending_of)
-b_full <- gs_boundaries(0.025, c(1/3, 2/3, 1), spending_of)
+design_half <- gsDesign(
+  k = 3, test.type = 1, alpha = 0.0125,
+  sfu = sfLDOF, n.I = c(1/3, 2/3, 1), maxn.IPlan = 1
+)
 cat(sprintf(
   "Boundary at alpha = 0.0125:     %.6f\n0.5 * Boundary at alpha = 0.025: %.6f\n",
-  b_half$bounds_nominal[1],
-  0.5 * b_full$bounds_nominal[1]
+  pnorm(design_half$upper$bound[1], lower.tail = FALSE),
+  0.5 * pnorm(design_obf$upper$bound[1], lower.tail = FALSE)
 ))
 ```
 
-This demonstrates why the spending function must be evaluated at the
+This demonstrates why the design must be constructed at the
 hypothesis-specific significance level (weight times alpha), rather than
-applying the weight to boundaries computed at the full alpha.
+applying the weight to boundaries computed at the full alpha. This is why
+`graph_test_shortcut_gsDesign()` rebuilds the gsDesign design of a hypothesis
+whenever its weight changes.
 
 **Analysis 2 (t = 2/3).** The test_values table above shows the boundary for
 each hypothesis at the point when it is tested, reflecting sequential graph
@@ -427,12 +514,12 @@ the graph's closure. This table is independent of the observed p-values and
 can be used to manually verify the rejection decisions shown in `test_values`.
 
 ```{r boundary-table}
-result_verbose <- graph_test_shortcut_gsd(
+result_verbose <- graph_test_shortcut_gsDesign(
   graph = g,
   p = p,
   alpha = 0.025,
   info_frac = info_frac,
-  spending_fn = spending_of,
+  sfu = sfLDOF,
   verbose = TRUE
 )
 
@@ -550,7 +637,11 @@ maximum number of analyses), with `NA` for analyses that do not apply.
 When `p` contains `NA` values, `info_frac` must be a matrix with `NA` in the
 same positions. This ensures users explicitly specify the correct information
 fractions for each hypothesis, since different endpoints may have very
-different event accrual schedules.
+different event accrual schedules. Internally, `graph_test_shortcut_gsDesign()`
+builds one gsDesign design per hypothesis from its non-`NA` analyses, so a
+hypothesis with three analyses gets a three-analysis design, a hypothesis with
+two analyses a two-analysis design, and a hypothesis with a single analysis
+is handled as a fixed-sample test (gsDesign requires at least two analyses).
 
 ```{r oncology-p-values}
 p_onc <- rbind(
@@ -602,17 +693,17 @@ knitr::kable(
 ### Sequential P-values (look_back = TRUE)
 
 The gMCPLite vignette uses sequential p-values for its analysis. We replicate
-this by running `graph_test_shortcut_gsd()` with `look_back = TRUE`, which
-uses sequential p-values for rejection decisions. All hypotheses use the
-O'Brien-Fleming spending function:
+this by running `graph_test_shortcut_gsDesign()` with `look_back = TRUE`,
+which uses sequential p-values for rejection decisions. All hypotheses use
+the Lan-DeMets O'Brien-Fleming spending function:
 
 ```{r oncology-run-lb}
-result_onc_lb <- graph_test_shortcut_gsd(
+result_onc_lb <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_of,
+  sfu = sfLDOF,
   look_back = TRUE,
   test_values = TRUE
 )
@@ -688,9 +779,9 @@ knitr::kable(onc_summary_lb, row.names = FALSE,
              caption = "Oncology case study (look_back = TRUE): rejection decisions")
 ```
 
-This case study demonstrates that `graph_test_shortcut_gsd()` handles trials
-where different endpoints have different numbers of analyses — a common
-situation in oncology trials with OS, PFS, and ORR endpoints.
+This case study demonstrates that `graph_test_shortcut_gsDesign()` handles
+trials where different endpoints have different numbers of analyses — a
+common situation in oncology trials with OS, PFS, and ORR endpoints.
 
 ### Per-hypothesis look_back
 
@@ -714,12 +805,12 @@ look_back_onc <- c(
   TRUE    # H6_ORR_A: look_back
 )
 
-result_onc_mixed <- graph_test_shortcut_gsd(
+result_onc_mixed <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_of,
+  sfu = sfLDOF,
   look_back = look_back_onc
 )
 print(result_onc_mixed)
@@ -774,23 +865,23 @@ p_onc_lb["H4_PFS_A", ] <- c(0.0001, 0.02, NA)
 p_onc_lb["H5_ORR_S", ] <- c(0.0008, NA, NA)
 
 # look_back = FALSE: H4's repeated p-value at analysis 2 is too large
-result_onc_no_lb <- graph_test_shortcut_gsd(
+result_onc_no_lb <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc_lb,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_of,
+  sfu = sfLDOF,
   look_back = FALSE,
   test_values = TRUE
 )
 
 # look_back = TRUE: H4 benefits from its strong analysis-1 evidence
-result_onc_yes_lb <- graph_test_shortcut_gsd(
+result_onc_yes_lb <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc_lb,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_of,
+  sfu = sfLDOF,
   look_back = TRUE,
   test_values = TRUE
 )
@@ -864,18 +955,21 @@ The three look_back rejections illustrate different mechanisms:
 
 ### Customizing Spending Functions: Spending Time
 
-Some group sequential frameworks (e.g., gMCPLite via gsDesign) separate
-*spending time* from *information fraction*. The information fraction
-determines the correlation structure of the test statistics, while the
-spending time determines how alpha is allocated across analyses via the
+gsDesign separates *spending time* from *information fraction*. The
+information fraction (`n.I` in gsDesign, `info_frac` here) determines the
+correlation structure of the test statistics, while the spending time
+(`usTime`) determines how alpha is allocated across analyses via the
 spending function. The two can differ when, for example, all-subjects
 hypotheses use all-subjects event counts for the correlation but subgroup
 event counts for spending.
 
-In `graphicalMCP`, the `info_frac` argument is used for both purposes by
-default. However, the spending time behavior can be achieved without any
-API changes by defining a custom spending function that internally maps
-the information fractions to spending times.
+`graph_test_shortcut_gsDesign()` passes gsDesign's `usTime` argument through
+unchanged. By default (`usTime = NULL`), the spending time equals the
+information fraction (capped at 1). Otherwise, `usTime` is either a vector
+with one value per analysis, applied to all hypotheses, or a matrix with the
+same dimensions and `NA` positions as `info_frac`, giving each hypothesis its
+own spending time. This plays the role of `spending_with_time()` in
+`graph_test_shortcut_gsd()`.
 
 Consider the oncology trial above. The all-subjects hypotheses ($H_2$ and
 $H_4$) use all-subjects event counts for their information fractions (which
@@ -886,52 +980,38 @@ subgroup is a subset of the all-subjects population, and the subgroup events
 may better reflect the information available for the treatment effect
 comparison.
 
-The `spending_with_time()` function creates a spending function that uses
-a fixed spending time instead of the information fractions passed at runtime:
-
 For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
 (`r paste(c(529, 700, 800), collapse = ", ")`) for the correlation structure
 (via `info_frac`), but subgroup OS events
-(`r paste(c(185, 245, 295), collapse = ", ")`) for spending:
+(`r paste(c(185, 245, 295), collapse = ", ")`) for spending. We start from
+the information fractions, so that the `NA` positions match, and replace the
+rows of the all-subjects hypotheses:
 
 ```{r spending-time-setup}
-# Spending time = subgroup event fractions (same as H1_OS_S)
-# info_frac ensures NA positions match those in info_frac_onc
-spending_h2 <- spending_with_time(
-  spending_of,
-  spending_time = c(185 / 295, 245 / 295, 1),
-  info_frac = info_frac_onc["H2_OS_A", ]
-)
+usTime_onc <- info_frac_onc
 
-# Similarly, H4 (PFS, all subjects) uses subgroup PFS event fractions
-spending_h4 <- spending_with_time(
-  spending_of,
-  spending_time = c(265 / 310, 1, NA),
-  info_frac = info_frac_onc["H4_PFS_A", ]
-)
+# H2 (OS, all subjects): spending time = subgroup OS event fractions
+usTime_onc["H2_OS_A", ] <- c(185 / 295, 245 / 295, 1)
 
-# Build per-hypothesis spending function list
-spending_fn_onc <- list(
-  spending_of,   # H1_OS_S:  standard (info_frac = spending time)
-  spending_h2,   # H2_OS_A:  spending time = subgroup OS events
-  spending_of,   # H3_PFS_S: standard
-  spending_h4,   # H4_PFS_A: spending time = subgroup PFS events
-  spending_of,   # H5_ORR_S: standard (single analysis)
-  spending_of    # H6_ORR_A: standard (single analysis)
-)
+# H4 (PFS, all subjects): spending time = subgroup PFS event fractions
+usTime_onc["H4_PFS_A", ] <- c(265 / 310, 1, NA)
+
+usTime_onc
 ```
 
 Now `info_frac_onc` continues to use all-subjects event counts for $H_2$ and
-$H_4$ (determining the correlation structure), while the custom spending
-functions use subgroup event counts for alpha allocation:
+$H_4$ (determining the correlation structure), while `usTime_onc` uses
+subgroup event counts for alpha allocation. The printed result shows the
+spending time alongside the information fractions:
 
 ```{r spending-time-run}
-result_onc_st <- graph_test_shortcut_gsd(
+result_onc_st <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc,
   alpha = alpha_onc,
   info_frac = info_frac_onc,
-  spending_fn = spending_fn_onc,
+  sfu = sfLDOF,
+  usTime = usTime_onc,
   look_back = TRUE
 )
 print(result_onc_st)
@@ -958,10 +1038,9 @@ analysis 1 for OS), meaning the spending function allocates less alpha to
 early analyses — the boundaries become more conservative at interim analyses
 and more liberal at the final analysis.
 
-This approach illustrates a general principle: because `spending_fn` accepts
-any function with the signature `function(alpha, info_frac)`, users can
-encode arbitrary spending behaviors — including spending time separation —
-without requiring changes to the `graph_test_shortcut_gsd()` interface.
+Internally, the spending time is passed to both `gsDesign()` (for the
+boundaries) and `sequentialPValue()` (for the repeated p-values), so the two
+views of the procedure remain consistent.
 
 ### Monitoring: Adjusting for Changed Final Information
 
@@ -974,10 +1053,12 @@ at earlier analyses were already computed using the **planned** information
 fractions, but the correlation structure at the current analysis should
 reflect the **actual** information fractions.
 
-The spending time approach handles this naturally:
+The separation of spending time and information fraction handles this
+naturally:
 
-- **Spending time**: use the planned information fractions to preserve the
-  boundaries at analyses 1 and 2 (which have already been applied).
+- **Spending time** (`usTime`): use the planned information fractions to
+  preserve the boundaries at analyses 1 and 2 (which have already been
+  applied).
 - **Information fraction** (`info_frac`): use the actual information fractions
   for the correlation structure, since this reflects the true joint
   distribution of the test statistics.
@@ -1001,48 +1082,45 @@ cat("Planned:", round(planned_if_h1, 4), "\n")
 cat("Actual: ", round(actual_if_h1, 4), "\n")
 ```
 
-We create a spending function that uses the planned information fractions
-for alpha allocation, while the procedure uses the actual information
-fractions for the correlation structure:
-
-```{r monitoring-spending}
-# Spending function using planned info fractions for spending,
-# with info_frac for NA structure validation
-spending_h1_monitor <- spending_with_time(
-  spending_of,
-  spending_time = planned_if_h1,
-  info_frac = actual_if_h1
-)
-```
-
-To illustrate, we compare the boundaries computed under three scenarios:
+To illustrate, we compare the boundaries computed by `gsDesign()` under three
+scenarios:
 
 1. **Planned**: both spending and correlation use planned info fractions
    (the original design).
 2. **Naive update**: both spending and correlation use actual info fractions
    (ignores that analyses 1 and 2 used planned boundaries).
-3. **Correct monitoring**: spending uses planned info fractions, correlation
-   uses actual info fractions.
+3. **Correct monitoring**: spending uses planned info fractions (`usTime`),
+   correlation uses actual info fractions (`n.I`).
 
 ```{r monitoring-comparison}
 alpha_h1 <- 0.01  # H1's allocated alpha
 
+# Nominal p-value boundaries of a gsDesign design with information n_i and
+# spending time us_time
+nominal_bounds <- function(n_i, us_time) {
+  design <- gsDesign(
+    k = 3, test.type = 1, alpha = alpha_h1,
+    sfu = sfLDOF, n.I = n_i, maxn.IPlan = 1, usTime = us_time
+  )
+  pnorm(design$upper$bound, lower.tail = FALSE)
+}
+
 # Scenario 1: Planned (original design)
-bounds_planned <- gs_boundaries(alpha_h1, planned_if_h1, spending_of)
+bounds_planned <- nominal_bounds(planned_if_h1, planned_if_h1)
 
 # Scenario 2: Naive update (both use actual)
-bounds_naive <- gs_boundaries(alpha_h1, actual_if_h1, spending_of)
+bounds_naive <- nominal_bounds(actual_if_h1, actual_if_h1)
 
 # Scenario 3: Correct monitoring (spending=planned, correlation=actual)
-bounds_monitor <- gs_boundaries(alpha_h1, actual_if_h1, spending_h1_monitor)
+bounds_monitor <- nominal_bounds(actual_if_h1, planned_if_h1)
 
 monitor_table <- data.frame(
   Analysis = 1:3,
   Planned.IF = round(planned_if_h1, 4),
   Actual.IF = round(actual_if_h1, 4),
-  Boundary.Planned = bounds_planned$bounds_nominal,
-  Boundary.Naive = bounds_naive$bounds_nominal,
-  Boundary.Monitor = bounds_monitor$bounds_nominal
+  Boundary.Planned = bounds_planned,
+  Boundary.Naive = bounds_naive,
+  Boundary.Monitor = bounds_monitor
 )
 knitr::kable(monitor_table, digits = 6,
              caption = paste("Boundaries under three scenarios",
@@ -1051,10 +1129,11 @@ knitr::kable(monitor_table, digits = 6,
 
 The key observations:
 
-- **Analyses 1 and 2**: the monitoring boundaries differ from the planned
-  boundaries because the correlation structure has changed (the actual
-  info fractions are smaller). However, the spending at these analyses is
-  preserved — the same cumulative alpha is allocated.
+- **Analyses 1 and 2**: the monitoring boundaries coincide with the planned
+  boundaries. The spending at these analyses is preserved (the same
+  cumulative alpha is allocated), and since the information at analyses 1 and
+  2 has not changed relative to each other, the correlation between them is
+  unchanged as well.
 - **Analysis 3**: the monitoring boundary reflects both the preserved
   spending schedule and the updated correlation structure.
 - **Naive update**: changes the spending at all analyses, which is
@@ -1062,8 +1141,7 @@ The key observations:
 
 This approach extends naturally to the full graphical procedure. For
 monitoring at analysis 3, use the actual information fractions in
-`info_frac` and per-hypothesis spending functions with planned information
-fractions:
+`info_frac` and the planned information fractions in `usTime`:
 
 ```{r monitoring-full}
 # Actual info fractions for all hypotheses
@@ -1072,167 +1150,160 @@ actual_if_onc <- info_frac_onc
 actual_if_onc["H1_OS_S", ] <- c(185 / 310, 245 / 310, 1)
 actual_if_onc["H2_OS_A", ] <- c(529 / 830, 700 / 830, 1)
 
-# Spending functions using planned info fractions for OS hypotheses
-spending_fn_monitor <- list(
-  spending_with_time(spending_of,
-    spending_time = info_frac_onc["H1_OS_S", ],
-    info_frac = actual_if_onc["H1_OS_S", ]),
-  spending_with_time(spending_of,
-    spending_time = info_frac_onc["H2_OS_A", ],
-    info_frac = actual_if_onc["H2_OS_A", ]),
-  spending_of,   # H3: PFS complete, no change
-  spending_of,   # H4: PFS complete, no change
-  spending_of,   # H5: ORR complete
-  spending_of    # H6: ORR complete
-)
-
-result_monitor <- graph_test_shortcut_gsd(
+# Planned info fractions as the spending time for all hypotheses
+result_monitor <- graph_test_shortcut_gsDesign(
   graph = g_onc,
   p = p_onc,
   alpha = alpha_onc,
   info_frac = actual_if_onc,
-  spending_fn = spending_fn_monitor,
+  sfu = sfLDOF,
+  usTime = info_frac_onc,
   look_back = TRUE
 )
 print(result_monitor)
 ```
 
+An equivalent way to describe the same situation, common in gsDesign, keeps
+the planned maximum as the unit of information, so that the information
+fraction at the final analysis exceeds 1 (e.g., $310 / 295 = 1.051$ for
+$H_1$). `graph_test_shortcut_gsDesign()` accepts information fractions above
+1, and the default spending time — the information fractions capped at 1 — is
+then exactly the planned schedule. Since the correlation between analyses
+depends only on ratios of information, this gives the same results:
+
+```{r monitoring-overrun}
+overrun_if_onc <- info_frac_onc
+overrun_if_onc["H1_OS_S", ] <- c(185, 245, 310) / 295
+overrun_if_onc["H2_OS_A", ] <- c(529, 700, 830) / 800
+
+result_overrun <- graph_test_shortcut_gsDesign(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = overrun_if_onc,
+  sfu = sfLDOF,
+  look_back = TRUE
+)
+all.equal(result_overrun$outputs$adjusted_p, result_monitor$outputs$adjusted_p)
+```
+
+One caveat applies when calling `sequentialPValue()` directly with
+over-running information: its default spending time is the information
+divided by the *last* information supplied, which rescales the planned
+spending at the interim analyses. `graph_test_shortcut_gsDesign()` avoids
+this by always passing the spending time explicitly.
+
 ## Additional Examples
 
 ### Different Spending Functions per Hypothesis
 
-The procedure allows different hypotheses to use different spending functions.
-For example, one might use a more aggressive spending function for secondary
-hypotheses:
+The procedure allows different hypotheses to use different spending functions
+by passing a list to `sfu`, with one element per hypothesis. For example, one
+might use a more aggressive spending function for secondary hypotheses:
 
 ```{r different-spending}
-result2 <- graph_test_shortcut_gsd(
+result2 <- graph_test_shortcut_gsDesign(
   graph = g,
   p = p,
   alpha = 0.025,
   info_frac = c(1/3, 2/3),
-  spending_fn = list(
-    spending_of,      # H1: O'Brien-Fleming
-    spending_of,      # H2: O'Brien-Fleming
-    spending_pocock,  # H3: Pocock (more aggressive)
-    spending_pocock   # H4: Pocock (more aggressive)
+  sfu = list(
+    sfLDOF,     # H1: O'Brien-Fleming
+    sfLDOF,     # H2: O'Brien-Fleming
+    sfLDPocock, # H3: Pocock (more aggressive)
+    sfLDPocock  # H4: Pocock (more aggressive)
   ),
   test_values = TRUE
 )
 print(result2)
 ```
 
-### Using Spending Functions from Other Packages
+Likewise, `sfupar` can be a list with one parameter per hypothesis.
 
-The `spending_fn` argument accepts any function with the signature
-`function(alpha, info_frac)` that returns the cumulative alpha spent at each
-information fraction. This makes it straightforward to use spending functions
-from other packages.
+### gsDesign's Spending Function Library
 
-**gsDesign.** The `gsDesign` package provides a rich collection of spending
-functions (`sfLDOF`, `sfLDPocock`, `sfHSD`, `sfExponential`, etc.). Each
-takes `(alpha, t, param)` and returns a list with a `$spend` element
-containing the cumulative spending. A simple wrapper extracts this:
+Any of gsDesign's spending functions can be passed as `sfu`, with its
+parameter as `sfupar`, and so can the classical boundary families that
+gsDesign specifies by name: `"OF"` (O'Brien-Fleming), `"Pocock"`, and `"WT"`
+(Wang-Tsiatis, with `sfupar` giving the shape parameter $\Delta$). gsDesign
+represents these families by their boundary shape rather than by a spending
+function; `graph_test_shortcut_gsDesign()` obtains their repeated p-values by
+inverting the boundary directly, and the resulting Wang-Tsiatis boundaries are
+exact. The following compares several choices on the diabetes trial:
 
-```{r gsdesign-wrapper}
-if (requireNamespace("gsDesign", quietly = TRUE)) {
-  # Wrapper for gsDesign's Lan-DeMets O'Brien-Fleming
-  gsdesign_of <- function(alpha, info_frac) {
-    gsDesign::sfLDOF(alpha, info_frac)$spend
-  }
+```{r gsdesign-library}
+spending_choices <- list(
+  "sfLDOF" = list(sfu = sfLDOF, sfupar = NULL),
+  "sfHSD, gamma = -2" = list(sfu = sfHSD, sfupar = -2),
+  "sfPower, rho = 2" = list(sfu = sfPower, sfupar = 2),
+  "sfExponential, nu = 0.75" = list(sfu = sfExponential, sfupar = 0.75),
+  "sfLinear, 20% spent at t = 0.5" = list(sfu = sfLinear, sfupar = c(0.5, 0.2)),
+  "WT, Delta = 0.25" = list(sfu = "WT", sfupar = 0.25)
+)
 
-  # Wrapper for gsDesign's Hwang-Shih-DeCani with gamma = -2
-  gsdesign_hsd <- function(alpha, info_frac) {
-    gsDesign::sfHSD(alpha, info_frac, param = -2)$spend
-  }
-
-  result_gsdesign <- graph_test_shortcut_gsd(
+library_comparison <- do.call(rbind, lapply(names(spending_choices), function(nm) {
+  choice <- spending_choices[[nm]]
+  res <- graph_test_shortcut_gsDesign(
     graph = g,
     p = p,
     alpha = 0.025,
     info_frac = c(1/3, 2/3),
-    spending_fn = list(
-      gsdesign_of,   # H1: gsDesign O'Brien-Fleming
-      gsdesign_of,   # H2: gsDesign O'Brien-Fleming
-      gsdesign_hsd,  # H3: gsDesign HSD(gamma=-2)
-      gsdesign_hsd   # H4: gsDesign HSD(gamma=-2)
-    )
+    sfu = choice$sfu,
+    sfupar = choice$sfupar
   )
-  print(result_gsdesign)
-}
+  data.frame(
+    Spending = nm,
+    t(round(res$outputs$adjusted_p, 4)),
+    Rejected = paste(names(which(res$outputs$rejected)), collapse = ", "),
+    check.names = FALSE
+  )
+}))
+knitr::kable(library_comparison, row.names = FALSE,
+             caption = "Adjusted p-values and rejections by spending function")
 ```
 
-Any of `gsDesign`'s spending functions can be wrapped this way. For spending
-functions with additional parameters (like `sfHSD`), simply bind the
-parameter in the wrapper as shown above. A more advanced use of custom
-spending functions — including the separation of *spending time* from
-*information fraction* — is illustrated in the
-[Customizing Spending Functions: Spending Time] section of the oncology
-case study above.
+Two details of the interface are worth noting:
 
-Note that wrapping only borrows `gsDesign`'s spending formulas; the
-boundaries and repeated p-values are still computed by `graphicalMCP`. To
-delegate the group sequential calculations themselves to `gsDesign`, use
-`graph_test_shortcut_gsDesign()`, which takes `gsDesign`'s spending functions,
-parameters, and spending time (`sfu`, `sfupar`, `usTime`) directly and is
-described in the
-[Group Sequential Design with Graphical Approaches Using gsDesign](group-sequential-testing-gsDesign.html)
-vignette.
+- A spending function whose parameter is itself a list, such as
+  `sfTruncated()`, must have that list wrapped in a list with one copy per
+  hypothesis, since a list given as `sfupar` is otherwise read as one
+  parameter per hypothesis. For example, truncated Hwang-Shih-DeCani spending
+  that spends nothing before 20% and everything by 80% information:
 
-**rpact.** The `rpact` package computes group sequential designs via
-`getDesignGroupSequential()` but does not expose standalone spending
-functions that can be called with arbitrary `alpha` and information fraction
-inputs. During the graphical testing procedure, `graph_test_shortcut_gsd()`
-internally evaluates spending functions at the current local significance
-level for each hypothesis (i.e., hypothesis weight $\times$ overall
-$\alpha$), which can be very small as weights shift during the procedure.
-While `rpact::getDesignGroupSequential()` accepts small alpha values, it
-issues warnings for alpha below $10^{-6}$ ("out of validated bounds") and
-throws an error when alpha is exactly 0 — which occurs when a hypothesis
-has zero weight. The internal function
-`rpact:::.getDesignGroupSequentialAlphaSpending()` is also not suitable,
-as it takes a design object rather than raw alpha and information fraction
-inputs, and is not part of the public API. Since `rpact` does not provide a
-standalone spending function interface, its spending functions cannot be
-directly wrapped for use with `graph_test_shortcut_gsd()`. However,
-`gsDesign` and `rpact` implement the same standard spending function
-formulas, so `gsDesign` wrappers can be used to achieve equivalent results.
-
-However, it would be possible to use `rpact` if the `graphicalMCP` package functions interface
-differently with `rpact` compared to `gsDesign`. In particular, this code snippet shows how to obtain the
-repeated p-values from `rpact` shown in the above repeated p-values example:
-
-```{r rpact-snippet}
-rpact::setLogLevel("DISABLED")
-repP <- function(pVals){
-  cum_n <- seq_along(pVals) * 2
-  design <- rpact::getDesignGroupSequential(typeOfDesign = "asOF", kMax = 3)
-  data <- rpact::getDataset(
-    cumMeans = c(qnorm(1 - pVals) / sqrt(cum_n)),
-    cumStDevs = rep(1, length(pVals)), 
-    cumN = cum_n
-  )
-  stage_res <- rpact::getStageResults(design, data, normalApproximation = TRUE)
-  rpact::getRepeatedPValues(stage_res)
-}  
-
-repP(c(0.0062, 0.0002))
-repP(c(0.0170, 0.0035))
-repP(c(0.0090, 0.0020))
-repP(c(0.1300, 0.0600))
+```{r gsdesign-truncated}
+truncated_param <- list(trange = c(0.2, 0.8), sf = sfHSD, param = 1)
+result_truncated <- graph_test_shortcut_gsDesign(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  sfu = sfTruncated,
+  sfupar = rep(list(truncated_param), 4)
+)
+result_truncated$outputs$rejected
 ```
 
-It would be more beneficial to use the built-in `rpact` integration routines to obtain these
-repeated p-values, because this would provide an alternative computation method. 
-Merely supplying another implementation of the same simple spending function formulas
-would not provide a meaningful alternative.
+- `sfPoints()`, which takes the cumulative proportion of alpha spent at each
+  analysis, is not supported: gsDesign evaluates the spending function on the
+  analyses observed so far when computing repeated p-values, and `sfPoints()`
+  requires the full schedule at every call. The same spending is available
+  through `sfLinear()`, whose parameter lists the analysis times followed by
+  the cumulative proportions spent at them.
 
 ### User-Defined Spending Functions
 
-Users can define entirely custom spending functions as long as they accept
-two arguments — `alpha` and `info_frac` — and return the cumulative alpha
-spent. This provides full flexibility in controlling how alpha is allocated
-across analyses.
+Users can define entirely custom spending functions following gsDesign's
+convention. A spending function takes three arguments — `alpha`, `t`, and
+`param` — and returns a `spendfn` object whose `spend` element is the
+cumulative alpha spent at each `t`. The easiest way to construct such an
+object is gsDesign's template `spendingFunction()`, which fills in the
+required structure; the custom function then only needs to replace the
+`spend` element and, for informative printing, the `name`. gsDesign's own
+spending functions also store a reference to themselves in the `sf` element,
+which `gsDesign()` and `sequentialPValue()` use to evaluate the spending
+function later; `graph_test_shortcut_gsDesign()` sets this element for the
+functions it is given, but following the convention keeps a custom function
+usable directly with gsDesign as well.
 
 As an example, consider a **piecewise spending function** that uses
 O'Brien-Fleming spending for the first half of alpha (conservative at early
@@ -1240,23 +1311,29 @@ analyses) and Pocock spending for the second half (more aggressive). This
 can arise naturally in the graphical procedure: a hypothesis that starts
 with a small weight uses conservative OBF spending, and when it receives
 additional weight via graph propagation, the incremental alpha is spent
-more aggressively using Pocock.
+more aggressively using Pocock. The threshold is the spending function's
+parameter:
 
 ```{r user-defined-spending}
-# Piecewise spending: OBF for the first 'threshold' of alpha,
+# Piecewise spending: OBF for the first `param` of alpha,
 # Pocock for the remainder
-spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
-  spending_of(pmin(alpha, threshold), info_frac) +
-    spending_pocock(pmax(alpha - threshold, 0), info_frac)
+sfPiecewise <- function(alpha, t, param) {
+  x <- spendingFunction(alpha, t, param)
+  x$name <- "Piecewise O'Brien-Fleming / Pocock"
+  x$parname <- "threshold"
+  x$sf <- sfPiecewise
+  x$spend <- sfLDOF(min(alpha, param), t)$spend +
+    if (alpha > param) sfLDPocock(alpha - param, t)$spend else 0
+  x
 }
 
 # At alpha = 0.025: first 0.0125 is OBF, second 0.0125 is Pocock
 t <- c(1/3, 2/3, 1)
 comparison <- data.frame(
   `Info Fraction` = t,
-  `OBF only` = spending_of(0.025, t),
-  `Pocock only` = spending_pocock(0.025, t),
-  Piecewise = spending_piecewise(0.025, t),
+  `OBF only` = sfLDOF(0.025, t)$spend,
+  `Pocock only` = sfLDPocock(0.025, t)$spend,
+  Piecewise = sfPiecewise(0.025, t, param = 0.0125)$spend,
   check.names = FALSE
 )
 knitr::kable(comparison, digits = 6,
@@ -1269,54 +1346,61 @@ function reduces to pure O'Brien-Fleming:
 ```{r user-defined-spending-half}
 # At alpha = 0.0125: entirely OBF (below threshold)
 all.equal(
-  spending_piecewise(0.0125, t),
-  spending_of(0.0125, t)
+  sfPiecewise(0.0125, t, param = 0.0125)$spend,
+  sfLDOF(0.0125, t)$spend
 )
 ```
 
 The piecewise spending function can be used directly in
-`graph_test_shortcut_gsd()`:
+`graph_test_shortcut_gsDesign()`, with the threshold passed as `sfupar`:
 
 ```{r user-defined-spending-gsd}
-result_piecewise <- graph_test_shortcut_gsd(
+result_piecewise <- graph_test_shortcut_gsDesign(
   graph = g,
   p = p,
   alpha = 0.025,
   info_frac = c(1/3, 2/3),
-  spending_fn = spending_piecewise
+  sfu = sfPiecewise,
+  sfupar = 0.0125
 )
 print(result_piecewise)
 ```
 
 ## Summary
 
-The `graph_test_shortcut_gsd()` function performs multiple testing in group
-sequential trials using graphical approaches. Key features include:
+The `graph_test_shortcut_gsDesign()` function performs multiple testing in
+group sequential trials using graphical approaches, with the group sequential
+calculations delegated to gsDesign. Key features include:
 
-1. **Proper group sequential boundaries**: Boundaries are computed from spending
-   functions using the multivariate normal distribution of test statistics, not
-   by equating incremental spending with nominal significance levels.
+1. **gsDesign's group sequential machinery**: For each hypothesis, a
+   one-sided gsDesign design encodes its analysis schedule. Boundaries are
+   the design's upper bounds at the level currently allocated to the
+   hypothesis, and repeated p-values are obtained from `sequentialPValue()`
+   by setting the Z-statistics of earlier analyses to $-20$. The
+   probabilities are evaluated by gsDesign's deterministic numerical
+   integration, so results are reproducible without setting a seed.
 
-2. **Sequential rejection within analyses**: When a hypothesis is rejected at an
-   analysis, the graph is updated and boundaries for remaining hypotheses are
-   recomputed with increased weights, potentially enabling additional rejections
-   at the same analysis.
+2. **gsDesign's spending specification**: Spending functions (`sfu`), their
+   parameters (`sfupar`), and the spending time (`usTime`) are specified
+   exactly as in `gsDesign()`, giving access to gsDesign's spending function
+   library, the classical boundary families, and user-defined spending
+   functions built on `spendingFunction()`.
 
-3. **Repeated and sequential p-values**: `repeated_p()` computes the minimum
-   significance level for crossing the boundary at a specific analysis.
-   `sequential_p()` computes the minimum across all analyses. Both are reported
-   in the output regardless of the `look_back` setting.
+3. **The same graphical procedure**: Sequential rejection within analyses,
+   repeated and sequential p-values, the `look_back` option, per-hypothesis
+   spending functions and information fractions, and different numbers of
+   analyses per hypothesis (via `NA` padding) all work as in
+   `graph_test_shortcut_gsd()`, and the two functions return results of the
+   same structure.
 
-4. **The look_back option**: `look_back = FALSE` (default) uses repeated
-   p-values for analysis-by-analysis decisions. `look_back = TRUE` uses
-   sequential p-values, which can lead to additional rejections when evidence
-   from earlier analyses is relevant.
-
-5. **Flexibility**: Different hypotheses can use different spending functions,
-   different information fractions, and different numbers of analyses (via `NA`
-   padding in the p-value and information fraction matrices).
+4. **Spending time and monitoring**: `usTime` separates the spending time
+   from the information fraction, which also handles a final analysis whose
+   information differs from the plan.
 
 ## References
+
+Anderson, K. M. (2026). gsDesign: Group Sequential Design. R package.
+[https://CRAN.R-project.org/package=gsDesign](https://CRAN.R-project.org/package=gsDesign)
 
 Maurer, W., and Bretz, F. (2013). Multiple testing in group sequential trials
 using graphical approaches. *Statistics in Biopharmaceutical Research*, 5(4),

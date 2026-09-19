@@ -97,6 +97,7 @@ articles:
   - shortcut-testing
   - closed-testing
   - group-sequential-testing
+  - group-sequential-testing-gsDesign
   - graph-examples
   - internal-validation
   - comparisons
