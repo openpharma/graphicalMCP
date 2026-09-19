@@ -64,6 +64,9 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   print(x$inputs$graph, precision = precision, indent = indent)
   cat("\n")
   cat(pad, "Alpha = ", x$inputs$alpha, "\n", sep = "")
+  if (!is.null(x$inputs$engine)) {
+    cat(pad, "Group sequential engine: ", x$inputs$engine, "\n", sep = "")
+  }
 
   # Analysis names from column names of p
   analysis_names <- colnames(x$inputs$p)
@@ -83,24 +86,42 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
 
   # Spending functions
   cat("\n", pad, "Spending functions\n", sep = "")
-  for (j in seq_len(num_hyps)) {
-    sf_body <- deparse(body(x$inputs$spending_fn[[j]]))
-    sf_name <- tryCatch(
-      {
-        env <- environment(x$inputs$spending_fn[[j]])
-        if (identical(x$inputs$spending_fn[[j]], spending_of)) {
-          "O'Brien-Fleming"
-        } else if (identical(x$inputs$spending_fn[[j]], spending_pocock)) {
-          "Pocock"
-        } else if (identical(x$inputs$spending_fn[[j]], spending_linear)) {
-          "Linear"
-        } else {
-          paste(sf_body, collapse = " ")
-        }
-      },
-      error = function(e) paste(sf_body, collapse = " ")
-    )
-    cat(pad, pad, hyp_names[j], ": ", sf_name, "\n", sep = "")
+  if (identical(x$inputs$engine, "gsDesign")) {
+    # gsDesign engine: label each hypothesis by gsDesign's own name for its
+    # spending function or boundary family
+    for (j in seq_len(num_hyps)) {
+      cat(pad, pad, hyp_names[j], ": ",
+        gsd_spending_label(x$inputs$sfu[[j]], x$inputs$sfupar[[j]]),
+        "\n",
+        sep = ""
+      )
+    }
+    if (!is.null(x$inputs$usTime)) {
+      cat("\n", pad, "Spending time (usTime)\n", sep = "")
+      ust_df <- as.data.frame(x$inputs$usTime, row.names = hyp_names)
+      colnames(ust_df) <- analysis_names
+      print(ust_df)
+    }
+  } else {
+    for (j in seq_len(num_hyps)) {
+      sf_body <- deparse(body(x$inputs$spending_fn[[j]]))
+      sf_name <- tryCatch(
+        {
+          env <- environment(x$inputs$spending_fn[[j]])
+          if (identical(x$inputs$spending_fn[[j]], spending_of)) {
+            "O'Brien-Fleming"
+          } else if (identical(x$inputs$spending_fn[[j]], spending_pocock)) {
+            "Pocock"
+          } else if (identical(x$inputs$spending_fn[[j]], spending_linear)) {
+            "Linear"
+          } else {
+            paste(sf_body, collapse = " ")
+          }
+        },
+        error = function(e) paste(sf_body, collapse = " ")
+      )
+      cat(pad, pad, hyp_names[j], ": ", sf_name, "\n", sep = "")
+    }
   }
 
   # Look back mode
@@ -271,4 +292,38 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
   }
 
   invisible(x)
+}
+
+
+#' Human-readable label for a gsDesign spending specification
+#'
+#' Uses gsDesign's own `$name` for a spending function (with its parameter,
+#' if one was supplied), and a fixed label for the classical boundary
+#' families.
+#'
+#' @noRd
+gsd_spending_label <- function(sfu, sfupar) {
+  if (is.character(sfu)) {
+    return(switch(sfu,
+      OF = "O'Brien-Fleming (classical)",
+      Pocock = "Pocock (classical)",
+      WT = paste0("Wang-Tsiatis (Delta = ", sfupar, ")"),
+      sfu
+    ))
+  }
+  # formals() returns the default as an unevaluated expression; evaluate it
+  param <- if (is.null(sfupar)) {
+    eval(formals(gsDesign::gsDesign)$sfupar)
+  } else {
+    sfupar
+  }
+  sf_name <- tryCatch(sfu(0.025, 1, param)$name, error = function(e) NULL)
+  if (is.null(sf_name)) {
+    return(paste(deparse(body(sfu)), collapse = " "))
+  }
+  if (is.null(sfupar)) {
+    sf_name
+  } else {
+    paste0(sf_name, " (parameter = ", paste(sfupar, collapse = ", "), ")")
+  }
 }

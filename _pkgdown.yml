@@ -41,6 +41,7 @@ reference:
 - desc: Functions for group sequential designs with graphical MCPs
 - contents:
   - graph_test_shortcut_gsd
+  - graph_test_shortcut_gsDesign
   - print.gsd_graph_report
   - repeated_p
   - sequential_p

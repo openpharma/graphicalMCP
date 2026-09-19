@@ -289,24 +289,8 @@ graph_test_shortcut_gsd <- function(graph,
     verbose, test_values
   )
 
-  # Determine analysis names from column names of p and info_frac.
-  # If both have column names, they must match. If only one has them, use those.
-  # If neither has them, default to Analysis_1, Analysis_2, ...
-  p_names <- colnames(p)
-  if_names <- colnames(info_frac)
-  if (!is.null(p_names) && !is.null(if_names)) {
-    stopifnot(
-      "Column names of p and info_frac must match" =
-        identical(p_names, if_names)
-    )
-    analysis_names <- p_names
-  } else if (!is.null(p_names)) {
-    analysis_names <- p_names
-  } else if (!is.null(if_names)) {
-    analysis_names <- if_names
-  } else {
-    analysis_names <- paste0("Analysis_", seq_len(num_analyses))
-  }
+  # Determine analysis names from column names of p and info_frac
+  analysis_names <- gsd_analysis_names(p, info_frac)
   colnames(p) <- analysis_names
   colnames(info_frac) <- analysis_names
 
@@ -819,8 +803,8 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
 #' @return Invisibly returns `graph`.
 #'
 #' @keywords internal
-gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
-                          verbose, test_values) {
+gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn = NULL,
+                          look_back, verbose, test_values) {
   num_hyps <- length(graph$hypotheses)
   num_analyses <- ncol(p)
 
@@ -848,10 +832,11 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     "Non-NA information fractions must be positive" =
       length(if_non_na) == 0 || all(if_non_na > 0),
     "Spending functions must be a list of functions" =
-      is.list(spending_fn) &&
-        all(vapply(spending_fn, is.function, logical(1))),
+      is.null(spending_fn) ||
+        (is.list(spending_fn) &&
+          all(vapply(spending_fn, is.function, logical(1)))),
     "Number of spending functions must match the number of hypotheses" =
-      length(spending_fn) == num_hyps,
+      is.null(spending_fn) || length(spending_fn) == num_hyps,
     "look_back must be a logical vector of length matching hypotheses" =
       is.logical(look_back) && length(look_back) == num_hyps,
     "Verbose flag must be a length one logical" =
@@ -880,4 +865,29 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
   }
 
   invisible(graph)
+}
+
+
+#' Determine analysis names from the column names of p and info_frac
+#'
+#' If both have column names they must match; if only one has them, those are
+#' used; otherwise the analyses are named Analysis_1, Analysis_2, ...
+#'
+#' @noRd
+gsd_analysis_names <- function(p, info_frac) {
+  p_names <- colnames(p)
+  if_names <- colnames(info_frac)
+  if (!is.null(p_names) && !is.null(if_names)) {
+    stopifnot(
+      "Column names of p and info_frac must match" =
+        identical(p_names, if_names)
+    )
+    p_names
+  } else if (!is.null(p_names)) {
+    p_names
+  } else if (!is.null(if_names)) {
+    if_names
+  } else {
+    paste0("Analysis_", seq_len(ncol(p)))
+  }
 }

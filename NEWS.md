@@ -76,3 +76,5 @@
 * Plotting examples, vignettes, and tests are skipped when `igraph` or `gMCP` is not installed
 
 # graphicalMCP (development version)
+
+* Added `graph_test_shortcut_gsDesign()`, which performs the group sequential graphical procedure of `graph_test_shortcut_gsd()` with all group sequential calculations (boundaries and repeated p-values) delegated to the gsDesign package, using gsDesign's spending functions (`sfu`, `sfupar`) and spending time (`usTime`). gsDesign is a suggested package and is only required by this function
