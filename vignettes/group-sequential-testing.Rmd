@@ -1,11 +1,11 @@
 ---
-title: "Group Sequential Design with Graphical Approaches"
+title: "Graphical Approaches in Group Sequential Design"
 output:
   rmarkdown::html_vignette:
     number_sections: true
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Group Sequential Design with Graphical Approaches}
+  %\VignetteIndexEntry{Graphical Approaches in Group Sequential Design}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -1176,7 +1176,7 @@ delegate the group sequential calculations themselves to `gsDesign`, use
 `graph_test_shortcut_gsDesign()`, which takes `gsDesign`'s spending functions,
 parameters, and spending time (`sfu`, `sfupar`, `usTime`) directly and is
 described in the
-[Group Sequential Design with Graphical Approaches Using gsDesign](group-sequential-testing-gsDesign.html)
+[Graphical Approaches in Group Sequential Design: Combining graphicalMCP and gsDesign](group-sequential-testing-gsDesign.html)
 vignette.
 
 **rpact.** The `rpact` package computes group sequential designs via

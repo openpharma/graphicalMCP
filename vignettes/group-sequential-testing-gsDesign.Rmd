@@ -1,11 +1,11 @@
 ---
-title: "Group Sequential Design with Graphical Approaches Using gsDesign"
+title: "Graphical Approaches in Group Sequential Design: Combining graphicalMCP and gsDesign"
 output:
   rmarkdown::html_vignette:
     number_sections: true
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Group Sequential Design with Graphical Approaches Using gsDesign}
+  %\VignetteIndexEntry{Graphical Approaches in Group Sequential Design: Combining graphicalMCP and gsDesign}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -39,7 +39,7 @@ shortcut testing, graph updates, and the `look_back` option — is identical to
 `graph_test_shortcut_gsd()`, and the results have the same structure.
 
 This vignette reproduces the two case studies of the
-[Group Sequential Design with Graphical Approaches](group-sequential-testing.html)
+[Graphical Approaches in Group Sequential Design](group-sequential-testing.html)
 vignette with `graph_test_shortcut_gsDesign()`: a diabetes trial from Section
 4 of Maurer and Bretz (2013), and an oncology trial adapted from the
 [gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
