@@ -289,30 +289,18 @@ graph_test_shortcut_gsd <- function(graph,
     verbose, test_values
   )
 
-  # Determine analysis names from column names of p and info_frac.
-  # If both have column names, they must match. If only one has them, use those.
-  # If neither has them, default to Analysis_1, Analysis_2, ...
-  p_names <- colnames(p)
-  if_names <- colnames(info_frac)
-  if (!is.null(p_names) && !is.null(if_names)) {
-    stopifnot(
-      "Column names of p and info_frac must match" =
-        identical(p_names, if_names)
-    )
-    analysis_names <- p_names
-  } else if (!is.null(p_names)) {
-    analysis_names <- p_names
-  } else if (!is.null(if_names)) {
-    analysis_names <- if_names
-  } else {
-    analysis_names <- paste0("Analysis_", seq_len(num_analyses))
-  }
+  # Determine analysis names from column names of p and info_frac
+  analysis_names <- gsd_analysis_names(p, info_frac)
   colnames(p) <- analysis_names
   colnames(info_frac) <- analysis_names
 
   # Run the procedure ----------------------------------------------------------
+  # The group sequential computations (repeated p-values and nominal
+  # boundaries) are delegated to an engine so that the graphical logic in
+  # gsd_test() and its helpers does not depend on how they are computed.
+  engine <- gsd_engine_mvtnorm(spending_fn)
   result <- gsd_test(
-    graph, p, alpha, info_frac, spending_fn, look_back,
+    graph, p, alpha, info_frac, engine, look_back,
     num_analyses, num_hyps, hyp_names, analysis_names,
     test_values, verbose
   )
@@ -351,7 +339,7 @@ graph_test_shortcut_gsd <- function(graph,
       test_values = if (test_values) result$test_values,
       boundary_table = if (verbose) {
         gsd_boundary_table(
-          graph, alpha, info_frac, spending_fn,
+          graph, alpha, info_frac, engine,
           num_hyps, hyp_names
         )
       }
@@ -372,7 +360,7 @@ graph_test_shortcut_gsd <- function(graph,
 #' @param graph An `initial_graph` object.
 #' @param alpha Overall significance level.
 #' @param info_frac Information fraction matrix (m x K).
-#' @param spending_fn List of spending functions.
+#' @param engine A group sequential engine; see [gsd_engine_mvtnorm()].
 #' @param num_hyps Number of hypotheses.
 #' @param hyp_names Character vector of hypothesis names.
 #'
@@ -382,7 +370,7 @@ graph_test_shortcut_gsd <- function(graph,
 #'   for each possible weight.
 #'
 #' @keywords internal
-gsd_boundary_table <- function(graph, alpha, info_frac, spending_fn,
+gsd_boundary_table <- function(graph, alpha, info_frac, engine,
                                num_hyps, hyp_names) {
   # Get all possible weights from the closure
   weights_matrix <- graph_generate_weights(graph)
@@ -407,12 +395,7 @@ gsd_boundary_table <- function(graph, alpha, info_frac, spending_fn,
       if (allocated <= 0) {
         boundaries <- rep(0, num_analyses_j)
       } else {
-        bounds_result <- gs_boundaries(
-          alpha = allocated,
-          info_frac = if_j,
-          spending_fn = spending_fn[[j]]
-        )
-        boundaries <- bounds_result$bounds_nominal
+        boundaries <- engine$nominal_bounds(allocated, if_j, j)
       }
 
       row <- data.frame(
@@ -443,7 +426,7 @@ gsd_boundary_table <- function(graph, alpha, info_frac, spending_fn,
 #' proceeding to the next.
 #'
 #' @keywords internal
-gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
+gsd_test <- function(graph, p, alpha, info_frac, engine, look_back,
                      num_analyses, num_hyps, hyp_names, analysis_names,
                      test_values, verbose) {
   # Indices of non-NA analyses per hypothesis
@@ -458,11 +441,9 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     idx_j <- non_na_indices[[j]]
     for (kk in seq_along(idx_j)) {
       cols <- idx_j[1:kk]
-      rep_p_matrix[j, idx_j[kk]] <- suppressMessages(repeated_p(
-        p = p[j, cols],
-        info_frac = info_frac[j, cols],
-        spending_fn = spending_fn[[j]]
-      ))
+      rep_p_matrix[j, idx_j[kk]] <- suppressMessages(
+        engine$repeated_p(p[j, cols], info_frac[j, cols], j)
+      )
     }
   }
 
@@ -581,7 +562,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     # Per-analysis test_values details
     if (test_values) {
       tv_details[[k]] <- gsd_test_values_details(
-        step_graph, p, k, alpha, info_frac, spending_fn,
+        step_graph, p, k, alpha, info_frac, engine,
         newly_in_order, hyp_names, rejected, active_at_k
       )
 
@@ -599,7 +580,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
             shortcut_k$details$results[[rej_idx]]$hypotheses[hyp_name]
           lb_rows <- gsd_test_values_look_back(
             hyp_name, k, first_rejected_at[hyp_name], alpha, p,
-            info_frac, spending_fn, hyp_names, w_at_rej
+            info_frac, engine, hyp_names, w_at_rej
           )
 
           # Check if this hypothesis has a standard row at analysis k
@@ -661,7 +642,7 @@ gsd_test <- function(graph, p, alpha, info_frac, spending_fn, look_back,
 #'
 #' @keywords internal
 gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
-                                    spending_fn, rejection_seq_k,
+                                    engine, rejection_seq_k,
                                     hyp_names, rejected_after,
                                     has_data_k = rep(TRUE, length(hyp_names))) {
   num_hyps <- length(hyp_names)
@@ -687,12 +668,7 @@ gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
     non_na_up_to_k <- which(!is.na(info_frac[j, ]) & seq_len(ncol(info_frac)) <= k)
     if_j <- info_frac[j, non_na_up_to_k]
     k_eff <- length(if_j)
-    bounds_result <- gs_boundaries(
-      alpha = total_alpha_j,
-      info_frac = if_j,
-      spending_fn = spending_fn[[j]]
-    )
-    bounds_result$bounds_nominal[k_eff]
+    engine$nominal_bounds(total_alpha_j, if_j, j)[k_eff]
   }
 
   detail_rows <- list()
@@ -765,7 +741,7 @@ gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
 #' @param alpha Overall significance level.
 #' @param p P-value matrix.
 #' @param info_frac Information fraction matrix.
-#' @param spending_fn List of spending functions.
+#' @param engine A group sequential engine; see [gsd_engine_mvtnorm()].
 #' @param hyp_names Character vector of hypothesis names.
 #' @param w_at_rejection The hypothesis weight at the point of rejection
 #'   (from the shortcut's internal graph sequence).
@@ -775,7 +751,7 @@ gsd_test_values_details <- function(step_graph, p, k, alpha, info_frac,
 #'
 #' @keywords internal
 gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
-                                      info_frac, spending_fn, hyp_names,
+                                      info_frac, engine, hyp_names,
                                       w_at_rejection) {
   j <- which(hyp_names == hyp_name)
   total_alpha_j <- w_at_rejection * alpha
@@ -786,11 +762,7 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
   # Compute boundaries at all analyses up to k using the allocated alpha
   non_na_up_to_k <- non_na_all[non_na_all <= k]
   if_j <- info_frac[j, non_na_up_to_k]
-  bounds_result <- gs_boundaries(
-    alpha = total_alpha_j,
-    info_frac = if_j,
-    spending_fn = spending_fn[[j]]
-  )
+  bounds_nominal <- engine$nominal_bounds(total_alpha_j, if_j, j)
 
   # Generate rows for analyses k-1 down to attributed_to (decreasing order)
   prior_analyses <- seq(k - 1, attributed_to)
@@ -802,7 +774,7 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
     if (length(a_pos) == 0) next # hypothesis has no data at this analysis
 
     nominal_p <- p[j, a]
-    boundary <- bounds_result$bounds_nominal[a_pos]
+    boundary <- bounds_nominal[a_pos]
     crossed <- !is.na(nominal_p) && nominal_p <= boundary
 
     detail_rows[[length(detail_rows) + 1]] <- data.frame(
@@ -831,8 +803,8 @@ gsd_test_values_look_back <- function(hyp_name, k, attributed_to, alpha, p,
 #' @return Invisibly returns `graph`.
 #'
 #' @keywords internal
-gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
-                          verbose, test_values) {
+gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn = NULL,
+                          look_back, verbose, test_values) {
   num_hyps <- length(graph$hypotheses)
   num_analyses <- ncol(p)
 
@@ -860,10 +832,11 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
     "Non-NA information fractions must be positive" =
       length(if_non_na) == 0 || all(if_non_na > 0),
     "Spending functions must be a list of functions" =
-      is.list(spending_fn) &&
-        all(vapply(spending_fn, is.function, logical(1))),
+      is.null(spending_fn) ||
+        (is.list(spending_fn) &&
+          all(vapply(spending_fn, is.function, logical(1)))),
     "Number of spending functions must match the number of hypotheses" =
-      length(spending_fn) == num_hyps,
+      is.null(spending_fn) || length(spending_fn) == num_hyps,
     "look_back must be a logical vector of length matching hypotheses" =
       is.logical(look_back) && length(look_back) == num_hyps,
     "Verbose flag must be a length one logical" =
@@ -892,4 +865,29 @@ gsd_input_val <- function(graph, p, alpha, info_frac, spending_fn, look_back,
   }
 
   invisible(graph)
+}
+
+
+#' Determine analysis names from the column names of p and info_frac
+#'
+#' If both have column names they must match; if only one has them, those are
+#' used; otherwise the analyses are named Analysis_1, Analysis_2, ...
+#'
+#' @noRd
+gsd_analysis_names <- function(p, info_frac) {
+  p_names <- colnames(p)
+  if_names <- colnames(info_frac)
+  if (!is.null(p_names) && !is.null(if_names)) {
+    stopifnot(
+      "Column names of p and info_frac must match" =
+        identical(p_names, if_names)
+    )
+    p_names
+  } else if (!is.null(p_names)) {
+    p_names
+  } else if (!is.null(if_names)) {
+    if_names
+  } else {
+    paste0("Analysis_", seq_len(ncol(p)))
+  }
 }

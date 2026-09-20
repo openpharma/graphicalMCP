@@ -9,7 +9,7 @@ gsd_input_val(
   p,
   alpha,
   info_frac,
-  spending_fn,
+  spending_fn = NULL,
   look_back,
   verbose,
   test_values
