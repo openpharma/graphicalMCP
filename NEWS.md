@@ -79,3 +79,4 @@
 
 * Added `graph_test_shortcut_gsDesign()`, which performs the group sequential graphical procedure of `graph_test_shortcut_gsd()` with all group sequential calculations (boundaries and repeated p-values) delegated to the gsDesign package, using gsDesign's spending functions (`sfu`, `sfupar`) and spending time (`usTime`). gsDesign is a suggested package and is only required by this function
 * Added a vignette on group sequential testing with `graph_test_shortcut_gsDesign()`, which reproduces the case studies of the group sequential testing vignette with gsDesign's spending functions and spending time
+* Added `graph_test_shortcut_rpact()`, which performs the same group sequential graphical procedure with all group sequential calculations delegated to the rpact package, using rpact's design types and parameters (`typeOfDesign`, `gammaA`, `deltaWT`, `userAlphaSpending`) and an optional spending time. rpact is a suggested package and is only required by this function

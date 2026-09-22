@@ -102,6 +102,25 @@ print.gsd_graph_report <- function(x, ..., precision = 6, indent = 2) {
       colnames(ust_df) <- analysis_names
       print(ust_df)
     }
+  } else if (identical(x$inputs$engine, "rpact")) {
+    # rpact engine: label each hypothesis by its rpact design type and
+    # parameter
+    for (j in seq_len(num_hyps)) {
+      cat(pad, pad, hyp_names[j], ": ",
+        gsd_design_label_rpact(
+          x$inputs$typeOfDesign[[j]], x$inputs$gammaA[[j]],
+          x$inputs$deltaWT[[j]]
+        ),
+        "\n",
+        sep = ""
+      )
+    }
+    if (!is.null(x$inputs$spending_time)) {
+      cat("\n", pad, "Spending time\n", sep = "")
+      st_df <- as.data.frame(x$inputs$spending_time, row.names = hyp_names)
+      colnames(st_df) <- analysis_names
+      print(st_df)
+    }
   } else {
     for (j in seq_len(num_hyps)) {
       sf_body <- deparse(body(x$inputs$spending_fn[[j]]))
@@ -328,4 +347,30 @@ gsd_spending_label <- function(sfu, sfupar) {
   } else {
     paste0(sf_name, " (parameter = ", paste(sfupar, collapse = ", "), ")")
   }
+}
+
+
+#' Human-readable label for an rpact design specification
+#'
+#' rpact's design type followed by its full name and, where applicable, the
+#' parameter used.
+#'
+#' @noRd
+gsd_design_label_rpact <- function(typeOfDesign, gammaA, deltaWT) {
+  full_name <- switch(typeOfDesign,
+    asOF = "Lan-DeMets O'Brien-Fleming",
+    asP = "Lan-DeMets Pocock",
+    asHSD = paste0("Hwang-Shih-DeCani, gammaA = ", gammaA),
+    asKD = paste0("Kim-DeMets, gammaA = ", gammaA),
+    asUser = "user-defined alpha spending",
+    OF = "O'Brien-Fleming",
+    P = "Pocock",
+    WT = paste0("Wang-Tsiatis, deltaWT = ", deltaWT),
+    PT = "Pampallona-Tsiatis",
+    HP = "Haybittle-Peto",
+    WToptimum = "optimal Wang-Tsiatis",
+    noEarlyEfficacy = "no early efficacy stopping",
+    NULL
+  )
+  if (is.null(full_name)) typeOfDesign else paste0(typeOfDesign, " (", full_name, ")")
 }

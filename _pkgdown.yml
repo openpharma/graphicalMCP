@@ -42,6 +42,7 @@ reference:
 - contents:
   - graph_test_shortcut_gsd
   - graph_test_shortcut_gsDesign
+  - graph_test_shortcut_rpact
   - print.gsd_graph_report
   - repeated_p
   - sequential_p
