@@ -185,10 +185,22 @@ test_input_val <- function(graph,
 
 #' @rdname input_val
 #' @keywords internal
-power_input_val <- function(graph, sim_n, power_marginal, test_corr, success) {
+power_input_val <- function(graph,
+                            alpha,
+                            sim_n,
+                            power_marginal,
+                            test_corr,
+                            success) {
   num_hyps <- length(graph$hypotheses)
 
   stopifnot(
+    # `power_marginal` is the marginal power at level `alpha`, so the mapping
+    # to a noncentrality parameter, qnorm(1 - alpha) - qnorm(1 - power_marginal),
+    # is only defined for alpha strictly inside (0, 1). At alpha 0 or 1 it
+    # returns NaN (when power_marginal is also 0 or 1) or silently wrong power,
+    # so these are rejected here (Issue #47).
+    "Alpha must be strictly between 0 and 1 for power calculations" =
+      is.numeric(alpha) && length(alpha) == 1 && alpha > 0 && alpha < 1,
     "Number of simulations must be a length one integer" =
       is.numeric(sim_n) && as.integer(sim_n) == sim_n && length(sim_n) == 1,
     "Marginal power must be between 0 and 1" =

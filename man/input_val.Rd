@@ -16,7 +16,7 @@ test_input_val(
   test_values
 )
 
-power_input_val(graph, sim_n, power_marginal, test_corr, success)
+power_input_val(graph, alpha, sim_n, power_marginal, test_corr, success)
 }
 \arguments{
 \item{graph}{An initial graph as returned by \code{\link[=graph_create]{graph_create()}}.}

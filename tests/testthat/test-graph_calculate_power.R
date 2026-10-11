@@ -207,3 +207,35 @@ test_that("boundary marginal power 0/1 is handled correctly (#47)", {
       outputs$rejected)
   )
 })
+
+test_that("alpha of exactly 0 or 1 is rejected in power calculations (#47)", {
+  holm <- graph_create(
+    hypotheses = c(0.5, 0.5),
+    transitions = matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
+  )
+
+  # alpha 0/1 makes the marginal-power -> noncentrality mapping degenerate:
+  # NaN when power_marginal is also 0/1, or silently wrong power otherwise.
+  # All four must error rather than hang, error cryptically, or mislead.
+  expect_error(
+    graph_calculate_power(holm, alpha = 0, power_marginal = c(0, 0), sim_n = 1),
+    "strictly between 0 and 1"
+  )
+  expect_error(
+    graph_calculate_power(holm, alpha = 0, power_marginal = c(0.5, 0.5), sim_n = 1),
+    "strictly between 0 and 1"
+  )
+  expect_error(
+    graph_calculate_power(holm, alpha = 1, power_marginal = c(1, 1), sim_n = 1),
+    "strictly between 0 and 1"
+  )
+  expect_error(
+    graph_calculate_power(holm, alpha = 1, power_marginal = c(0.5, 0.5), sim_n = 1),
+    "strictly between 0 and 1"
+  )
+
+  # interior alpha with boundary marginal power stays valid
+  expect_no_error(
+    graph_calculate_power(holm, alpha = 0.025, power_marginal = c(1, 0), sim_n = 1)
+  )
+})
