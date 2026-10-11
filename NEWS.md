@@ -78,3 +78,4 @@
 # graphicalMCP (development version)
 
 * Gave an informative error when a graph has lost or has inconsistent hypothesis names (e.g. after `graph$hypotheses <- c(0.6, 0.4)`), instead of a cryptic downstream failure (Issue #110)
+* Fixed `graph_calculate_power()` for boundary marginal power values of 0 or 1: Bonferroni testing no longer hangs, and Hochberg testing no longer over-rejects, when a simulated p-value is exactly 0 or 1 (Issue #47)

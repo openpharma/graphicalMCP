@@ -152,3 +152,58 @@ test_that("verbose output", {
     c("p_sim", "test_results")
   )
 })
+
+test_that("boundary marginal power 0/1 is handled correctly (#47)", {
+  # Holm procedure: two hypotheses, equal alpha split
+  holm <- graph_create(
+    hypotheses = c(0.5, 0.5),
+    transitions = matrix(c(0, 1, 1, 0), nrow = 2, byrow = TRUE)
+  )
+
+  # With power_marginal = c(1, 0) the simulated p-values are deterministically
+  # (0, 1), so H1 should always be rejected and H2 never.
+
+  # Bonferroni previously hung forever in graph_test_shortcut_fast()
+  bonf <- graph_calculate_power(holm, power_marginal = c(1, 0), sim_n = 1)
+  expect_equal(unname(bonf$power$power_local), c(1, 0))
+
+  # Hochberg previously returned (1, 1) from graph_test_closure_fast()
+  hoch <- graph_calculate_power(
+    holm,
+    power_marginal = c(1, 0),
+    test_groups = list(c(1, 2)),
+    test_types = list("hochberg"),
+    sim_n = 1
+  )
+  expect_equal(unname(hoch$power$power_local), c(1, 0))
+
+  # The mirror image and the all-0 / all-1 cases should also be exact
+  expect_equal(
+    unname(
+      graph_calculate_power(holm, power_marginal = c(0, 1), sim_n = 1)$
+        power$power_local
+    ),
+    c(0, 1)
+  )
+  expect_equal(
+    unname(
+      graph_calculate_power(holm, power_marginal = c(1, 1), sim_n = 1)$
+        power$power_local
+    ),
+    c(1, 1)
+  )
+  expect_equal(
+    unname(
+      graph_calculate_power(holm, power_marginal = c(0, 0), sim_n = 1)$
+        power$power_local
+    ),
+    c(0, 0)
+  )
+
+  # Power simulation must agree with the exact closed test on the boundary
+  expect_equal(
+    unname(bonf$power$power_local) == 1,
+    unname(graph_test_shortcut(holm, p = c(0, 1), alpha = 0.025)$
+      outputs$rejected)
+  )
+})

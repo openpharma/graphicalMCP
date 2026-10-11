@@ -36,7 +36,11 @@ graph_test_closure_fast <- function(p,
                                     alpha,
                                     adjusted_weights,
                                     matrix_intersections) {
-  rej_hyps <- t(p <= alpha * t(adjusted_weights))
+  # Mask by intersection membership *before* reducing over hypotheses: a
+  # hypothesis not in an intersection must never count toward rejecting it.
+  # Otherwise a hypothesis with p-value 0 and weight 0 (so `0 <= 0 * alpha` is
+  # TRUE) would mark intersections it does not belong to as rejected (#47).
+  rej_hyps <- t(p <= alpha * t(adjusted_weights)) & (matrix_intersections == 1)
 
   # "+ 0" converts to integer from logical
   matrixStats::colSums2(
@@ -62,8 +66,14 @@ graph_test_shortcut_fast <- function(p, alpha, adjusted_weights) {
     # weights matrix, then go down one line
     intersection_num <-
       nrow_critical - sum(binary_slots * !rejected) + 1
+    # Only hypotheses still in the current intersection (i.e. not yet rejected)
+    # can be rejected in this step. Without the `!rejected` guard, a hypothesis
+    # with p-value 0 and weight 0 (so `0 <= 0 * alpha` is TRUE) would be flagged
+    # again every iteration, so `rejected` would stop changing while
+    # `any(rejected_step)` stayed TRUE, looping forever (#47).
     rejected_step <-
-      p <= adjusted_weights[intersection_num, , drop = TRUE] * alpha
+      !rejected &
+        p <= adjusted_weights[intersection_num, , drop = TRUE] * alpha
 
     if (!any(rejected_step)) {
       break
