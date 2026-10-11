@@ -65,6 +65,8 @@
 #'
 #' graph_generate_weights(g)
 graph_generate_weights <- function(graph) {
+  test_graph_names(graph)
+
   hyp_names <- names(graph$hypotheses)
   num_hyps <- length(graph$hypotheses)
 

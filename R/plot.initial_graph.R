@@ -128,6 +128,8 @@ plot.initial_graph <- function(x,
                                eps = NULL,
                                background_color = "white",
                                margins = c(1, 1, 1, 1)) {
+  test_graph_names(x, warn_only = TRUE)
+
   oldpar <- graphics::par("bg", "mar")
   on.exit(suppressWarnings(graphics::par(oldpar)))
 

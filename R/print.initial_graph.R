@@ -45,6 +45,8 @@ print.initial_graph <- function(x,
                                 ...,
                                 precision = 4,
                                 indent = 0) {
+  test_graph_names(x, warn_only = TRUE)
+
   x$hypotheses[attr(x, "deleted")] <-
     x$transitions[attr(x, "deleted"), ] <-
     x$transitions[, attr(x, "deleted")] <-
