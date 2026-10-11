@@ -85,6 +85,7 @@ as_graphMCP <- function(graph) {
 #' @rdname as_graph
 #' @export
 as_graphMCP.initial_graph <- function(graph) {
+  test_graph_names(graph)
   if (!requireNamespace("gMCP", quietly = TRUE)) {
     stop("Please install.packages('gMCP') before converting to a gMCP graph")
   } else {
@@ -101,6 +102,7 @@ as_igraph <- function(graph) {
 #' @rdname as_graph
 #' @export
 as_igraph.initial_graph <- function(graph) {
+  test_graph_names(graph)
   if (!requireNamespace("igraph", quietly = TRUE)) {
     stop("Please install.packages('igraph') before converting to an igraph")
   } else {

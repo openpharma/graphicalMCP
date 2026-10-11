@@ -76,3 +76,5 @@
 * Plotting examples, vignettes, and tests are skipped when `igraph` or `gMCP` is not installed
 
 # graphicalMCP (development version)
+
+* Gave an informative error when a graph has lost or has inconsistent hypothesis names (e.g. after `graph$hypotheses <- c(0.6, 0.4)`), instead of a cryptic downstream failure (Issue #110)

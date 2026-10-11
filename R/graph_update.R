@@ -87,6 +87,8 @@ graph_update <- function(graph, delete) {
       is.logical(delete) || (all(as.integer(delete) == delete))
   )
 
+  test_graph_names(graph)
+
   ordered <- !is.logical(delete)
 
   # Qualitative checking
