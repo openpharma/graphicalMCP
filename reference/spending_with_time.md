@@ -96,8 +96,8 @@ spending_with_time(spending_of, spending_time_sub)
 #>     result[non_na] <- spent
 #>     result
 #> }
-#> <bytecode: 0x55f204c66b48>
-#> <environment: 0x55f204c67ad0>
+#> <bytecode: 0x565039ae38e8>
+#> <environment: 0x565039ae0a40>
 
 # --- Monitoring with changed final information ---
 # Planned: 295 OS events at 3 analyses (185, 245, 295 events).
