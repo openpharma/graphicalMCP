@@ -123,3 +123,14 @@ CRAN release: 2026-08-27
   hypothesis names (e.g. after `graph$hypotheses <- c(0.6, 0.4)`),
   instead of a cryptic downstream failure (Issue
   [\#110](https://github.com/openpharma/graphicalMCP/issues/110))
+- Fixed
+  [`graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)
+  for boundary marginal power values of 0 or 1: Bonferroni testing no
+  longer hangs, and Hochberg testing no longer over-rejects, when a
+  simulated p-value is exactly 0 or 1 (Issue
+  [\#47](https://github.com/openpharma/graphicalMCP/issues/47))
+- [`graph_calculate_power()`](https://openpharma.github.io/graphicalMCP/reference/graph_calculate_power.md)
+  now requires `alpha` to be strictly between 0 and 1, since marginal
+  power is undefined at `alpha` of 0 or 1 (previously these produced an
+  error or silently wrong power) (Issue
+  [\#47](https://github.com/openpharma/graphicalMCP/issues/47))
