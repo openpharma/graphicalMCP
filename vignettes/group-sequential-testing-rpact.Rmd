@@ -1,0 +1,1503 @@
+---
+title: "Graphical Approaches in Group Sequential Design: Combining graphicalMCP and rpact"
+output:
+  rmarkdown::html_vignette:
+    number_sections: true
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Graphical Approaches in Group Sequential Design: Combining graphicalMCP and rpact}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  dpi = 192,
+  fig.retina = 2
+)
+```
+
+## Introduction
+
+Group sequential designs allow for interim analyses during a clinical trial,
+enabling early stopping for efficacy while controlling the familywise Type I
+error rate (FWER). When combined with graphical multiple comparison procedures,
+these designs can test multiple hypotheses across multiple analyses in a
+structured and transparent way.
+
+The `graph_test_shortcut_rpact()` function performs the same group sequential
+graphical procedure as `graph_test_shortcut_gsd()`, but obtains every group
+sequential quantity — cumulative spending, boundaries, and repeated p-values —
+from the [rpact package](https://CRAN.R-project.org/package=rpact) (Wassmer
+and Pahlke, 2026). Designs are specified in rpact's own terms (`typeOfDesign`
+with its parameters `gammaA`, `deltaWT`, or `userAlphaSpending`, and an
+optional spending time), so that a group sequential design worked out with
+rpact can be carried over to the graphical procedure unchanged. The graphical
+part of the procedure — the shortcut testing, graph updates, and the
+`look_back` option — is identical to `graph_test_shortcut_gsd()`, and the
+results have the same structure.
+
+This vignette reproduces the two case studies of the
+[Graphical Approaches in Group Sequential Design](group-sequential-testing.html)
+vignette with `graph_test_shortcut_rpact()`: a diabetes trial from Section 4
+of Maurer and Bretz (2013), and an oncology trial adapted from the
+[gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
+different endpoints have different numbers of analyses. Along the way it shows
+how rpact is used inside the function. rpact is a suggested package of
+graphicalMCP and must be installed to use `graph_test_shortcut_rpact()`.
+
+```{r rpact-guard, echo = FALSE, results = "asis"}
+if (!requireNamespace("rpact", quietly = TRUE)) {
+  cat(
+    "**The rpact package is not installed, so the code in this vignette",
+    "was not run.**\n"
+  )
+  knitr::knit_exit()
+}
+```
+
+```{r setup, message = FALSE}
+library(graphicalMCP)
+library(rpact)
+```
+
+## Alpha Spending Functions
+
+Alpha spending functions determine how the total significance level is
+allocated across interim and final analyses. In rpact, the spending function
+is part of the *design type*: `getDesignGroupSequential()` takes a
+`typeOfDesign` argument whose alpha spending types begin with `as`, and the
+cumulative alpha spent at each analysis is returned in the design's
+`alphaSpent` element. The most common choices are:
+
+- `"asOF"` — Lan-DeMets O'Brien-Fleming approximation (very conservative at
+  early analyses)
+- `"asP"` — Lan-DeMets Pocock approximation (more uniform spending)
+- `"asHSD"` — Hwang-Shih-DeCani family (flexible, controlled by `gammaA`)
+- `"asKD"` — Kim-DeMets power family; `gammaA = 1` gives linear (uniform)
+  spending
+- `"asUser"` — cumulative spending given directly as `userAlphaSpending`
+
+```{r spending-comparison}
+# Cumulative spending of a design type at information fractions t_values
+t_values <- c(1/3, 2/3, 1)
+spending <- function(typeOfDesign, gammaA = NULL) {
+  args <- list(
+    kMax = 3, informationRates = t_values, alpha = 0.025, sided = 1,
+    typeOfDesign = typeOfDesign
+  )
+  if (!is.null(gammaA)) args$gammaA <- gammaA
+  do.call(getDesignGroupSequential, args)$alphaSpent
+}
+
+spending_comparison <- data.frame(
+  `Info Fraction` = t_values,
+  `O'Brien-Fleming` = spending("asOF"),
+  Pocock = spending("asP"),
+  `HSD (gamma=-4)` = spending("asHSD", gammaA = -4),
+  Linear = spending("asKD", gammaA = 1),
+  check.names = FALSE
+)
+knitr::kable(spending_comparison, digits = 6,
+             caption = "Cumulative alpha spent at each analysis (alpha = 0.025)")
+```
+
+The O'Brien-Fleming spending function is very conservative at early analyses
+(spending only `r sprintf("%.5f", spending("asOF")[1])` at the first
+interim), making it a popular choice when early stopping should require very
+strong evidence.
+
+In `graph_test_shortcut_rpact()`, the design type is passed as `typeOfDesign`
+and its parameter as `gammaA` (for `"asHSD"` and `"asKD"`) or `deltaWT` (for
+`"WT"`), exactly as in `getDesignGroupSequential()`. The built-in spending
+functions of graphicalMCP correspond to rpact's design types as follows:
+
+| graphicalMCP (`spending_fn`) | rpact (`typeOfDesign`, parameter)   |
+|------------------------------|-------------------------------------|
+| `spending_of()`              | `"asOF"`                            |
+| `spending_pocock()`          | `"asP"`                             |
+| `spending_hsd(gamma)`        | `"asHSD"`, `gammaA = gamma`         |
+| `spending_linear()`          | `"asKD"`, `gammaA = 1`              |
+| `spending_wt(delta)`         | `"WT"`, `deltaWT = delta`           |
+| `spending_with_time()`       | `spending_time`                     |
+
+## From Spending to Boundaries
+
+An important distinction: the cumulative spending at an analysis is **not** the
+nominal significance level (boundary) at that analysis. The boundary must be
+computed from the spending using the joint distribution of test statistics
+across analyses. Specifically, the Z-scale boundary $b_k$ satisfies:
+
+$$P(Z_1 < b_1, \ldots, Z_k < b_k) = 1 - f(\alpha, t_k)$$
+
+where $f(\alpha, t_k)$ is the cumulative spending and
+$(Z_1, \ldots, Z_k)$ follow the canonical joint distribution with
+$\text{Cor}(Z_i, Z_j) = \sqrt{t_i / t_j}$ for $i \le j$. We consider
+one-sided tests with the upper alternative (i.e., larger effects are better).
+At analysis $k$, the null hypothesis is rejected if $Z_k \ge b_k$, or
+equivalently, if the observed p-value $p_k \le \Phi(-b_k)$ where $\Phi$ is
+the standard normal CDF.
+
+In rpact, the boundaries are obtained by constructing a design with
+`getDesignGroupSequential()`. The call below is the one that
+`graph_test_shortcut_rpact()` makes for each hypothesis: `sided = 1` requests
+a one-sided design, `informationRates` gives the information at each analysis
+as a fraction of the planned maximum, so that the correlation between analyses
+is the one implied by the information fractions, and the Z-scale boundaries
+and their nominal p-value equivalents are the design's `criticalValues` and
+`stageLevels`.
+
+```{r boundaries-example}
+# Compute boundaries for OBF spending at alpha = 0.025 with 3 equally spaced analyses
+design_obf <- getDesignGroupSequential(
+  kMax = 3, informationRates = t_values, alpha = 0.025, sided = 1,
+  typeOfDesign = "asOF"
+)
+
+boundary_table <- data.frame(
+  Analysis = 1:3,
+  `Info Fraction` = t_values,
+  `Cumulative Spending` = design_obf$alphaSpent,
+  `Z Boundary` = design_obf$criticalValues,
+  `Nominal p Boundary` = design_obf$stageLevels,
+  check.names = FALSE
+)
+knitr::kable(boundary_table, digits = 6,
+             caption = "OBF group sequential boundaries (alpha = 0.025)")
+```
+
+## Repeated and Sequential P-values
+
+Two types of p-values are central to the group sequential graphical procedure.
+Let $\hat{p}_k$ denote the repeated p-value and $\tilde{p}_k$ denote the
+sequential p-value at analysis $k$.
+
+- **Repeated p-value** $\hat{p}_k$: the minimum significance level at which
+  the group sequential boundary *at analysis $k$ specifically* would be crossed.
+  It only considers the boundary at the current analysis.
+
+- **Sequential p-value** $\tilde{p}_k$: the minimum significance level at
+  which any group sequential boundary *at analyses $1, \ldots, k$* would be
+  crossed. It equals the cumulative minimum of repeated p-values:
+  $\tilde{p}_k = \min_{l=1}^{k} \hat{p}_l$.
+
+rpact computes repeated p-values with `getRepeatedPValues()`, which takes the
+stage results of a design and a dataset, and searches for the smallest level
+at which the boundary at the current stage is crossed — the design is rebuilt
+at each candidate level and its critical value compared with the observed
+Z-statistic. Two features of this function make it unsuitable for direct use
+inside the graphical procedure: it requires a dataset rather than test
+statistics, and it caps its result at 0.5. The graphical procedure compares
+repeated p-values with allocated levels and derives adjusted p-values from
+them, so it needs the uncapped value for a p-value or Z-statistic.
+`graph_test_shortcut_rpact()` therefore applies the same search itself —
+solving $c_k(\alpha) = Z_k$ on the `criticalValues` of
+`getDesignGroupSequential()` over the level — for every design type and
+without the cap. Because it is the same algorithm on the same designs, the two
+agree to the tolerance of rpact's search wherever the latter is applicable.
+
+The following code shows the mechanism for a single hypothesis with the
+design from the previous section: the repeated p-value at analysis $k$ is the
+root of $c_k(\alpha) - Z_k$ in $\alpha$, where $c_k(\alpha)$ is the critical
+value at analysis $k$ of the design built at level $\alpha$. This is what
+`graph_test_shortcut_rpact()` does internally for each hypothesis at each
+analysis; you never need to do it yourself. For comparison, the same values
+are obtained from `getRepeatedPValues()`; to use it directly we need a
+dataset, and a one-sample dataset of means with unit standard deviation and
+sample sizes proportional to the information fractions reproduces any given
+Z-statistics exactly.
+
+```{r rep-seq-p-example}
+# A hypothesis tested at three analyses with OBF spending
+p_h1 <- c(0.05, 0.02, 0.01)
+info <- c(1/3, 2/3, 1)
+z_h1 <- qnorm(1 - p_h1)
+
+# Critical value at analysis k of the design built at level a
+critical_value <- function(a, k) {
+  getDesignGroupSequential(
+    kMax = 3, informationRates = info, alpha = a, sided = 1,
+    typeOfDesign = "asOF"
+  )$criticalValues[k]
+}
+
+# Repeated p-value at analysis k: the level at which the boundary at
+# analysis k equals the observed Z-statistic
+rep_p_h1 <- sapply(1:3, function(k) {
+  uniroot(
+    function(a) critical_value(a, k) - z_h1[k], c(1e-6, 0.49), tol = 1e-8
+  )$root
+})
+cat("Repeated p-values:", rep_p_h1, "\n")
+
+# Sequential p-values: the cumulative minimum of the repeated p-values
+seq_p_h1 <- cummin(rep_p_h1)
+cat("Sequential p-values:", seq_p_h1, "\n")
+
+# The same from rpact::getRepeatedPValues(), via a dataset that reproduces z_h1
+n_h1 <- 300 * info
+data_h1 <- getDataset(
+  overallSampleSizes = n_h1,
+  overallMeans = z_h1 / sqrt(n_h1),
+  overallStDevs = rep(1, 3)
+)
+stage_results <- getStageResults(
+  design_obf, data_h1, thetaH0 = 0,
+  normalApproximation = TRUE, directionUpper = TRUE
+)
+cat("rpact::getRepeatedPValues():", as.numeric(getRepeatedPValues(stage_results)), "\n")
+```
+
+The two agree to the tolerance of rpact's search. The sequential p-value is
+the cumulative minimum of the repeated p-values across analyses. It is always
+less than or equal to the repeated p-value, since it considers all prior
+analyses. A hypothesis that nearly crossed its boundary at an earlier analysis
+will have a much smaller sequential p-value than its repeated p-value at the
+current analysis.
+
+The `graph_test_shortcut_rpact()` function supports two modes controlled by
+the `look_back` parameter. When `look_back = FALSE` (the default), rejection
+decisions at each analysis are based on repeated p-values only — i.e., only
+the boundary at the current analysis is considered. When `look_back = TRUE`,
+rejection decisions are based on sequential p-values, which "look back" at
+all prior analyses by taking the cumulative minimum of repeated p-values.
+This means that strong evidence from an earlier analysis is carried forward
+and can contribute to a rejection at a later analysis. Both modes are
+illustrated in the case studies below.
+
+## Case Study using repeated p-values and look_back = FALSE
+
+We replicate the numerical example from Section 4 of Maurer and Bretz (2013).
+This is a diabetes trial with two preplanned interim analyses comparing two
+doses (low and high) against placebo for two hierarchically ordered endpoints
+(HbA1c and body weight).
+
+### Hypotheses and Graph
+
+The trial has four hypotheses:
+
+- $H_1$: Low dose vs. placebo for HbA1c (primary)
+- $H_2$: High dose vs. placebo for HbA1c (primary)
+- $H_3$: Low dose vs. placebo for body weight (secondary)
+- $H_4$: High dose vs. placebo for body weight (secondary)
+
+The testing strategy follows the successiveness principle: secondary hypotheses
+cannot be tested until their parent primary hypothesis is rejected. Both
+primary hypotheses start with equal weight (0.5 each), and upon rejection,
+the weight is split equally between the other primary hypothesis and the
+corresponding secondary hypothesis.
+
+```{r graph-setup}
+hypotheses <- c(0.5, 0.5, 0, 0)
+transitions <- rbind(
+  c(0, 0.5, 0.5, 0), # H1 -> H2 (1/2), H3 (1/2)
+  c(0.5, 0, 0, 0.5), # H2 -> H1 (1/2), H4 (1/2)
+  c(0, 1, 0, 0),     # H3 -> H2 (full propagation)
+  c(1, 0, 0, 0)      # H4 -> H1 (full propagation)
+)
+g <- graph_create(hypotheses, transitions)
+```
+
+```{r graph-plot, eval = requireNamespace("igraph", quietly = TRUE)}
+plot(g, vertex.size = 40)
+```
+
+### Observed P-values
+
+The trial has three planned analyses at equally spaced information fractions
+$(1/3, 2/3, 1)$. The Lan-DeMets O'Brien-Fleming spending function (`"asOF"`)
+is used for all hypotheses. We assume the trial stops after the second interim
+analysis (based on the results obtained). Since only two analyses are
+conducted, we pass the p-values and information fractions for those two
+analyses only.
+
+```{r p-values}
+# P-values from Table 1 of Maurer and Bretz (2013)
+# Only analyses 1 and 2 are conducted (trial stops after analysis 2)
+p <- rbind(
+  H1 = c(0.0062, 0.0002),
+  H2 = c(0.017,  0.0035),
+  H3 = c(0.009,  0.002),
+  H4 = c(0.13,   0.06)
+)
+
+p_display <- as.data.frame(p)
+colnames(p_display) <- paste("Analysis", 1:2)
+knitr::kable(
+  p_display,
+  caption = "Observed nominal p-values"
+)
+```
+
+A schedule that ends before full information, as here, is natural for an
+alpha spending design: the spending function determines the cumulative alpha
+at each information fraction regardless of how many analyses follow, so a
+design at information rates $(1/3, 2/3)$ spends the planned alpha of the
+three-analysis design at its first two analyses (the values below agree to
+rpact's numerical precision). rpact accepts such information rates for its
+alpha spending types. The classical boundary families (`"OF"`, `"P"`, `"WT"`)
+are defined by their boundary shape over the whole planned schedule instead,
+and rpact requires their final information rate to be exactly 1 — they cannot
+be given only the analyses conducted so far, and
+`graph_test_shortcut_rpact()` stops with an informative error in that case.
+
+```{r partial-schedule}
+# The planned spending at the first two analyses is preserved
+design_partial <- getDesignGroupSequential(
+  kMax = 2, informationRates = c(1/3, 2/3), alpha = 0.025, sided = 1,
+  typeOfDesign = "asOF"
+)
+rbind(
+  `two analyses, (1/3, 2/3)` = design_partial$alphaSpent,
+  `three analyses, (1/3, 2/3, 1)` = design_obf$alphaSpent[1:2]
+)
+```
+
+### Running the Procedure (look_back = FALSE)
+
+The default mode is `look_back = FALSE`, which means the procedure does **not**
+look back at test statistics from prior analyses. At each analysis $k$,
+rejection decisions are based solely on the repeated p-value $\hat{p}_k$
+computed from the test statistic at analysis $k$, without utilizing test
+statistics from previous analyses. Note that the test statistic at analysis
+$k$ is computed from all data accumulated up to that point, but the
+rejection decision at analysis $k$ does not incorporate the test statistics
+(or repeated p-values) from analyses $1, \ldots, k-1$.
+
+There are two equivalent ways to understand the rejection decisions:
+
+1. **Repeated p-values** (default): The repeated p-value $\hat{p}_k$ is the
+   minimum significance level at which the group sequential boundary at
+   analysis $k$ would be crossed. These are passed to the graphical shortcut
+   procedure (`graph_test_shortcut()`) for multiplicity adjustment.
+2. **Nominal boundaries** (`test_values = TRUE`): At each analysis, the
+   observed p-value for each hypothesis is compared against its nominal
+   boundary, which depends on the hypothesis's current weight in the graph
+   and the spending function.
+
+Both approaches lead to exactly the same rejection decisions — they are two
+views of the same procedure.
+
+#### Repeated p-values
+
+`graph_test_shortcut_rpact()` computes the repeated p-value of each
+hypothesis at each analysis from rpact as shown in the previous section, and
+returns them in `$outputs$repeated_p`. The design type is passed as
+`typeOfDesign = "asOF"`, which is also the default:
+
+```{r run-gsd-no-lb}
+info_frac <- c(1/3, 2/3)
+result <- graph_test_shortcut_rpact(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = info_frac,
+  typeOfDesign = "asOF",
+  look_back = FALSE,
+  test_values = TRUE
+)
+```
+
+```{r repeated-p-matrix}
+rep_p_matrix <- result$outputs$repeated_p
+colnames(rep_p_matrix) <- c("Analysis 1", "Analysis 2")
+knitr::kable(rep_p_matrix, digits = 4,
+             caption = "Repeated p-values at each analysis")
+```
+
+We now walk through the procedure analysis by analysis using repeated p-values.
+At each analysis, the repeated p-values are passed to `graph_test_shortcut()`
+for multiplicity adjustment. The shortcut procedure rejects hypotheses in
+order of increasing adjusted repeated p-values. Newly rejected hypotheses are
+removed from the graph before proceeding to the next analysis.
+
+**Analysis 1.** The initial graph has weights $(0.5, 0.5, 0, 0)$. The repeated
+p-values are all large (the OBF spending function allocates very little alpha
+to the first interim), so no hypothesis is rejected. The graph is unchanged.
+
+**Analysis 2.** The repeated p-values at this analysis are much smaller.
+The graphical shortcut procedure rejects $H_1$ first, updates the graph to
+propagate $H_1$'s weight, then rejects $H_2$, followed by $H_3$. $H_4$'s
+repeated p-value remains too large, so it is retained. The rejection sequence
+at analysis 2 is: $H_1 \to H_2 \to H_3$.
+
+The printed result summarizes these steps. The line
+`Group sequential engine: rpact` records that the group sequential quantities
+were obtained from rpact, and each hypothesis is labeled with its rpact
+design type:
+
+```{r print-gsd-no-lb}
+print(result)
+```
+
+A hypothesis is rejected when its adjusted repeated p-value is at most
+$\alpha = 0.025$. The adjusted repeated p-values at analysis 2 are
+`r round(result$outputs$adjusted_p[["H1"]], 4)` ($H_1$),
+`r round(result$outputs$adjusted_p[["H2"]], 4)` ($H_2$),
+`r round(result$outputs$adjusted_p[["H3"]], 4)` ($H_3$), and
+`r round(result$outputs$adjusted_p[["H4"]], 4)` ($H_4$).
+The rejection sequence follows increasing adjusted repeated p-values:
+$H_1$ (smallest) $\to H_2 \to H_3$. $H_4$'s adjusted repeated p-value
+exceeds $\alpha$, so it is not rejected. All three rejections occur at
+analysis 2.
+
+#### Nominal boundaries
+
+The same rejection decisions can be understood by comparing observed p-values
+against nominal boundaries at each analysis. The `test_values` output from
+`graph_test_shortcut_rpact()` provides these boundaries. Each boundary is the
+`stageLevels` value of an rpact design constructed at the level currently
+allocated to the hypothesis (its weight times $\alpha$). The rejection
+sequence is determined by increasing adjusted repeated p-values. After each
+rejection, the graph is updated and boundaries for remaining hypotheses are
+recomputed with their new (increased) weights, potentially enabling further
+rejections at the same analysis.
+
+```{r test-values-tables}
+format_test_values <- function(tv) {
+  tv$Boundary <- formatC(tv$Boundary, format = "f", digits = 6)
+  tv
+}
+knitr::kable(format_test_values(result$test_values[[1]]), digits = 6,
+             caption = "Analysis 1: nominal boundaries and rejection decisions")
+knitr::kable(format_test_values(result$test_values[[2]]), digits = 6,
+             caption = "Analysis 2: nominal boundaries and rejection decisions")
+```
+
+**Analysis 1 (t = 1/3).** The initial weights are $(0.5, 0.5, 0, 0)$. The
+OBF spending function allocates very little alpha to the first interim
+analysis — as shown in the Analysis 1 table above, the nominal boundary for
+$H_1$ and $H_2$ is approximately
+`r formatC(result$test_values[[1]]$Boundary[1], format = "f", digits = 6)`.
+Since both observed p-values (0.0062 for $H_1$ and 0.017 for $H_2$) exceed
+this boundary, no hypothesis is rejected.
+
+An important note: the nominal boundary computed at a fraction of alpha is
+**not** equal to the same fraction of the boundary computed at the full alpha.
+For example, the boundary at the first analysis with the OBF spending function:
+
+```{r key-inequality}
+design_half <- getDesignGroupSequential(
+  kMax = 3, informationRates = c(1/3, 2/3, 1), alpha = 0.0125, sided = 1,
+  typeOfDesign = "asOF"
+)
+cat(sprintf(
+  "Boundary at alpha = 0.0125:     %.6f\n0.5 * Boundary at alpha = 0.025: %.6f\n",
+  design_half$stageLevels[1],
+  0.5 * design_obf$stageLevels[1]
+))
+```
+
+This demonstrates why the design must be constructed at the
+hypothesis-specific significance level (weight times alpha), rather than
+applying the weight to boundaries computed at the full alpha. This is why
+`graph_test_shortcut_rpact()` rebuilds the rpact design of a hypothesis
+whenever its weight changes.
+
+**Analysis 2 (t = 2/3).** The test_values table above shows the boundary for
+each hypothesis at the point when it is tested, reflecting sequential graph
+updates within the analysis:
+
+- $H_1$ (weight 0.5): boundary =
+  `r sprintf("%.4f", result$test_values[[2]]$Boundary[1])`.
+  Since $p_{1,2} = 0.0002$ is below this boundary, $H_1$ is rejected. The
+  graph is updated, propagating $H_1$'s weight.
+- $H_2$ (weight updated to 0.75 after $H_1$ rejection): boundary =
+  `r sprintf("%.4f", result$test_values[[2]]$Boundary[2])`.
+  Since $p_{2,2} = 0.0035$ is below this boundary, $H_2$ is rejected. The
+  graph is updated.
+- $H_3$ (weight updated to 0.5 after $H_1$ and $H_2$ rejection): boundary =
+  `r sprintf("%.4f", result$test_values[[2]]$Boundary[3])`.
+  Since $p_{3,2} = 0.002$ is below this boundary, $H_3$ is rejected. The
+  graph is updated.
+- $H_4$ (weight updated to 1.0 after all three rejections): boundary =
+  `r sprintf("%.4f", result$test_values[[2]]$Boundary[4])`.
+  Since $p_{4,2} = 0.06$ exceeds this boundary, $H_4$ is retained.
+
+Three out of four hypotheses ($H_1$, $H_2$, $H_3$) are rejected at
+analysis 2.
+
+#### Comparison with Paper Values
+
+We can verify our results against Table 2 of Maurer and Bretz (2013). The
+paper reports repeated p-values (which they call $\tilde{p}^r$) at each
+analysis:
+
+```{r paper-comparison, include=FALSE}
+paper_repeated_p <- data.frame(
+  Hypothesis = c("H1", "H2", "H3", "H4"),
+  `pr_1 (paper)` = c(0.1141, 0.1683, 0.1316, 0.382),
+  `pr_1 (ours)` = round(result$outputs$sequential_p[, 1], 4),
+  `pr_2 (paper)` = c(0.0024, 0.0172, 0.0117, 0.1285),
+  `pr_2 (ours)` = round(result$outputs$sequential_p[, 2], 4),
+  check.names = FALSE
+)
+knitr::kable(paper_repeated_p, digits = 4,
+             caption = "Comparison of sequential p-values with paper Table 2")
+```
+
+The nominal significance levels at each analysis also match the paper's Table 1:
+
+```{r nominal-comparison, include=FALSE}
+paper_table1 <- data.frame(
+  Hypothesis = c("H1", "H2", "H3", "H4"),
+  `alpha*_1 (paper)` = c(0.00002, 0.00002, 0, 0),
+  `alpha*_1 (ours)` = round(result$test_values[[1]]$Boundary, 5),
+  `alpha*_2 (paper)` = c(0.0022, "0.004 (updated)", "0.0022 (updated)",
+                         "0.006 (updated)"),
+  `alpha*_2 (ours)` = round(result$test_values[[2]]$Boundary, 4),
+  check.names = FALSE
+)
+knitr::kable(paper_table1,
+             caption = "Comparison of nominal boundaries with paper Table 1")
+```
+
+#### Boundary table
+
+Setting `verbose = TRUE` produces a boundary table that lists the nominal
+p-value boundaries at each analysis for all possible hypothesis weights from
+the graph's closure. This table is independent of the observed p-values and
+can be used to manually verify the rejection decisions shown in `test_values`.
+
+```{r boundary-table}
+result_verbose <- graph_test_shortcut_rpact(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = info_frac,
+  typeOfDesign = "asOF",
+  verbose = TRUE
+)
+
+# Display boundary tables for each hypothesis
+for (h in names(result_verbose$boundary_table)) {
+  cat(h, "\n")
+  print(result_verbose$boundary_table[[h]])
+  cat("\n")
+}
+```
+
+To verify the rejection decisions at analysis 2, look up each hypothesis's
+weight in the boundary table and compare the `Boundary.2` column against
+the observed p-value. For example, $H_1$ is tested at weight 0.5 with
+boundary `r formatC(result_verbose$boundary_table$H1$Boundary.2[result_verbose$boundary_table$H1$Weight == 0.5], format = "f", digits = 7)`.
+Since $p_{1,2} = 0.0002$ is below this boundary, $H_1$ is rejected. After
+$H_1$'s rejection, the graph propagates weight to $H_2$ (weight 0.75) and
+$H_3$ (weight 0.25). Looking up these weights confirms the boundaries used
+in the `test_values` output.
+
+## Case Study using sequential p-values and look_back = TRUE
+
+This example is adapted from the
+[gMCPLite vignette](https://cran.r-project.org/package=gMCPLite/vignettes/GraphicalMultiplicity.html)
+for an oncology trial with three endpoints, two populations and two interim
+analyses. Different hypotheses are tested at different analyses.
+
+### Trial Setup
+
+An oncology trial tests three endpoints — overall survival (OS), progression-free
+survival (PFS), and objective response rate (ORR) — each in a biomarker
+subgroup (S) and in the overall population (A, for all subjects). This gives
+six hypotheses with different numbers of analyses:
+
+- $H_{1}$ (OS, S): OS in the subgroup (3 analyses)
+- $H_{2}$ (OS, A): OS in all subjects (3 analyses)
+- $H_{3}$ (PFS, S): PFS in the subgroup (2 analyses)
+- $H_{4}$ (PFS, A): PFS in all subjects (2 analyses)
+- $H_{5}$ (ORR, S): ORR in the subgroup (1 analysis)
+- $H_{6}$ (ORR, A): ORR in all subjects (1 analysis)
+
+OS endpoints require longer follow-up and have three planned analyses. PFS
+endpoints mature faster and have two analyses. ORR is assessed at a single
+analysis. Each hypothesis has its own event-driven information fractions.
+
+### Graph and Alpha Allocation
+
+The initial alpha is split as: $H_1$ and $H_2$ each receive 0.01, $H_3$
+receives 0.004, $H_4$ receives 0, $H_5$ and $H_6$ each receive 0.0005. This
+totals $\alpha = 0.025$. The hypothesis weights are obtained by dividing each
+allocation by $\alpha$:
+
+```{r oncology-graph}
+alpha_onc <- 0.025
+alpha_allocation <- c(0.01, 0.01, 0.004, 0, 0.0005, 0.0005)
+hypotheses_onc <- alpha_allocation / alpha_onc
+
+hyp_names_onc <- c(
+  "H1_OS_S", "H2_OS_A", "H3_PFS_S", "H4_PFS_A", "H5_ORR_S", "H6_ORR_A"
+)
+names(hypotheses_onc) <- hyp_names_onc
+
+transitions_onc <- rbind(
+  c(0, 1, 0, 0, 0, 0),       # H1_OS_S  -> H2_OS_A
+  c(0, 0, 0.5, 0.5, 0, 0),   # H2_OS_A  -> H3_PFS_S (1/2), H4_PFS_A (1/2)
+  c(0, 0, 0, 1, 0, 0),       # H3_PFS_S -> H4_PFS_A
+  c(0, 0, 0, 0, 0.5, 0.5),   # H4_PFS_A -> H5_ORR_S (1/2), H6_ORR_A (1/2)
+  c(0, 0, 0, 0, 0, 1),       # H5_ORR_S -> H6_ORR_A
+  c(0.5, 0.5, 0, 0, 0, 0)    # H6_ORR_A -> H1_OS_S (1/2), H2_OS_A (1/2)
+)
+
+g_onc <- graph_create(hypotheses_onc, transitions_onc)
+```
+
+The transition structure follows the hierarchy: within each population, alpha
+flows from OS to PFS to ORR, and ORR recycles to OS. Between populations,
+the all-subjects hypotheses share alpha with the subgroup hypotheses.
+
+```{r oncology-graph-plot, eval = requireNamespace("igraph", quietly = TRUE), fig.height=5.5, fig.width=6, out.width="100%"}
+onc_layout <- rbind(
+  c(0, 3),     # H1_OS_S
+  c(2, 3),     # H2_OS_A
+  c(0, 1.8),   # H3_PFS_S
+  c(3, 1.8),   # H4_PFS_A
+  c(0, 0.5),   # H5_ORR_S
+  c(2, 0.5)    # H6_ORR_A
+)
+# Edge label positions: NA = auto, explicit coords to move specific labels
+# Edge order: 1=H6->H1, 2=H1->H2, 3=H6->H2, 4=H2->H3, 5=H2->H4,
+#             6=H3->H4, 7=H4->H5, 8=H4->H6, 9=H5->H6
+label_x <- rep(NA, 9)
+label_y <- rep(NA, 9)
+label_x[1] <- 0.4;  label_y[1] <- 2.5    # H6->H1: toward arrow (H1)
+label_x[3] <- 2.0;  label_y[3] <- 2.375  # H6->H2: on the edge, toward arrow
+label_x[4] <- 1.5;  label_y[4] <- 2.7    # H2->H3: toward tail (H2)
+label_x[6] <- 0.75; label_y[6] <- 1.8    # H3->H4: toward tail (H3)
+label_x[7] <- 0.9;  label_y[7] <- 0.89   # H4->H5: toward arrow (H5)
+label_x[8] <- 2.5;  label_y[8] <- 1.15   # H4->H6: on the edge, midway
+
+plot(g_onc, layout = onc_layout, vertex.size = 60, asp = 1,
+     vertex.label.cex = 0.7,
+     rescale = FALSE,
+     xlim = c(-0.6, 3.6),
+     ylim = c(-0.1, 3.6),
+     edge.label.x = label_x,
+     edge.label.y = label_y)
+```
+
+### P-values and Information Fractions
+
+Since hypotheses have different numbers of analyses, we use `NA` padding.
+The p-value and information fraction matrices have $K = 3$ columns (the
+maximum number of analyses), with `NA` for analyses that do not apply.
+
+When `p` contains `NA` values, `info_frac` must be a matrix with `NA` in the
+same positions. This ensures users explicitly specify the correct information
+fractions for each hypothesis, since different endpoints may have very
+different event accrual schedules. Internally, `graph_test_shortcut_rpact()`
+builds one rpact design per hypothesis from its non-`NA` analyses, so a
+hypothesis with three analyses gets a three-analysis design and a hypothesis
+with two analyses a two-analysis design. A hypothesis with a single analysis
+at full information is a fixed-sample test; with a single analysis below full
+information it uses the first stage of a two-stage design ending at 1, so that
+its boundary is the cumulative spending at that information fraction.
+
+```{r oncology-p-values}
+p_onc <- rbind(
+  H1_OS_S  = c(0.03,    0.0001, 0.000001),
+  H2_OS_A  = c(0.2,     0.15,   0.1),
+  H3_PFS_S = c(0.2,     0.001,  NA),
+  H4_PFS_A = c(0.3,     0.2,    NA),
+  H5_ORR_S = c(0.00001, NA,     NA),
+  H6_ORR_A = c(0.1,     NA,     NA)
+)
+
+# Event-driven information fractions (events / max events per endpoint)
+info_frac_onc <- rbind(
+  H1_OS_S  = c(185 / 295, 245 / 295, 1),
+  H2_OS_A  = c(529 / 800, 700 / 800, 1),
+  H3_PFS_S = c(265 / 310, 1,         NA),
+  H4_PFS_A = c(675 / 750, 1,         NA),
+  H5_ORR_S = c(1,         NA,        NA),
+  H6_ORR_A = c(1,         NA,        NA)
+)
+
+knitr::kable(
+  data.frame(
+    Hypothesis = rownames(p_onc),
+    `No. of Analyses` = rowSums(!is.na(p_onc)),
+    `Info Frac` = apply(info_frac_onc, 1, function(x) {
+      paste(round(x[!is.na(x)], 3), collapse = ", ")
+    }),
+    check.names = FALSE
+  ),
+  row.names = FALSE,
+  caption = "Number of analyses and information fractions per hypothesis"
+)
+```
+
+```{r oncology-p-table}
+p_display <- p_onc
+p_display[] <- ifelse(
+  is.na(p_display), "—",
+  formatC(as.numeric(p_display), format = "f", digits = 6)
+)
+knitr::kable(
+  as.data.frame(p_display),
+  col.names = paste("Analysis", 1:3),
+  caption = "Observed nominal p-values (— indicates no data at that analysis)"
+)
+```
+
+### Sequential P-values (look_back = TRUE)
+
+The gMCPLite vignette uses sequential p-values for its analysis. We replicate
+this by running `graph_test_shortcut_rpact()` with `look_back = TRUE`,
+which uses sequential p-values for rejection decisions. All hypotheses use
+the Lan-DeMets O'Brien-Fleming spending function:
+
+```{r oncology-run-lb}
+result_onc_lb <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  typeOfDesign = "asOF",
+  look_back = TRUE,
+  test_values = TRUE
+)
+print(result_onc_lb)
+```
+
+The sequential p-value matrices show the full picture across analyses, with
+`NA` for hypothesis–analysis combinations that do not exist:
+
+```{r oncology-seq-p}
+seq_p_display <- result_onc_lb$outputs$sequential_p
+seq_p_display[] <- ifelse(
+  is.na(seq_p_display), NA,
+  formatC(as.numeric(seq_p_display), format = "f", digits = 6)
+)
+knitr::kable(
+  as.data.frame(seq_p_display),
+  caption = "Sequential p-values (NA = hypothesis not tested at that analysis)"
+)
+```
+
+The procedure processes three analyses sequentially:
+
+**Analysis 1.** Hypotheses $H_1$–$H_4$ are tested at their first interim
+analysis. $H_5$ and $H_6$ undergo their only analysis. The ORR subgroup
+hypothesis $H_5$ has a very small p-value ($p = 0.00001$) and is rejected.
+Its alpha is propagated to $H_6$ through the graph.
+
+**Analysis 2.** Hypotheses $H_1$ and $H_2$ are at their second interim.
+$H_3$ and $H_4$ are at their final analysis. $H_5$ and $H_6$ have no further
+analyses (their columns are `NA`). $H_1$ (OS subgroup) and $H_3$ (PFS
+subgroup) cross their boundaries and are rejected.
+
+**Analysis 3.** Only $H_1$ and $H_2$ have data at the final analysis, but
+$H_1$ was already rejected. $H_2$'s p-values remain too large throughout.
+
+```{r oncology-results-lb}
+# Extract the p-value and boundary at the decision point for each hypothesis.
+# For rejected hypotheses, this is the analysis where rejection occurred.
+# For non-rejected hypotheses, this is the last analysis where it was tested.
+tv_all <- do.call(rbind, result_onc_lb$test_values)
+decision_p <- numeric(length(hyp_names_onc))
+decision_bound <- numeric(length(hyp_names_onc))
+for (i in seq_along(hyp_names_onc)) {
+  h <- hyp_names_onc[i]
+  rows <- tv_all[tv_all$Hypothesis == h, ]
+  if (nrow(rows) == 0) next
+  # Use the last row for this hypothesis (final decision point)
+  decision_p[i] <- rows$p[nrow(rows)]
+  decision_bound[i] <- rows$Boundary[nrow(rows)]
+}
+
+# For non-rejected hypotheses, find the last analysis where they were tested
+last_tested <- rowSums(!is.na(p_onc))
+
+onc_summary_lb <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `p` = formatC(decision_p, format = "f", digits = 6),
+  Boundary = formatC(decision_bound, format = "f", digits = 6),
+  Rejected = result_onc_lb$outputs$rejected,
+  Tested.at = result_onc_lb$outputs$decision_at,
+  First.Rej.at = ifelse(
+    is.na(result_onc_lb$outputs$first_rejected_at), "—",
+    as.character(result_onc_lb$outputs$first_rejected_at)
+  ),
+  Last.Rej.at = ifelse(
+    is.na(result_onc_lb$outputs$last_rejected_at), "—",
+    as.character(result_onc_lb$outputs$last_rejected_at)
+  ),
+  check.names = FALSE
+)
+knitr::kable(onc_summary_lb, row.names = FALSE,
+             caption = "Oncology case study (look_back = TRUE): rejection decisions")
+```
+
+This case study demonstrates that `graph_test_shortcut_rpact()` handles
+trials where different endpoints have different numbers of analyses — a
+common situation in oncology trials with OS, PFS, and ORR endpoints.
+
+### Per-hypothesis look_back
+
+The `look_back` parameter can also be specified as a logical vector, allowing
+different hypotheses to use different testing strategies. This is useful when
+some endpoints benefit from looking back at earlier evidence while others
+do not.
+
+Consider a scenario where we want to use `look_back = TRUE` for ORR
+endpoints (to allow them to benefit from earlier evidence if they receive
+alpha via graph propagation at a later analysis) while using
+`look_back = FALSE` for OS and PFS endpoints:
+
+```{r per-hyp-look-back}
+look_back_onc <- c(
+  FALSE,  # H1_OS_S:  no look_back
+  FALSE,  # H2_OS_A:  no look_back
+  FALSE,  # H3_PFS_S: no look_back
+  FALSE,  # H4_PFS_A: no look_back
+  TRUE,   # H5_ORR_S: look_back
+  TRUE    # H6_ORR_A: look_back
+)
+
+result_onc_mixed <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  typeOfDesign = "asOF",
+  look_back = look_back_onc
+)
+print(result_onc_mixed)
+```
+
+```{r per-hyp-look-back-compare}
+mixed_comparison <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (all LB)` = result_onc_lb$outputs$rejected,
+  `Adj. P (all LB)` = round(result_onc_lb$outputs$adjusted_p, 6),
+  `Rejected (mixed)` = result_onc_mixed$outputs$rejected,
+  `Adj. P (mixed)` = round(result_onc_mixed$outputs$adjusted_p, 6),
+  check.names = FALSE
+)
+knitr::kable(mixed_comparison, row.names = FALSE,
+             caption = "Effect of per-hypothesis look_back on rejection decisions")
+```
+
+In this example, using `look_back = FALSE` for OS and PFS means their
+rejection decisions are based solely on repeated p-values at each analysis.
+The ORR hypotheses use `look_back = TRUE`, allowing them to benefit from
+evidence at earlier analyses if they receive alpha via graph propagation
+at a later analysis. This mixed strategy can be useful when different
+endpoints have different clinical or regulatory rationales for looking back.
+
+### When look_back makes a difference
+
+We modify the oncology trial p-values to illustrate a scenario where
+`look_back = TRUE` leads to additional rejections. Three key changes are
+made:
+
+- $H_2$ (OS, all subjects): strong evidence at both analysis 1
+  ($p = 0.003$) and analysis 2 ($p = 0.005$). At analysis 1, $H_2$'s
+  weight (0.4) gives a boundary of 0.00154 — too small for $p = 0.003$.
+  At analysis 2, after $H_1$ is rejected, $H_2$ receives $H_1$'s weight
+  (reaching 0.8) and its analysis-2 p-value crosses the boundary.
+  Additionally, looking back to analysis 1 with the increased weight gives
+  a boundary of 0.00423, which $p = 0.003$ also crosses — so $H_2$ is
+  attributed to analysis 1.
+- $H_4$ (PFS, all subjects): strong evidence at analysis 1
+  ($p = 0.0001$) but weaker at analysis 2 ($p = 0.02$). Since $H_4$ starts
+  with weight 0, it cannot be tested until it receives alpha via graph
+  propagation — which only happens after $H_3$ is rejected at analysis 2.
+- $H_5$ (ORR, subgroup): a single analysis with $p = 0.0008$, which is
+  above its initial boundary ($0.0005$) but below the boundary it would
+  receive after graph propagation from $H_4$'s rejection.
+
+```{r oncology-look-back-diff}
+p_onc_lb <- p_onc
+p_onc_lb["H2_OS_A", ] <- c(0.003, 0.005, 0.1)
+p_onc_lb["H4_PFS_A", ] <- c(0.0001, 0.02, NA)
+p_onc_lb["H5_ORR_S", ] <- c(0.0008, NA, NA)
+
+# look_back = FALSE: H4's repeated p-value at analysis 2 is too large
+result_onc_no_lb <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc_lb,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  typeOfDesign = "asOF",
+  look_back = FALSE,
+  test_values = TRUE
+)
+
+# look_back = TRUE: H4 benefits from its strong analysis-1 evidence
+result_onc_yes_lb <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc_lb,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  typeOfDesign = "asOF",
+  look_back = TRUE,
+  test_values = TRUE
+)
+```
+
+With `look_back = FALSE`, $H_4$ and $H_5$ are not rejected, while $H_2$ is
+rejected at analysis 2:
+
+```{r oncology-look-back-diff-no}
+print(result_onc_no_lb)
+```
+
+With `look_back = TRUE`, $H_2$, $H_4$, and $H_5$ **are all rejected** and
+attributed to analysis 1. The `test_values` output at analysis 2 shows
+three different look_back scenarios:
+
+- $H_2$: its nominal p-value at analysis 2 ($p = 0.005$) crosses the
+  boundary at analysis 2 after receiving $H_1$'s weight — so $H_2$ is
+  rejected at analysis 2 regardless of look_back. But looking back to
+  analysis 1 with the increased weight (0.8) gives a boundary of 0.00423,
+  which $p = 0.003$ also crosses. This means $H_2$ is rejected at both
+  analyses, and is attributed to analysis 1 (`First.Rej.at = 1`). In the
+  `test_values`, both the analysis-2 row and the look_back analysis-1 row
+  show `Reject = TRUE`.
+- $H_4$: its nominal p-value at analysis 2 ($p = 0.02$) does not cross the
+  boundary, but looking back to analysis 1, $p = 0.0001$ crosses the
+  boundary with the weight received after $H_3$'s rejection.
+- $H_5$: it has no data at analysis 2 (single-analysis endpoint), but
+  looking back to analysis 1, $p = 0.0008$ crosses the boundary with the
+  weight received after $H_4$'s rejection. Note that $H_5$ only appears
+  as a look_back row (marked with `*`) in the analysis 2 test_values,
+  since it has no analysis-2 data.
+
+```{r oncology-look-back-diff-yes}
+print(result_onc_yes_lb)
+```
+
+```{r oncology-look-back-diff-compare}
+lb_diff_table <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (no LB)` = result_onc_no_lb$outputs$rejected,
+  `Rejected (LB)` = result_onc_yes_lb$outputs$rejected,
+  `First.Rej.at (LB)` = ifelse(
+    is.na(result_onc_yes_lb$outputs$first_rejected_at), "--",
+    as.character(result_onc_yes_lb$outputs$first_rejected_at)),
+  `Last.Rej.at (LB)` = ifelse(
+    is.na(result_onc_yes_lb$outputs$last_rejected_at), "--",
+    as.character(result_onc_yes_lb$outputs$last_rejected_at)),
+  check.names = FALSE
+)
+knitr::kable(lb_diff_table, row.names = FALSE,
+             caption = "Effect of look_back on oncology trial rejection decisions")
+```
+
+The three look_back rejections illustrate different mechanisms:
+
+- $H_2$ had data at both analyses and was rejected at analysis 2 even
+  without look_back. But graph propagation from $H_1$'s rejection increased
+  $H_2$'s weight, and looking back to analysis 1 with the new weight showed
+  that the boundary was also crossed there — attributing the rejection to
+  the earlier analysis.
+- $H_4$ started with weight 0 and only became testable after $H_3$'s
+  rejection at analysis 2. With `look_back = FALSE`, $H_4$ could only use
+  its analysis-2 evidence ($p = 0.02$), which was insufficient. With
+  `look_back = TRUE`, the strong analysis-1 evidence ($p = 0.0001$)
+  crossed the boundary.
+- $H_5$ had a single analysis and was not rejected initially (boundary too
+  small). After $H_4$'s rejection propagated weight to $H_5$, looking back
+  to analysis 1 with the increased weight enabled rejection — even though
+  $H_5$ had no data at analysis 2.
+
+### Customizing Spending Functions: Spending Time
+
+The information fraction (`informationRates` in rpact, `info_frac` here)
+determines the correlation structure of the test statistics, while the
+*spending time* determines how alpha is allocated across analyses via the
+spending function. The two can differ when, for example, all-subjects
+hypotheses use all-subjects event counts for the correlation but subgroup
+event counts for spending.
+
+rpact evaluates the spending function at the design's information rates and
+has no separate spending time argument. `graph_test_shortcut_rpact()`
+provides one, `spending_time`, and realizes it with rpact's `"asUser"` design
+type in two steps: the cumulative spending is read from a design built at the
+spending time (its `alphaSpent`), and passed as `userAlphaSpending` to a
+design built at the information fractions. By default (`spending_time = NULL`),
+the spending time equals the information fraction (capped at 1) and a single
+design suffices. Otherwise, `spending_time` is either a vector with one value
+per analysis, applied to all hypotheses, or a matrix with the same dimensions
+and `NA` positions as `info_frac`, giving each hypothesis its own spending
+time. This plays the role of `spending_with_time()` in
+`graph_test_shortcut_gsd()` and of `usTime` in
+`graph_test_shortcut_gsDesign()`. It applies to the alpha spending design
+types only: the classical boundary families have no spending function, and
+`"asUser"` already gives the spending directly.
+
+Consider the oncology trial above. The all-subjects hypotheses ($H_2$ and
+$H_4$) use all-subjects event counts for their information fractions (which
+determine the correlation structure), but one might want to use the
+corresponding subgroup event counts as the spending time (which determines
+how aggressively alpha is spent at each analysis). This is because the
+subgroup is a subset of the all-subjects population, and the subgroup events
+may better reflect the information available for the treatment effect
+comparison.
+
+For the oncology trial, $H_2$ (OS, all subjects) uses all-subjects OS events
+(`r paste(c(529, 700, 800), collapse = ", ")`) for the correlation structure
+(via `info_frac`), but subgroup OS events
+(`r paste(c(185, 245, 295), collapse = ", ")`) for spending. We start from
+the information fractions, so that the `NA` positions match, and replace the
+rows of the all-subjects hypotheses:
+
+```{r spending-time-setup}
+spending_time_onc <- info_frac_onc
+
+# H2 (OS, all subjects): spending time = subgroup OS event fractions
+spending_time_onc["H2_OS_A", ] <- c(185 / 295, 245 / 295, 1)
+
+# H4 (PFS, all subjects): spending time = subgroup PFS event fractions
+spending_time_onc["H4_PFS_A", ] <- c(265 / 310, 1, NA)
+
+spending_time_onc
+```
+
+Now `info_frac_onc` continues to use all-subjects event counts for $H_2$ and
+$H_4$ (determining the correlation structure), while `spending_time_onc` uses
+subgroup event counts for alpha allocation. The printed result shows the
+spending time alongside the information fractions:
+
+```{r spending-time-run}
+result_onc_st <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = info_frac_onc,
+  typeOfDesign = "asOF",
+  spending_time = spending_time_onc,
+  look_back = TRUE
+)
+print(result_onc_st)
+```
+
+```{r spending-time-compare}
+st_comparison <- data.frame(
+  Hypothesis = hyp_names_onc,
+  `Rejected (info fraction)` = result_onc_lb$outputs$rejected,
+  `Adj. P (info fraction)` = round(result_onc_lb$outputs$adjusted_p, 6),
+  `Rejected (spending time)` = result_onc_st$outputs$rejected,
+  `Adj. P (spending time)` = round(result_onc_st$outputs$adjusted_p, 6),
+  check.names = FALSE
+)
+knitr::kable(st_comparison, row.names = FALSE,
+             caption = "Effect of spending time on rejection decisions")
+```
+
+The spending time adjustment affects the sequential p-values for $H_2$ and
+$H_4$ because it changes how alpha is allocated across their analyses. The
+subgroup event fractions are smaller than the all-subjects event fractions at
+early analyses (e.g., `r round(185/295, 3)` vs. `r round(529/800, 3)` at
+analysis 1 for OS), meaning the spending function allocates less alpha to
+early analyses — the boundaries become more conservative at interim analyses
+and more liberal at the final analysis.
+
+Internally, the same two-step design is used for the boundaries and for the
+repeated p-values, so the two views of the procedure remain consistent.
+
+### Monitoring: Adjusting for Changed Final Information
+
+In practice, the total information (e.g., total number of events) at the
+final analysis may differ from what was planned at the design stage. When
+this happens, the information fractions at earlier analyses change
+retroactively — not because the data changed, but because the denominator
+(planned total) is now different. This creates a challenge: the boundaries
+at earlier analyses were already computed using the **planned** information
+fractions, but the correlation structure at the current analysis should
+reflect the **actual** information fractions.
+
+The separation of spending time and information fraction handles this
+naturally:
+
+- **Spending time** (`spending_time`): use the planned information fractions
+  to preserve the boundaries at analyses 1 and 2 (which have already been
+  applied).
+- **Information fraction** (`info_frac`): use the actual information fractions
+  for the correlation structure, since this reflects the true joint
+  distribution of the test statistics.
+
+Consider the OS subgroup hypothesis ($H_1$) in the oncology trial. The
+trial was designed with a planned maximum of 295 OS events in the subgroup,
+giving planned information fractions of
+(`r paste(round(c(185, 245, 295) / 295, 3), collapse = ", ")`).
+Suppose that by the time of the final analysis, 310 events have been
+observed instead of 295. The actual information fractions are now
+(`r paste(round(c(185, 245, 310) / 310, 3), collapse = ", ")`):
+
+```{r monitoring-setup}
+# Planned info fractions (used for boundaries at analyses 1 and 2)
+planned_if_h1 <- c(185 / 295, 245 / 295, 1)
+
+# Actual info fractions (more events than planned at final analysis)
+actual_if_h1 <- c(185 / 310, 245 / 310, 1)
+
+cat("Planned:", round(planned_if_h1, 4), "\n")
+cat("Actual: ", round(actual_if_h1, 4), "\n")
+```
+
+To illustrate, we compare the boundaries computed by rpact under three
+scenarios:
+
+1. **Planned**: both spending and correlation use planned info fractions
+   (the original design).
+2. **Naive update**: both spending and correlation use actual info fractions
+   (ignores that analyses 1 and 2 used planned boundaries).
+3. **Correct monitoring**: spending uses planned info fractions, correlation
+   uses actual info fractions. This is the two-step `"asUser"` construction
+   that `graph_test_shortcut_rpact()` uses for `spending_time`.
+
+```{r monitoring-comparison}
+alpha_h1 <- 0.01  # H1's allocated alpha
+
+# Nominal p-value boundaries of an rpact design with information rates
+# info_rates and spending at the spending time spend_time
+nominal_bounds <- function(info_rates, spend_time) {
+  if (isTRUE(all.equal(info_rates, spend_time))) {
+    design <- getDesignGroupSequential(
+      kMax = 3, informationRates = info_rates, alpha = alpha_h1, sided = 1,
+      typeOfDesign = "asOF"
+    )
+  } else {
+    # Step 1: cumulative spending at the spending time
+    spent <- getDesignGroupSequential(
+      kMax = 3, informationRates = spend_time, alpha = alpha_h1, sided = 1,
+      typeOfDesign = "asOF"
+    )$alphaSpent
+    # Step 2: that spending at the information rates
+    design <- getDesignGroupSequential(
+      kMax = 3, informationRates = info_rates, alpha = alpha_h1, sided = 1,
+      typeOfDesign = "asUser", userAlphaSpending = spent
+    )
+  }
+  design$stageLevels
+}
+
+# Scenario 1: Planned (original design)
+bounds_planned <- nominal_bounds(planned_if_h1, planned_if_h1)
+
+# Scenario 2: Naive update (both use actual)
+bounds_naive <- nominal_bounds(actual_if_h1, actual_if_h1)
+
+# Scenario 3: Correct monitoring (spending=planned, correlation=actual)
+bounds_monitor <- nominal_bounds(actual_if_h1, planned_if_h1)
+
+monitor_table <- data.frame(
+  Analysis = 1:3,
+  Planned.IF = round(planned_if_h1, 4),
+  Actual.IF = round(actual_if_h1, 4),
+  Boundary.Planned = bounds_planned,
+  Boundary.Naive = bounds_naive,
+  Boundary.Monitor = bounds_monitor
+)
+knitr::kable(monitor_table, digits = 6,
+             caption = paste("Boundaries under three scenarios",
+                             "(H1 with alpha = 0.01)"))
+```
+
+The key observations:
+
+- **Analyses 1 and 2**: the monitoring boundaries coincide with the planned
+  boundaries. The spending at these analyses is preserved (the same
+  cumulative alpha is allocated), and since the information at analyses 1 and
+  2 has not changed relative to each other, the correlation between them is
+  unchanged as well.
+- **Analysis 3**: the monitoring boundary reflects both the preserved
+  spending schedule and the updated correlation structure.
+- **Naive update**: changes the spending at all analyses, which is
+  inconsistent with the boundaries already applied at analyses 1 and 2.
+
+This approach extends naturally to the full graphical procedure. For
+monitoring at analysis 3, use the actual information fractions in
+`info_frac` and the planned information fractions in `spending_time`:
+
+```{r monitoring-full}
+# Actual info fractions for all hypotheses
+# (only OS hypotheses affected; PFS and ORR are complete)
+actual_if_onc <- info_frac_onc
+actual_if_onc["H1_OS_S", ] <- c(185 / 310, 245 / 310, 1)
+actual_if_onc["H2_OS_A", ] <- c(529 / 830, 700 / 830, 1)
+
+# Planned info fractions as the spending time for all hypotheses
+result_monitor <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = actual_if_onc,
+  typeOfDesign = "asOF",
+  spending_time = info_frac_onc,
+  look_back = TRUE
+)
+print(result_monitor)
+```
+
+An equivalent way to describe the same situation keeps the planned maximum as
+the unit of information, so that the information fraction at the final
+analysis exceeds 1 (e.g., $310 / 295 = 1.051$ for $H_1$). rpact does not
+accept information rates above 1, but `graph_test_shortcut_rpact()` does:
+it divides such fractions by their maximum for the correlation structure
+(the correlation between analyses depends only on ratios of information), and
+the default spending time — the information fractions capped at 1 — is then
+exactly the planned schedule. This gives the same results:
+
+```{r monitoring-overrun}
+overrun_if_onc <- info_frac_onc
+overrun_if_onc["H1_OS_S", ] <- c(185, 245, 310) / 295
+overrun_if_onc["H2_OS_A", ] <- c(529, 700, 830) / 800
+
+result_overrun <- graph_test_shortcut_rpact(
+  graph = g_onc,
+  p = p_onc,
+  alpha = alpha_onc,
+  info_frac = overrun_if_onc,
+  typeOfDesign = "asOF",
+  look_back = TRUE
+)
+all.equal(result_overrun$outputs$adjusted_p, result_monitor$outputs$adjusted_p)
+```
+
+## Additional Examples
+
+### Different Design Types per Hypothesis
+
+The procedure allows different hypotheses to use different design types by
+passing a list to `typeOfDesign`, with one element per hypothesis. For
+example, one might use a more aggressive spending function for secondary
+hypotheses:
+
+```{r different-spending}
+result2 <- graph_test_shortcut_rpact(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  typeOfDesign = list(
+    "asOF", # H1: O'Brien-Fleming
+    "asOF", # H2: O'Brien-Fleming
+    "asP",  # H3: Pocock (more aggressive)
+    "asP"   # H4: Pocock (more aggressive)
+  ),
+  test_values = TRUE
+)
+print(result2)
+```
+
+Likewise, `gammaA`, `deltaWT`, and `userAlphaSpending` can be lists with one
+value per hypothesis.
+
+### rpact's Design Types
+
+Any alpha spending design type of `getDesignGroupSequential()` can be passed
+as `typeOfDesign`, with its parameter as `gammaA`. The following compares
+several choices on the diabetes trial:
+
+```{r rpact-library}
+design_choices <- list(
+  "asOF" = list(typeOfDesign = "asOF", gammaA = NULL),
+  "asP" = list(typeOfDesign = "asP", gammaA = NULL),
+  "asHSD, gammaA = -2" = list(typeOfDesign = "asHSD", gammaA = -2),
+  "asKD, gammaA = 2" = list(typeOfDesign = "asKD", gammaA = 2),
+  "asKD, gammaA = 1 (linear)" = list(typeOfDesign = "asKD", gammaA = 1)
+)
+
+library_comparison <- do.call(rbind, lapply(names(design_choices), function(nm) {
+  choice <- design_choices[[nm]]
+  res <- graph_test_shortcut_rpact(
+    graph = g,
+    p = p,
+    alpha = 0.025,
+    info_frac = c(1/3, 2/3),
+    typeOfDesign = choice$typeOfDesign,
+    gammaA = choice$gammaA
+  )
+  data.frame(
+    Design = nm,
+    t(round(res$outputs$adjusted_p, 4)),
+    Rejected = paste(names(which(res$outputs$rejected)), collapse = ", "),
+    check.names = FALSE
+  )
+}))
+knitr::kable(library_comparison, row.names = FALSE,
+             caption = "Adjusted p-values and rejections by design type")
+```
+
+The classical boundary families — `"OF"` (O'Brien-Fleming), `"P"` (Pocock),
+and `"WT"` (Wang-Tsiatis, with `deltaWT` giving the shape parameter
+$\Delta$) — are also available. rpact represents these families by their
+boundary shape rather than by a spending function, which has two
+consequences for the graphical procedure: the final information fraction of
+each hypothesis must be exactly 1, and `spending_time` does not apply to
+them. The diabetes trial, which stops after its second of three analyses,
+therefore cannot be analyzed with a classical family, but the oncology trial
+can, since every hypothesis's schedule runs to full information:
+
+```{r rpact-classical}
+classical_comparison <- do.call(rbind, lapply(
+  list(
+    list(label = "asOF", typeOfDesign = "asOF", deltaWT = NULL),
+    list(label = "OF", typeOfDesign = "OF", deltaWT = NULL),
+    list(label = "P", typeOfDesign = "P", deltaWT = NULL),
+    list(label = "WT, deltaWT = 0.25", typeOfDesign = "WT", deltaWT = 0.25)
+  ),
+  function(choice) {
+    res <- graph_test_shortcut_rpact(
+      graph = g_onc,
+      p = p_onc,
+      alpha = alpha_onc,
+      info_frac = info_frac_onc,
+      typeOfDesign = choice$typeOfDesign,
+      deltaWT = choice$deltaWT,
+      look_back = TRUE
+    )
+    data.frame(
+      Design = choice$label,
+      t(round(res$outputs$adjusted_p, 4)),
+      Rejected = paste(names(which(res$outputs$rejected)), collapse = ", "),
+      check.names = FALSE
+    )
+  }
+))
+knitr::kable(classical_comparison, row.names = FALSE,
+             caption = "Oncology trial: adjusted p-values and rejections by design type")
+```
+
+### User-Defined Spending
+
+rpact's `"asUser"` design type takes the cumulative alpha spent at each
+analysis directly, as `userAlphaSpending`. In `graph_test_shortcut_rpact()`
+this is a non-decreasing vector with one value per analysis of the
+hypothesis, between 0 and `alpha` (or a list of such vectors, one per
+hypothesis). Any spending that can be written down as numbers can be used
+this way.
+
+There is, however, an important difference from a spending *function*. In
+the graphical procedure a hypothesis is tested at many levels — its weight
+times `alpha`, which changes as other hypotheses are rejected — so the
+design is rebuilt at levels other than `alpha`. `userAlphaSpending`
+describes the spending at `alpha` only, and `graph_test_shortcut_rpact()`
+scales it proportionally for other levels. For the built-in spending
+functions this is exact, because they are all proportional to `alpha`:
+spending `alpha` with `"asOF"` and spending `0.5 * alpha` with
+`userAlphaSpending = 0.5 * (the "asOF" spending at alpha)` give the same
+design. A user-defined spending function whose *shape* depends on `alpha`
+cannot be represented this way.
+
+As an example, consider a **piecewise spending function** that uses
+O'Brien-Fleming spending for the first half of alpha (conservative at early
+analyses) and Pocock spending for the second half (more aggressive). With
+graphicalMCP's built-in spending functions it is:
+
+```{r user-defined-spending}
+# Piecewise spending: OBF for the first `threshold` of alpha,
+# Pocock for the remainder
+spending_piecewise <- function(alpha, info_frac, threshold = 0.0125) {
+  spending_of(pmin(alpha, threshold), info_frac) +
+    spending_pocock(pmax(alpha - threshold, 0), info_frac)
+}
+
+# At alpha = 0.025: first 0.0125 is OBF, second 0.0125 is Pocock
+t <- c(1/3, 2/3, 1)
+comparison <- data.frame(
+  `Info Fraction` = t,
+  `OBF only` = spending_of(0.025, t),
+  `Pocock only` = spending_pocock(0.025, t),
+  Piecewise = spending_piecewise(0.025, t),
+  check.names = FALSE
+)
+knitr::kable(comparison, digits = 6,
+             caption = "Piecewise spending: OBF for first half, Pocock for second half")
+```
+
+At `alpha = 0.0125` (e.g., a hypothesis with weight 0.5), the piecewise
+function reduces to pure O'Brien-Fleming, which is very different from half
+of its spending at `alpha = 0.025`:
+
+```{r user-defined-spending-half}
+rbind(
+  `piecewise at 0.0125` = spending_piecewise(0.0125, t),
+  `half of piecewise at 0.025` = 0.5 * spending_piecewise(0.025, t)
+)
+```
+
+Passing the spending at `alpha = 0.025` as `userAlphaSpending` therefore
+gives a different procedure from `graph_test_shortcut_gsd()` with the
+spending function itself. On the diabetes trial the two happen to reject the
+same hypotheses, but the adjusted p-values and boundaries differ:
+
+```{r user-defined-spending-gsd}
+result_piecewise_rpact <- graph_test_shortcut_rpact(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  typeOfDesign = "asUser",
+  userAlphaSpending = spending_piecewise(0.025, c(1/3, 2/3))
+)
+result_piecewise_gsd <- graph_test_shortcut_gsd(
+  graph = g,
+  p = p,
+  alpha = 0.025,
+  info_frac = c(1/3, 2/3),
+  spending_fn = spending_piecewise
+)
+data.frame(
+  `Rejected (rpact, asUser)` = result_piecewise_rpact$outputs$rejected,
+  `Adj. P (rpact, asUser)` = round(result_piecewise_rpact$outputs$adjusted_p, 4),
+  `Rejected (spending function)` = result_piecewise_gsd$outputs$rejected,
+  `Adj. P (spending function)` = round(result_piecewise_gsd$outputs$adjusted_p, 4),
+  check.names = FALSE
+)
+```
+
+For user-defined spending functions whose shape depends on the level, use
+`graph_test_shortcut_gsd()` or `graph_test_shortcut_gsDesign()`, which
+re-evaluate the function at each level. `"asUser"` is the right choice when
+the spending is genuinely specified as a fixed schedule of cumulative alpha.
+
+## Summary
+
+The `graph_test_shortcut_rpact()` function performs multiple testing in
+group sequential trials using graphical approaches, with the group sequential
+calculations delegated to rpact. Key features include:
+
+1. **rpact's group sequential machinery**: For each hypothesis, a one-sided
+   rpact design (`getDesignGroupSequential()`) encodes its analysis schedule.
+   Boundaries are the design's `stageLevels` at the level currently
+   allocated to the hypothesis, and repeated p-values are obtained by solving
+   for the level at which the design's critical value equals the observed
+   Z-statistic — the algorithm of `getRepeatedPValues()`, applied without its
+   cap of 0.5. rpact's integration is deterministic, so results are
+   reproducible without setting a seed.
+
+2. **rpact's design specification**: Design types (`typeOfDesign`), their
+   parameters (`gammaA`, `deltaWT`, `userAlphaSpending`), and the spending
+   time (`spending_time`) give access to rpact's alpha spending designs, the
+   classical boundary families, and user-specified spending schedules.
+
+3. **The same graphical procedure**: Sequential rejection within analyses,
+   repeated and sequential p-values, the `look_back` option, per-hypothesis
+   design types and information fractions, and different numbers of analyses
+   per hypothesis (via `NA` padding) all work as in
+   `graph_test_shortcut_gsd()`, and the two functions return results of the
+   same structure.
+
+4. **Spending time and monitoring**: `spending_time` separates the spending
+   time from the information fraction, realized through rpact's `"asUser"`
+   design, which also handles a final analysis whose information differs
+   from the plan.
+
+## References
+
+Maurer, W., and Bretz, F. (2013). Multiple testing in group sequential trials
+using graphical approaches. *Statistics in Biopharmaceutical Research*, 5(4),
+311-320.
+
+Wassmer, G., and Brannath, W. (2025). *Group Sequential and Confirmatory
+Adaptive Designs in Clinical Trials*, 2nd edition. Springer, Cham.
+[doi:10.1007/978-3-031-89669-9](https://doi.org/10.1007/978-3-031-89669-9)
+
+Wassmer, G., and Pahlke, F. (2026). rpact: Confirmatory Adaptive Clinical
+Trial Design and Analysis. R package.
+[https://CRAN.R-project.org/package=rpact](https://CRAN.R-project.org/package=rpact)

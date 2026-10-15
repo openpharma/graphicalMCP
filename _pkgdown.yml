@@ -99,6 +99,7 @@ articles:
   - closed-testing
   - group-sequential-testing
   - group-sequential-testing-gsDesign
+  - group-sequential-testing-rpact
   - graph-examples
   - internal-validation
   - comparisons
