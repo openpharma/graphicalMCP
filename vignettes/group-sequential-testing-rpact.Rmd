@@ -338,10 +338,14 @@ design at information rates $(1/3, 2/3)$ spends the planned alpha of the
 three-analysis design at its first two analyses (the values below agree to
 rpact's numerical precision). rpact accepts such information rates for its
 alpha spending types. The classical boundary families (`"OF"`, `"P"`, `"WT"`)
-are defined by their boundary shape over the whole planned schedule instead,
-and rpact requires their final information rate to be exactly 1 — they cannot
-be given only the analyses conducted so far, and
-`graph_test_shortcut_rpact()` stops with an informative error in that case.
+are different: their boundary is a shape over the whole planned schedule,
+with a constant calibrated so that the probability of crossing at *any*
+planned analysis equals the level. Without the final analysis the design is
+not defined, so their final information rate must be exactly 1 — a
+requirement of the designs themselves, which rpact enforces (as does
+graphicalMCP's own `spending_wt()`). They cannot be given only the analyses
+conducted so far, and `graph_test_shortcut_rpact()` stops with an
+informative error in that case.
 
 ```{r partial-schedule}
 # The planned spending at the first two analyses is preserved
@@ -1325,13 +1329,15 @@ knitr::kable(library_comparison, row.names = FALSE,
 
 The classical boundary families — `"OF"` (O'Brien-Fleming), `"P"` (Pocock),
 and `"WT"` (Wang-Tsiatis, with `deltaWT` giving the shape parameter
-$\Delta$) — are also available. rpact represents these families by their
-boundary shape rather than by a spending function, which has two
-consequences for the graphical procedure: the final information fraction of
-each hypothesis must be exactly 1, and `spending_time` does not apply to
-them. The diabetes trial, which stops after its second of three analyses,
-therefore cannot be analyzed with a classical family, but the oncology trial
-can, since every hypothesis's schedule runs to full information:
+$\Delta$) — are also available. These families are defined by their boundary
+shape over the whole planned schedule rather than by a spending function,
+which has two consequences for the graphical procedure: the final information
+fraction of each hypothesis must be exactly 1 (the boundary constant is
+calibrated over all planned analyses, so the design is undefined without the
+last one), and `spending_time` does not apply to them. The diabetes trial,
+which stops after its second of three analyses, therefore cannot be analyzed
+with a classical family, but the oncology trial can, since every hypothesis's
+schedule runs to full information:
 
 ```{r rpact-classical}
 classical_comparison <- do.call(rbind, lapply(

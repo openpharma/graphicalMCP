@@ -90,9 +90,11 @@
 #'   design at the information fractions, divided by their maximum when they
 #'   exceed 1 (the correlation between analyses depends only on their
 #'   ratios). The classical boundary families are defined by their boundary
-#'   shape over the whole planned schedule, and rpact requires their final
-#'   information fraction to be exactly 1: unlike the alpha spending designs,
-#'   they cannot be given only the analyses conducted so far.
+#'   shape over the whole planned schedule — their constant is calibrated so
+#'   that the crossing probability over all planned analyses equals the level
+#'   — so their final information fraction must be exactly 1 (rpact enforces
+#'   this, as does [spending_wt()]): unlike the alpha spending designs, they
+#'   cannot be given only the analyses conducted so far.
 #' * **Single-analysis hypotheses.** A hypothesis with one analysis below
 #'   full information uses the first stage of a two-stage design ending at 1,
 #'   so that its boundary is the cumulative spending at that information
@@ -397,9 +399,10 @@ gsd_input_val_rpact <- function(typeOfDesign, gammaA, deltaWT,
     if (type %in% gsd_rpact_classical && length(t_j) > 1 &&
       !isTRUE(all.equal(t_j[length(t_j)], 1))) {
       stop(
-        "rpact requires the final information fraction to be exactly 1 for ",
-        "the classical boundary families (\"", type, "\" for hypothesis ", j,
-        "): supply the full planned schedule."
+        "The classical boundary families are defined over the whole planned ",
+        "schedule, so the final information fraction must be exactly 1 (\"",
+        type, "\" for hypothesis ", j, "): supply the full planned schedule, ",
+        "or use an alpha spending design for analyses conducted so far."
       )
     }
   }
