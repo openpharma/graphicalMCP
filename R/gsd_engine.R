@@ -232,11 +232,12 @@ gsd_engine_gsDesign <- function(alpha, info_frac, sfu, sfupar, usTime) {
 #' * One design per hypothesis at the allocated level encodes its analysis
 #'   schedule, `getDesignGroupSequential(kMax = K_j, informationRates, alpha,
 #'   sided = 1, typeOfDesign, ...)`. Nominal boundaries are its `stageLevels`.
-#' * Repeated p-values are found by solving \eqn{c_k(\alpha) = Z_k} on the
-#'   design's `criticalValues` over the level. This is the algorithm that
-#'   rpact's own `getRepeatedPValues()` uses internally (a bisection over the
-#'   level with the design rebuilt at each step), applied without its ceiling
-#'   of 0.5 and to every design type.
+#' * Repeated p-values use [rpact::getRepeatedPValues()] with a general
+#'   estimates dataset reproducing the cumulative Z-statistics and information.
+#'   The expert options disable alpha validation warnings and the 0.5 cap
+#'   locally; the caller's options are restored on exit. For `asOF` with
+#'   separate spending time, boundary inversion re-evaluates the nonlinear
+#'   spending at every candidate alpha instead.
 #' * rpact evaluates the spending function at the design's information rates
 #'   and does not accept rates above 1. A spending time that differs from the
 #'   information fractions, or information fractions above 1 (over-running
@@ -250,12 +251,6 @@ gsd_engine_gsDesign <- function(alpha, info_frac, sfu, sfupar, usTime) {
 #' * A hypothesis with a single analysis below full information uses the
 #'   first stage of a two-stage design ending at 1; at full information it is
 #'   a fixed-sample test.
-#'
-#' rpact warns when a level lies outside its validated range `[1e-6, 0.5)`,
-#' which the engine muffles, and cannot compute designs at levels above
-#' roughly 0.65 ("critical values cannot be calculated"). The engine searches
-#' up to the highest level rpact can compute and reports a repeated p-value
-#' of 1 when the boundary is not crossed there.
 #'
 #' @inheritParams gsd_engine_gsDesign
 #' @param typeOfDesign A list of m design types in rpact's convention, e.g.
@@ -275,9 +270,6 @@ gsd_engine_gsDesign <- function(alpha, info_frac, sfu, sfupar, usTime) {
 gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
                              userAlphaSpending, spending_time) {
   num_hyps <- nrow(info_frac)
-  # Search interval for repeated p-values, matching repeated_p()'s conventions
-  p_lower <- 1e-6
-  p_upper <- 1 - 1e-6
 
   # Per-hypothesis full analysis schedule (non-NA analyses only)
   sched <- lapply(seq_len(num_hyps), function(j) {
@@ -312,6 +304,10 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
       kMax = length(rates), informationRates = rates, alpha = a, sided = 1,
       typeOfDesign = type
     )
+    if (identical(type, "WToptimum")) {
+      args$typeOfDesign <- "WT"
+      args$deltaWT <- sched[[j]]$deltaWT
+    }
     if (type %in% c("asHSD", "asKD")) args$gammaA <- gammaA[[j]]
     if (identical(type, "WT")) args$deltaWT <- deltaWT[[j]]
     args
@@ -321,6 +317,8 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
   # user spending values that underflow at early analyses; the graphical
   # procedure evaluates such levels routinely
   get_design <- function(args) {
+    old_options <- options(rpact.validate.alpha.enabled = FALSE)
+    on.exit(options(old_options), add = TRUE)
     withCallingHandlers(
       do.call(rpact::getDesignGroupSequential, args),
       warning = function(w) {
@@ -331,6 +329,17 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
         }
       }
     )
+  }
+
+  # Optimize the shape once at the original alpha, matching rpact's nested
+  # family for repeated p-values; use the same shape for nominal boundaries.
+  for (j in seq_len(num_hyps)) {
+    if (identical(sched[[j]]$type, "WToptimum") && !sched[[j]]$fixed) {
+      sched[[j]]$deltaWT <- get_design(list(
+        kMax = sched[[j]]$K, informationRates = sched[[j]]$rates,
+        alpha = alpha, sided = 1, typeOfDesign = "WToptimum"
+      ))$deltaWT
+    }
   }
 
   # Cumulative spending of hypothesis j at level `a` at its spending time
@@ -345,10 +354,8 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
     get_design(design_args(j, a, s$st, s$type))$alphaSpent
   }
 
-  # Design for hypothesis j at level `a`, or NULL where rpact cannot compute
-  # it. Near its limits rpact returns degenerate designs rather than failing
-  # (critical values at its internal floor of about 7e-9, or negative), which
-  # are treated as not computable as well.
+  # Signed and infinite critical values are valid (the latter disables an
+  # early efficacy analysis). Only missing designs/values indicate failure.
   build_design <- function(j, a) {
     s <- sched[[j]]
     d <- tryCatch(
@@ -366,66 +373,10 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
       },
       error = function(e) NULL
     )
-    if (is.null(d) || anyNA(d$criticalValues) || any(d$criticalValues <= 1e-6)) {
+    if (is.null(d) || anyNA(d$criticalValues)) {
       return(NULL)
     }
     d
-  }
-
-  # Highest level at which rpact can compute the design of hypothesis j
-  ceiling_cache <- new.env(parent = emptyenv())
-  level_ceiling <- function(j) {
-    key <- as.character(j)
-    if (is.null(ceiling_cache[[key]])) {
-      candidates <- c(p_upper, seq(0.95, 0.05, by = -0.05))
-      found <- NA_real_
-      for (a in candidates) {
-        if (!is.null(build_design(j, a))) {
-          found <- a
-          break
-        }
-      }
-      if (is.na(found)) {
-        stop(
-          "rpact could not compute a group sequential design for hypothesis ",
-          j, " at any level."
-        )
-      }
-      ceiling_cache[[key]] <- found
-    }
-    ceiling_cache[[key]]
-  }
-
-  # Critical value at analysis k; an infinite value (a boundary that cannot
-  # be crossed) is capped so that the root search sees a finite function
-  crit_at <- function(j, a, k) {
-    d <- build_design(j, a)
-    if (is.null(d)) NA_real_ else min(d$criticalValues[k], 40)
-  }
-
-  # Smallest level at which `exceed()` (increasing in the level, NA where
-  # rpact cannot compute the design) becomes non-negative, with the same
-  # conventions as repeated_p(): 1 if the boundary is not crossed at the
-  # highest computable level, p_lower if it is crossed already at p_lower.
-  find_level <- function(j, exceed) {
-    hi <- level_ceiling(j)
-    up <- exceed(hi)
-    if (is.na(up) || up <= 0) {
-      return(1)
-    }
-    lo <- p_lower
-    lo_val <- exceed(lo)
-    while (is.na(lo_val) && lo < hi / 2) {
-      lo <- lo * 2
-      lo_val <- exceed(lo)
-    }
-    if (is.na(lo_val)) {
-      stop("rpact could not compute the group sequential design for hypothesis ", j, ".")
-    }
-    if (lo_val >= 0) {
-      return(lo)
-    }
-    stats::uniroot(exceed, c(lo, hi), tol = 1e-8)$root
   }
 
   list(
@@ -436,8 +387,52 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
       if (s$fixed) {
         return(p[1])
       }
-      z <- pmin(pmax(stats::qnorm(1 - p), -20), 20)
-      find_level(j, function(a) z[k] - crit_at(j, a, k))
+      old_options <- options(
+        rpact.validate.alpha.enabled = FALSE,
+        rpact.repeated.pvalues.cap.enabled = FALSE
+      )
+      on.exit(options(old_options), add = TRUE)
+      # asOF spending is nonlinear in alpha. With separate spending times,
+      # asUser's proportional inversion would change the testing family.
+      # Re-evaluate the spending at every candidate level in this one case.
+      if (s$separate && identical(s$type, "asOF")) {
+        z <- stats::qnorm(p[k], lower.tail = FALSE)
+        exceed <- function(a) {
+          design <- build_design(j, a)
+          if (is.null(design)) return(NA_real_)
+          z - design$criticalValues[k]
+        }
+        lower <- 1e-6
+        upper <- 1 - 1e-6
+        upper_value <- exceed(upper)
+        if (is.na(upper_value)) stop("rpact could not compute the upper search boundary.")
+        if (upper_value <= 0) return(1)
+        # Very small spending can underflow in rpact's asUser construction.
+        lower_value <- exceed(lower)
+        while (is.na(lower_value) && lower < upper / 2) {
+          lower <- lower * 2
+          lower_value <- exceed(lower)
+        }
+        if (is.na(lower_value)) stop("rpact could not compute the lower search boundary.")
+        if (lower_value >= 0) return(lower)
+        return(stats::uniroot(exceed, c(lower, upper), tol = 1e-8)$root)
+      }
+      d <- build_design(j, alpha)
+      if (is.null(d)) stop("rpact could not compute the group sequential design.")
+      # DatasetGeneral takes independent stage increments, whereas p contains
+      # cumulative test statistics. Reconstruct the score increments so that
+      # inverse-variance pooling gives Z_k at information I_k exactly.
+      information <- s$rates[seq_len(k)]
+      increments <- diff(c(0, information))
+      z <- pmin(pmax(stats::qnorm(p, lower.tail = FALSE), -20), 20)
+      data <- rpact::getDataset(
+        est = diff(c(0, z * sqrt(information))) / increments,
+        se = 1 / sqrt(increments)
+      )
+      results <- rpact::getStageResults(
+        d, data, thetaH0 = 0, directionUpper = TRUE
+      )
+      as.numeric(rpact::getRepeatedPValues(results))[k]
     },
     nominal_bounds = function(alpha, info_frac, j) {
       s <- sched[[j]]

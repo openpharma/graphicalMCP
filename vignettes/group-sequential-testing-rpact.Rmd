@@ -47,12 +47,14 @@ of Maurer and Bretz (2013), and an oncology trial adapted from the
 [gMCPLite package](https://cran.r-project.org/package=gMCPLite) where
 different endpoints have different numbers of analyses. Along the way it shows
 how rpact is used inside the function. rpact is a suggested package of
-graphicalMCP and must be installed to use `graph_test_shortcut_rpact()`.
+graphicalMCP. This vignette requires rpact with general estimates datasets
+and the expert options below (development version 4.5.0.9323 or later).
 
 ```{r rpact-guard, echo = FALSE, results = "asis"}
-if (!requireNamespace("rpact", quietly = TRUE)) {
+if (!requireNamespace("rpact", quietly = TRUE) ||
+    utils::packageVersion("rpact") < "4.5.0.9323") {
   cat(
-    "**The rpact package is not installed, so the code in this vignette",
+    "**A sufficiently recent rpact package is not installed, so this vignette",
     "was not run.**\n"
   )
   knitr::knit_exit()
@@ -184,31 +186,28 @@ sequential p-value at analysis $k$.
   crossed. It equals the cumulative minimum of repeated p-values:
   $\tilde{p}_k = \min_{l=1}^{k} \hat{p}_l$.
 
-rpact computes repeated p-values with `getRepeatedPValues()`, which takes the
-stage results of a design and a dataset, and searches for the smallest level
-at which the boundary at the current stage is crossed — the design is rebuilt
-at each candidate level and its critical value compared with the observed
-Z-statistic. Two features of this function make it unsuitable for direct use
-inside the graphical procedure: it requires a dataset rather than test
-statistics, and it caps its result at 0.5. The graphical procedure compares
-repeated p-values with allocated levels and derives adjusted p-values from
-them, so it needs the uncapped value for a p-value or Z-statistic.
-`graph_test_shortcut_rpact()` therefore applies the same search itself —
-solving $c_k(\alpha) = Z_k$ on the `criticalValues` of
-`getDesignGroupSequential()` over the level — for every design type and
-without the cap. Because it is the same algorithm on the same designs, the two
-agree to the tolerance of rpact's search wherever the latter is applicable.
+`graph_test_shortcut_rpact()` now calls rpact's `getRepeatedPValues()`
+directly for the standard schedules and proportional spending rules. The two expert options `rpact.validate.alpha.enabled = FALSE`
+and `rpact.repeated.pvalues.cap.enabled = FALSE` suppress validated-alpha
+warnings and extend the search above 0.5, respectively. The adapter sets
+these options locally and restores the caller's settings on exit. This
+does not extend rpact's validated alpha range. Environment variables take
+precedence in rpact, so `RPACT_REPEATED_PVALUES_CAP_ENABLED` must be unset
+or `FALSE`.
 
-The following code shows the mechanism for a single hypothesis with the
-design from the previous section: the repeated p-value at analysis $k$ is the
-root of $c_k(\alpha) - Z_k$ in $\alpha$, where $c_k(\alpha)$ is the critical
-value at analysis $k$ of the design built at level $\alpha$. This is what
-`graph_test_shortcut_rpact()` does internally for each hypothesis at each
-analysis; you never need to do it yourself. For comparison, the same values
-are obtained from `getRepeatedPValues()`; to use it directly we need a
-dataset, and a one-sample dataset of means with unit standard deviation and
-sample sizes proportional to the information fractions reproduces any given
-Z-statistics exactly.
+The dataset requirement is handled by `getDataset(est = ..., se = ...)`.
+These inputs are **stage-wise** estimates and standard errors, whereas the
+observed p-values give **cumulative** Z-statistics. For information
+$I_k = t_k$, let $\Delta I_k = I_k - I_{k-1}$ and $S_k = Z_k\sqrt{I_k}$,
+with $I_0 = S_0 = 0$. Supplying
+
+$$\mathrm{est}_k = \frac{S_k - S_{k-1}}{\Delta I_k}, \qquad
+\mathrm{se}_k = \frac{1}{\sqrt{\Delta I_k}}$$
+
+reproduces the cumulative Z-statistics exactly under inverse-variance
+pooling. No artificial sample sizes or standard deviations are needed.
+The following example uses this conversion directly, just as the adapter
+does internally.
 
 ```{r rep-seq-p-example}
 # A hypothesis tested at three analyses with OBF spending
@@ -216,42 +215,32 @@ p_h1 <- c(0.05, 0.02, 0.01)
 info <- c(1/3, 2/3, 1)
 z_h1 <- qnorm(1 - p_h1)
 
-# Critical value at analysis k of the design built at level a
-critical_value <- function(a, k) {
-  getDesignGroupSequential(
-    kMax = 3, informationRates = info, alpha = a, sided = 1,
-    typeOfDesign = "asOF"
-  )$criticalValues[k]
-}
-
-# Repeated p-value at analysis k: the level at which the boundary at
-# analysis k equals the observed Z-statistic
-rep_p_h1 <- sapply(1:3, function(k) {
-  uniroot(
-    function(a) critical_value(a, k) - z_h1[k], c(1e-6, 0.49), tol = 1e-8
-  )$root
-})
-cat("Repeated p-values:", rep_p_h1, "\n")
-
-# Sequential p-values: the cumulative minimum of the repeated p-values
-seq_p_h1 <- cummin(rep_p_h1)
-cat("Sequential p-values:", seq_p_h1, "\n")
-
-# The same from rpact::getRepeatedPValues(), via a dataset that reproduces z_h1
-n_h1 <- 300 * info
+# Reconstruct independent stage increments from cumulative Z-statistics
+information_increments <- diff(c(0, info))
 data_h1 <- getDataset(
-  overallSampleSizes = n_h1,
-  overallMeans = z_h1 / sqrt(n_h1),
-  overallStDevs = rep(1, 3)
+  est = diff(c(0, z_h1 * sqrt(info))) / information_increments,
+  se = 1 / sqrt(information_increments)
 )
 stage_results <- getStageResults(
-  design_obf, data_h1, thetaH0 = 0,
-  normalApproximation = TRUE, directionUpper = TRUE
+  design_obf, data_h1, thetaH0 = 0, directionUpper = TRUE
 )
-cat("rpact::getRepeatedPValues():", as.numeric(getRepeatedPValues(stage_results)), "\n")
+stopifnot(isTRUE(all.equal(stage_results$overallTestStatistics, z_h1)))
+
+# Scope the expert settings so that the caller's options are restored
+rep_p_h1 <- local({
+  old_options <- options(
+    rpact.validate.alpha.enabled = FALSE,
+    rpact.repeated.pvalues.cap.enabled = FALSE
+  )
+  on.exit(options(old_options))
+  as.numeric(getRepeatedPValues(stage_results))
+})
+cat("Repeated p-values:", rep_p_h1, "\n")
+seq_p_h1 <- cummin(rep_p_h1)
+cat("Sequential p-values:", seq_p_h1, "\n")
 ```
 
-The two agree to the tolerance of rpact's search. The sequential p-value is
+The reconstructed statistics agree to numerical precision. The sequential p-value is
 the cumulative minimum of the repeated p-values across analyses. It is always
 less than or equal to the repeated p-value, since it considers all prior
 analyses. A hypothesis that nearly crossed its boundary at an earlier analysis
@@ -1033,6 +1022,15 @@ time. This plays the role of `spending_with_time()` in
 types only: the classical boundary families have no spending function, and
 `"asUser"` already gives the spending directly.
 
+For `"asOF"`, the spending proportions depend on alpha. When spending time
+differs from information time (including over-running information), the
+adapter therefore retains boundary inversion and rebuilds the spending at
+every candidate alpha. Calling `getRepeatedPValues()` on one fixed `"asUser"`
+design would instead scale its spending proportionally and change the
+procedure. For `"asP"`, `"asHSD"`, and `"asKD"`, the spending is proportional,
+so native `getRepeatedPValues()` remains applicable with separate spending
+times.
+
 Consider the oncology trial above. The all-subjects hypotheses ($H_2$ and
 $H_4$) use all-subjects event counts for their information fractions (which
 determine the correlation structure), but one might want to use the
@@ -1384,12 +1382,12 @@ the graphical procedure a hypothesis is tested at many levels — its weight
 times `alpha`, which changes as other hypotheses are rejected — so the
 design is rebuilt at levels other than `alpha`. `userAlphaSpending`
 describes the spending at `alpha` only, and `graph_test_shortcut_rpact()`
-scales it proportionally for other levels. For the built-in spending
-functions this is exact, because they are all proportional to `alpha`:
-spending `alpha` with `"asOF"` and spending `0.5 * alpha` with
-`userAlphaSpending = 0.5 * (the "asOF" spending at alpha)` give the same
-design. A user-defined spending function whose *shape* depends on `alpha`
-cannot be represented this way.
+scales it proportionally for other levels. This is exact for the proportional
+spending rules `"asP"`, `"asHSD"`, and `"asKD"`. It is **not** exact for
+`"asOF"`: its spending proportions change with `alpha`. An `"asUser"` design
+built from O'Brien-Fleming spending agrees at the original level, but generally
+differs at other levels. A spending function whose shape depends on `alpha`
+cannot be represented by one fixed proportional spending schedule.
 
 As an example, consider a **piecewise spending function** that uses
 O'Brien-Fleming spending for the first half of alpha (conservative at early
@@ -1463,6 +1461,26 @@ For user-defined spending functions whose shape depends on the level, use
 re-evaluate the function at each level. `"asUser"` is the right choice when
 the spending is genuinely specified as a fixed schedule of cumulative alpha.
 
+## Compatibility with the previous adapter
+
+Regression tests compare the native calls with results captured from the
+previous critical-value inversion, including both vignette case studies.
+For the standard spending designs and the `"OF"`, `"P"`, and `"WT"`
+families, differences are on the scale of the numerical search tolerance;
+rejection decisions are unchanged in these examples. Values above the old
+adapter's computable-level ceiling can now be returned rather than replaced
+by 1. A value near 1 can still represent a numerical search endpoint if no
+crossing is attainable below 1.
+
+Two classical designs have deliberate differences. For `"HP"`, rpact's
+native search can find small attainable roots that the old adapter skipped
+when raising its lower search bracket. For `"WToptimum"`, the shape is
+optimized once at the original `alpha`, then `deltaWT` is held fixed for
+both inversion and allocated-level boundaries. This follows rpact's nested
+family of boundaries; the old adapter re-optimized at each candidate level.
+These cases are tested separately rather than treated as numerically
+unchanged.
+
 ## Summary
 
 The `graph_test_shortcut_rpact()` function performs multiple testing in
@@ -1472,10 +1490,10 @@ calculations delegated to rpact. Key features include:
 1. **rpact's group sequential machinery**: For each hypothesis, a one-sided
    rpact design (`getDesignGroupSequential()`) encodes its analysis schedule.
    Boundaries are the design's `stageLevels` at the level currently
-   allocated to the hypothesis, and repeated p-values are obtained by solving
-   for the level at which the design's critical value equals the observed
-   Z-statistic — the algorithm of `getRepeatedPValues()`, applied without its
-   cap of 0.5. rpact's integration is deterministic, so results are
+   allocated to the hypothesis. Repeated p-values come directly from
+   `getRepeatedPValues()` using general estimates datasets and locally
+   disabling the 0.5 cap, with boundary inversion retained for `"asOF"`
+   when spending and information times differ. rpact's integration is deterministic, so results are
    reproducible without setting a seed.
 
 2. **rpact's design specification**: Design types (`typeOfDesign`), their

@@ -37,7 +37,7 @@ Suggests:
     lrstat (>= 0.3.3),
     prompt,
     rmarkdown,
-    rpact,
+    rpact (>= 4.5.0.9323),
     scales,
     testthat (>= 3.0.0),
     tibble,

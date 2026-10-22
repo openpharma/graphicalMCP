@@ -135,13 +135,16 @@ of the results are identical to \code{\link[=graph_test_shortcut_gsd]{graph_test
 function for a description of the procedure and of \code{look_back}.
 
 rpact is an optional dependency: the function stops with an informative
-error if it is not installed.
+error if a sufficiently recent version is not installed (see Details).
 }
 \details{
 This function performs the same graphical group sequential procedure as
 \code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} (Maurer and Bretz, 2013), but delegates all
 group sequential calculations to rpact, used only through its public
-function \code{\link[rpact:getDesignGroupSequential]{rpact::getDesignGroupSequential()}}.
+functions \code{\link[rpact:getDesignGroupSequential]{rpact::getDesignGroupSequential()}}, \code{\link[rpact:getDataset]{rpact::getDataset()}},
+\code{\link[rpact:getStageResults]{rpact::getStageResults()}}, and \code{\link[rpact:getRepeatedPValues]{rpact::getRepeatedPValues()}}.
+It requires rpact with general estimates datasets and the expert options
+described below (development version 4.5.0.9323 or later).
 \itemize{
 \item \strong{Analysis structure.} For hypothesis \eqn{j} with information
 fractions \eqn{t_j} at its \eqn{K_j} analyses, a one-sided design
@@ -154,12 +157,11 @@ boundary at analysis \eqn{k} for an allocated level is the design's
 \code{stageLevels[k]} (rpact's nominal one-sided significance level).
 \item \strong{Repeated p-values.} The repeated p-value at analysis \eqn{k} is the
 smallest level at which the boundary at analysis \eqn{k} is crossed. It
-is found by solving \eqn{c_k(\alpha) = Z_k} on the design's
-\code{criticalValues} over the level. This is the algorithm that rpact's
-\code{\link[rpact:getRepeatedPValues]{rpact::getRepeatedPValues()}} uses internally, applied without its
-ceiling of 0.5 and to every design type. rpact cannot compute designs at
-levels above roughly 0.65; a boundary that is not crossed at the highest
-level rpact can compute is reported as a repeated p-value of 1.
+is calculated by \code{\link[rpact:getRepeatedPValues]{rpact::getRepeatedPValues()}} from a dataset of
+stage-wise estimates and standard errors that reproduces the cumulative
+Z-statistics and information fractions. The search extends above 0.5.
+Values near 1 may be numerical endpoints when no boundary crossing is
+attainable below 1.
 Sequential p-values (\code{look_back = TRUE}) are the running minimum of the
 repeated p-values.
 \item \strong{Spending time and over-running information.} rpact evaluates the
@@ -176,17 +178,29 @@ that the crossing probability over all planned analyses equals the level
 — so their final information fraction must be exactly 1 (rpact enforces
 this, as does \code{\link[=spending_wt]{spending_wt()}}): unlike the alpha spending designs, they
 cannot be given only the analyses conducted so far.
+For \code{"asOF"} with separate spending time (including over-running
+information), spending proportions vary with alpha. This case retains
+boundary inversion, rebuilding the spending at every candidate level;
+native \code{"asUser"} inversion would hold the proportions fixed.
+\item \strong{Optimized boundaries.} \code{"WToptimum"} is optimized once at the
+original \code{alpha}. Its \code{deltaWT} is then held fixed for both repeated
+p-values and allocated-level boundaries, matching rpact's nested family.
+This differs from the previous adapter, which re-optimized at each level.
+\item \strong{Haybittle-Peto boundaries.} Native repeated p-values can be smaller
+than those of the previous adapter, whose lower search bracket could
+skip small attainable roots.
 \item \strong{Single-analysis hypotheses.} A hypothesis with one analysis below
 full information uses the first stage of a two-stage design ending at 1,
 so that its boundary is the cumulative spending at that information
 fraction; at full information it is a fixed-sample test.
 }
 
-rpact warns when a level lies outside its validated range of
-\eqn{[10^{-6}, 0.5)}; the graphical procedure evaluates such levels
-routinely (for small hypothesis weights, and when searching for repeated
-p-values), so these warnings are suppressed. rpact's integration is
-deterministic, so results are reproducible without setting a seed. The
+The expert options \code{rpact.validate.alpha.enabled = FALSE} and
+\code{rpact.repeated.pvalues.cap.enabled = FALSE} are set locally, with the
+caller's options restored on exit. Environment variables take precedence
+in rpact; \code{RPACT_REPEATED_PVALUES_CAP_ENABLED} must be unset or \code{FALSE}.
+This use does not extend rpact's validated alpha range. Its integration
+is deterministic, so results are reproducible without setting a seed. The
 built-in spending functions correspond to \code{typeOfDesign = "asOF"}
 (\code{\link[=spending_of]{spending_of()}}), \code{"asP"} (\code{\link[=spending_pocock]{spending_pocock()}}), \code{"asHSD"} with
 \code{gammaA = gamma} (\code{\link[=spending_hsd]{spending_hsd()}}), \code{"asKD"} with \code{gammaA = 1}

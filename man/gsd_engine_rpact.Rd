@@ -44,11 +44,12 @@ every group sequential quantity from \code{\link[rpact:getDesignGroupSequential]
 \itemize{
 \item One design per hypothesis at the allocated level encodes its analysis
 schedule, \code{getDesignGroupSequential(kMax = K_j, informationRates, alpha, sided = 1, typeOfDesign, ...)}. Nominal boundaries are its \code{stageLevels}.
-\item Repeated p-values are found by solving \eqn{c_k(\alpha) = Z_k} on the
-design's \code{criticalValues} over the level. This is the algorithm that
-rpact's own \code{getRepeatedPValues()} uses internally (a bisection over the
-level with the design rebuilt at each step), applied without its ceiling
-of 0.5 and to every design type.
+\item Repeated p-values use \code{\link[rpact:getRepeatedPValues]{rpact::getRepeatedPValues()}} with a general
+estimates dataset reproducing the cumulative Z-statistics and information.
+The expert options disable alpha validation warnings and the 0.5 cap
+locally; the caller's options are restored on exit. For \code{asOF} with
+separate spending time, boundary inversion re-evaluates the nonlinear
+spending at every candidate alpha instead.
 \item rpact evaluates the spending function at the design's information rates
 and does not accept rates above 1. A spending time that differs from the
 information fractions, or information fractions above 1 (over-running
@@ -63,11 +64,5 @@ are defined by their boundary shape.
 first stage of a two-stage design ending at 1; at full information it is
 a fixed-sample test.
 }
-
-rpact warns when a level lies outside its validated range \verb{[1e-6, 0.5)},
-which the engine muffles, and cannot compute designs at levels above
-roughly 0.65 ("critical values cannot be calculated"). The engine searches
-up to the highest level rpact can compute and reports a repeated p-value
-of 1 when the boundary is not crossed there.
 }
 \keyword{internal}

@@ -32,10 +32,11 @@ expect_close_rpact <- function(new, old, tol = 1e-5) {
 expect_rpact_equivalent <- function(new, old, tol = 1e-5) {
   for (field in c(
     "rejected", "decision_at", "first_rejected_at", "last_rejected_at",
-    "rejection_sequence", "graph"
+    "rejection_sequence"
   )) {
     expect_identical(new$outputs[[field]], old$outputs[[field]])
   }
+  expect_equal(new$outputs$graph, old$outputs$graph, tolerance = 1e-12)
   for (field in c("repeated_p", "sequential_p", "adjusted_p")) {
     expect_close_rpact(new$outputs[[field]], old$outputs[[field]], tol)
   }
@@ -380,18 +381,18 @@ test_that("the rpact engine reproduces rpact's own repeated p-values below 0.5",
   }
 })
 
-test_that("the rpact engine reports 1 above the level rpact can compute", {
+test_that("the rpact engine computes repeated p-values above 0.5", {
   skip_if_not_installed("rpact")
   skip_if_not_installed("gsDesign")
   info <- matrix(c(0.1, 0.5, 1), 1)
   rp <- gsd_engine_rpact(0.025, info, list("asOF"), list(NULL), list(NULL), list(NULL), NULL)
   gs <- gsd_engine_gsDesign(0.025, info, list(gsDesign::sfLDOF), list(NULL), NULL)
 
-  # Weak evidence at 10% information is crossed only at a level (about 0.83)
-  # above rpact's ceiling: reported as 1
+  # Weak evidence at 10% information requires a repeated p-value above 0.5.
   expect_gt(gs$repeated_p(0.5, 0.1, 1), 0.7)
-  expect_equal(rp$repeated_p(0.5, 0.1, 1), 1)
-  # Below the ceiling the engines agree
+  expect_equal(rp$repeated_p(0.5, 0.1, 1),
+               gs$repeated_p(0.5, 0.1, 1), tolerance = 1e-5)
+  # Smaller p-values also agree
   expect_equal(rp$repeated_p(0.05, 0.1, 1), gs$repeated_p(0.05, 0.1, 1), tolerance = 1e-5)
   # Boundaries at levels 0 and 1 are trivial
   expect_equal(rp$nominal_bounds(0, info[1, ], 1), c(0, 0, 0))
@@ -532,4 +533,116 @@ test_that("print method labels rpact designs and shows the spending time", {
   ))
   expect_true(any(grepl("asHSD \\(Hwang-Shih-DeCani, gammaA = -2\\)", out_hsd)))
   expect_true(any(grepl("Boundary table", out_hsd)))
+})
+
+test_that("native rpact p-values preserve legacy graphical results", {
+  skip_if_not_installed("rpact")
+  # Captured from the original critical-value inversion before replacing it.
+  cases <- dget(test_path("fixtures", "rpact-legacy.R"))
+  for (case in cases) {
+    # HP's old inversion raised its lower bracket past attainable roots;
+    # WToptimum used to re-optimize its shape at every candidate alpha.
+    # Both corrections are checked separately below.
+    if (case$args$typeOfDesign %in% c("HP", "WToptimum")) next
+    actual <- do.call(graph_test_shortcut_rpact, case$args)
+    expect_rpact_equivalent(actual, case, tol = 1e-5)
+  }
+})
+
+test_that("general estimates reconstruct cumulative Z statistics", {
+  skip_if_not_installed("rpact")
+  information <- c(.2, .6, 1)
+  z <- c(2, -0.4, 1.3)
+  increments <- diff(c(0, information))
+  data <- rpact::getDataset(
+    est = diff(c(0, z * sqrt(information))) / increments,
+    se = 1 / sqrt(increments)
+  )
+  design <- rpact::getDesignGroupSequential(
+    kMax = 3, informationRates = information, sided = 1
+  )
+  results <- rpact::getStageResults(design, data, thetaH0 = 0)
+  expect_equal(results$overallTestStatistics, z, tolerance = 1e-12)
+})
+
+test_that("rpact expert options are restored on success and error", {
+  skip_if_not_installed("rpact")
+  before <- options(rpact.validate.alpha.enabled = TRUE,
+                    rpact.repeated.pvalues.cap.enabled = TRUE)
+  on.exit(options(before))
+  engine <- gsd_engine_rpact(.025, matrix(c(.5, 1), 1), list("asOF"),
+                            list(NULL), list(NULL), list(NULL), NULL)
+  expect_silent(engine$repeated_p(c(.1, .2), c(.5, 1), 1))
+  expect_true(getOption("rpact.validate.alpha.enabled"))
+  expect_true(getOption("rpact.repeated.pvalues.cap.enabled"))
+  expect_error(engine$repeated_p(c(NA_real_, .2), c(.5, 1), 1))
+  expect_true(getOption("rpact.validate.alpha.enabled"))
+  expect_true(getOption("rpact.repeated.pvalues.cap.enabled"))
+})
+
+test_that("uncapped native p-values invert signed boundaries", {
+  skip_if_not_installed("rpact")
+  engine <- gsd_engine_rpact(.025, matrix(c(.1, .5, 1), 1), list("asOF"),
+                            list(NULL), list(NULL), list(NULL), NULL)
+  value <- engine$repeated_p(.5, .1, 1)
+  expect_gt(value, .7)
+  expect_lt(value, 1)
+  expect_equal(engine$nominal_bounds(value, .1, 1), .5, tolerance = 1e-5)
+})
+
+test_that("HP native search finds small attainable final roots", {
+  skip_if_not_installed("rpact")
+  engine <- gsd_engine_rpact(.025, matrix(c(.5, 1), 1), list("HP"),
+                            list(NULL), list(NULL), list(NULL), NULL)
+  value <- engine$repeated_p(c(.0062, .0002), c(.5, 1), 1)
+  expect_lt(value, .002)
+  expect_lt(abs(engine$nominal_bounds(value, c(.5, 1), 1)[2] - .0002), 2e-6)
+})
+
+test_that("WToptimum uses the original optimized shape at every level", {
+  skip_if_not_installed("rpact")
+  info <- matrix(c(.5, 1), 1)
+  shape <- rpact::getDesignGroupSequential(
+    kMax = 2, informationRates = info[1, ], alpha = .025,
+    sided = 1, typeOfDesign = "WToptimum"
+  )$deltaWT
+  optimized <- gsd_engine_rpact(.025, info, list("WToptimum"),
+                               list(NULL), list(NULL), list(NULL), NULL)
+  fixed <- gsd_engine_rpact(.025, info, list("WT"),
+                           list(NULL), list(shape), list(NULL), NULL)
+  expect_equal(optimized$repeated_p(c(.01, .003), info[1, ], 1),
+               fixed$repeated_p(c(.01, .003), info[1, ], 1), tolerance = 1e-6)
+  for (level in c(.005, .025, .1)) {
+    expect_equal(optimized$nominal_bounds(level, info[1, ], 1),
+                 fixed$nominal_bounds(level, info[1, ], 1), tolerance = 1e-10)
+  }
+})
+
+test_that("noEarlyEfficacy accepts infinite interim boundaries", {
+  skip_if_not_installed("rpact")
+  engine <- gsd_engine_rpact(.025, matrix(c(.5, 1), 1),
+                            list("noEarlyEfficacy"), list(NULL),
+                            list(NULL), list(NULL), NULL)
+  expect_equal(engine$nominal_bounds(.025, c(.5, 1), 1), c(0, .025),
+               tolerance = 1e-6)
+  expect_gt(engine$repeated_p(.01, .5, 1), 1 - 1e-5)
+  expect_lt(abs(engine$repeated_p(c(.01, .003), c(.5, 1), 1) - .003), 2e-6)
+})
+
+test_that("an environment variable cannot silently re-enable the p-value cap", {
+  skip_if_not_installed("rpact")
+  old <- Sys.getenv("RPACT_REPEATED_PVALUES_CAP_ENABLED", unset = NA_character_)
+  on.exit(if (is.na(old)) Sys.unsetenv("RPACT_REPEATED_PVALUES_CAP_ENABLED") else
+    Sys.setenv(RPACT_REPEATED_PVALUES_CAP_ENABLED = old))
+  Sys.setenv(RPACT_REPEATED_PVALUES_CAP_ENABLED = "TRUE")
+  expect_error(gsd_check_rpact(), "requires uncapped repeated p-values")
+})
+
+test_that("repeated p-values depend only on the current cumulative statistic", {
+  skip_if_not_installed("rpact")
+  info <- c(.4, 1)
+  engine <- gsd_engine_rpact(.025, matrix(info, 1), list("asOF"),
+                            list(NULL), list(NULL), list(NULL), NULL)
+  expect_equal(engine$repeated_p(c(.9, .01), info, 1),
+               engine$repeated_p(c(.001, .01), info, 1), tolerance = 1e-10)
 })

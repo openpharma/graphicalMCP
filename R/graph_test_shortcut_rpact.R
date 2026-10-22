@@ -13,7 +13,7 @@
 #' function for a description of the procedure and of `look_back`.
 #'
 #' rpact is an optional dependency: the function stops with an informative
-#' error if it is not installed.
+#' error if a sufficiently recent version is not installed (see Details).
 #'
 #' @inheritParams graph_test_shortcut_gsd
 #' @inheritParams graph_test_shortcut
@@ -59,7 +59,10 @@
 #' This function performs the same graphical group sequential procedure as
 #' [graph_test_shortcut_gsd()] (Maurer and Bretz, 2013), but delegates all
 #' group sequential calculations to rpact, used only through its public
-#' function [rpact::getDesignGroupSequential()].
+#' functions [rpact::getDesignGroupSequential()], [rpact::getDataset()],
+#' [rpact::getStageResults()], and [rpact::getRepeatedPValues()].
+#' It requires rpact with general estimates datasets and the expert options
+#' described below (development version 4.5.0.9323 or later).
 #'
 #' * **Analysis structure.** For hypothesis \eqn{j} with information
 #'   fractions \eqn{t_j} at its \eqn{K_j} analyses, a one-sided design
@@ -73,12 +76,11 @@
 #'   `stageLevels[k]` (rpact's nominal one-sided significance level).
 #' * **Repeated p-values.** The repeated p-value at analysis \eqn{k} is the
 #'   smallest level at which the boundary at analysis \eqn{k} is crossed. It
-#'   is found by solving \eqn{c_k(\alpha) = Z_k} on the design's
-#'   `criticalValues` over the level. This is the algorithm that rpact's
-#'   [rpact::getRepeatedPValues()] uses internally, applied without its
-#'   ceiling of 0.5 and to every design type. rpact cannot compute designs at
-#'   levels above roughly 0.65; a boundary that is not crossed at the highest
-#'   level rpact can compute is reported as a repeated p-value of 1.
+#'   is calculated by [rpact::getRepeatedPValues()] from a dataset of
+#'   stage-wise estimates and standard errors that reproduces the cumulative
+#'   Z-statistics and information fractions. The search extends above 0.5.
+#'   Values near 1 may be numerical endpoints when no boundary crossing is
+#'   attainable below 1.
 #'   Sequential p-values (`look_back = TRUE`) are the running minimum of the
 #'   repeated p-values.
 #' * **Spending time and over-running information.** rpact evaluates the
@@ -95,16 +97,28 @@
 #'   — so their final information fraction must be exactly 1 (rpact enforces
 #'   this, as does [spending_wt()]): unlike the alpha spending designs, they
 #'   cannot be given only the analyses conducted so far.
+#'   For `"asOF"` with separate spending time (including over-running
+#'   information), spending proportions vary with alpha. This case retains
+#'   boundary inversion, rebuilding the spending at every candidate level;
+#'   native `"asUser"` inversion would hold the proportions fixed.
+#' * **Optimized boundaries.** `"WToptimum"` is optimized once at the
+#'   original `alpha`. Its `deltaWT` is then held fixed for both repeated
+#'   p-values and allocated-level boundaries, matching rpact's nested family.
+#'   This differs from the previous adapter, which re-optimized at each level.
+#' * **Haybittle-Peto boundaries.** Native repeated p-values can be smaller
+#'   than those of the previous adapter, whose lower search bracket could
+#'   skip small attainable roots.
 #' * **Single-analysis hypotheses.** A hypothesis with one analysis below
 #'   full information uses the first stage of a two-stage design ending at 1,
 #'   so that its boundary is the cumulative spending at that information
 #'   fraction; at full information it is a fixed-sample test.
 #'
-#' rpact warns when a level lies outside its validated range of
-#' \eqn{[10^{-6}, 0.5)}; the graphical procedure evaluates such levels
-#' routinely (for small hypothesis weights, and when searching for repeated
-#' p-values), so these warnings are suppressed. rpact's integration is
-#' deterministic, so results are reproducible without setting a seed. The
+#' The expert options `rpact.validate.alpha.enabled = FALSE` and
+#' `rpact.repeated.pvalues.cap.enabled = FALSE` are set locally, with the
+#' caller's options restored on exit. Environment variables take precedence
+#' in rpact; `RPACT_REPEATED_PVALUES_CAP_ENABLED` must be unset or `FALSE`.
+#' This use does not extend rpact's validated alpha range. Its integration
+#' is deterministic, so results are reproducible without setting a seed. The
 #' built-in spending functions correspond to `typeOfDesign = "asOF"`
 #' ([spending_of()]), `"asP"` ([spending_pocock()]), `"asHSD"` with
 #' `gammaA = gamma` ([spending_hsd()]), `"asKD"` with `gammaA = 1`
@@ -338,6 +352,16 @@ gsd_check_rpact <- function() {
       "Install it with install.packages(\"rpact\").",
       call. = FALSE
     )
+  }
+  if (utils::packageVersion("rpact") < "4.5.0.9323") {
+    stop("graph_test_shortcut_rpact() requires rpact >= 4.5.0.9323 ",
+         "with general estimates datasets and uncapped repeated p-values.",
+         call. = FALSE)
+  }
+  if (isTRUE(as.logical(Sys.getenv("RPACT_REPEATED_PVALUES_CAP_ENABLED", "FALSE")))) {
+    stop("Unset RPACT_REPEATED_PVALUES_CAP_ENABLED or set it to FALSE: ",
+         "graph_test_shortcut_rpact() requires uncapped repeated p-values.",
+         call. = FALSE)
   }
   invisible(TRUE)
 }
