@@ -19,10 +19,10 @@ set of analyses.}
 The default is \code{0.5} (Pocock). Use \code{0} for O'Brien-Fleming.}
 
 \item{maxpts}{An integer scalar for the maximum number of function values
-for \code{\link[mvtnorm:algorithms]{mvtnorm::GenzBretz()}}. The default is 25000.}
+for \code{\link[mvtnorm:GenzBretz]{mvtnorm::GenzBretz()}}. The default is 25000.}
 
 \item{abseps}{A numeric scalar for the absolute error tolerance for
-\code{\link[mvtnorm:algorithms]{mvtnorm::GenzBretz()}}. The default is 1e-6.}
+\code{\link[mvtnorm:GenzBretz]{mvtnorm::GenzBretz()}}. The default is 1e-6.}
 }
 \value{
 A numeric vector the same length as \code{info_frac} of cumulative alpha

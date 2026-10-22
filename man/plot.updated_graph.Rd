@@ -10,7 +10,7 @@
 \item{x}{An object of class \code{updated_graph} to plot.}
 
 \item{...}{
-  Arguments passed on to \code{\link[=plot.initial_graph]{plot.initial_graph}}
+  Arguments passed on to \code{\link{plot.initial_graph}}
   \describe{
     \item{\code{v_palette}}{A character vector of length two specifying the colors for
 retained and deleted hypotheses. More extensive color customization must be

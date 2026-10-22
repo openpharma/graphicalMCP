@@ -53,7 +53,7 @@ the procedure to be applied up to an interim analysis.}
 \item{sfu}{Upper spending function(s) in gsDesign's convention. Can be:
 \itemize{
 \item A single spending function such as \code{\link[gsDesign:sfLDOF]{gsDesign::sfLDOF()}} (the default),
-\code{\link[gsDesign:sfLDOF]{gsDesign::sfLDPocock()}}, \code{\link[gsDesign:sfHSD]{gsDesign::sfHSD()}}, or
+\code{\link[gsDesign:sfLDPocock]{gsDesign::sfLDPocock()}}, \code{\link[gsDesign:sfHSD]{gsDesign::sfHSD()}}, or
 \code{\link[gsDesign:sfPower]{gsDesign::sfPower()}}, or one of the strings \code{"OF"}, \code{"Pocock"}, \code{"WT"}
 for the classical O'Brien-Fleming, Pocock, and Wang-Tsiatis boundaries;
 applied to all hypotheses.
@@ -61,7 +61,7 @@ applied to all hypotheses.
 }
 
 A spending function must be evaluable at any leading subset of a
-hypothesis's spending times, as \code{\link[gsDesign:sequentiaPValue]{gsDesign::sequentialPValue()}} requires.
+hypothesis's spending times, as \code{\link[gsDesign:sequentialPValue]{gsDesign::sequentialPValue()}} requires.
 This excludes \code{\link[gsDesign:sfPoints]{gsDesign::sfPoints()}}; the same spending can be specified
 with \code{\link[gsDesign:sfLinear]{gsDesign::sfLinear()}}. User-defined spending functions follow
 gsDesign's template \code{\link[gsDesign:spendingFunction]{gsDesign::spendingFunction()}}: they take
@@ -75,7 +75,7 @@ hypothesis, with \code{NULL} entries using gsDesign's default. For example,
 \code{sfupar = -4} with \code{sfu = gsDesign::sfHSD}, \code{sfupar = 1} with
 \code{sfu = gsDesign::sfPower} for linear spending, or \code{sfupar = 0.25} with
 \code{sfu = "WT"}. A parameter that is itself a list, as for
-\code{\link[gsDesign:sfSpecial]{gsDesign::sfTruncated()}}, must be wrapped in a list of \eqn{m} copies so
+\code{\link[gsDesign:sfTruncated]{gsDesign::sfTruncated()}}, must be wrapped in a list of \eqn{m} copies so
 that it is not read as one parameter per hypothesis.}
 
 \item{usTime}{Optional spending time, passed to gsDesign as \code{usTime}. Can
@@ -141,7 +141,7 @@ This function performs the same graphical group sequential procedure as
 \code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} (Maurer and Bretz, 2013), but delegates all
 group sequential calculations to the gsDesign package, used only through
 its public functions \code{\link[gsDesign:gsDesign]{gsDesign::gsDesign()}},
-\code{\link[gsDesign:sequentiaPValue]{gsDesign::sequentialPValue()}}, and the \verb{sf*} spending functions.
+\code{\link[gsDesign:sequentialPValue]{gsDesign::sequentialPValue()}}, and the \verb{sf*} spending functions.
 
 The two layers meet through a single interface: for each hypothesis at each
 analysis, gsDesign supplies a \emph{repeated p-value} and a \emph{nominal p-value
@@ -167,7 +167,7 @@ re-evaluated at whatever level the graph currently allocates to the
 hypothesis (its weight times \code{alpha}).
 \item \strong{Repeated p-values.} The repeated p-value at analysis \eqn{k} is the
 smallest level at which the boundary at analysis \eqn{k} is crossed. It is
-obtained from \code{\link[gsDesign:sequentiaPValue]{gsDesign::sequentialPValue()}} after setting the
+obtained from \code{\link[gsDesign:sequentialPValue]{gsDesign::sequentialPValue()}} after setting the
 Z-statistics of analyses \eqn{1, \ldots, k-1} to \eqn{-20} (gsDesign's
 own value for "no lower bound"), so that only analysis \eqn{k} can trigger
 a rejection; this is exact, not an approximation. The spending time is
@@ -259,6 +259,6 @@ Anderson, K. M. gsDesign: Group Sequential Design. R package.
 \seealso{
 \code{\link[=graph_test_shortcut_gsd]{graph_test_shortcut_gsd()}} for the same procedure with the built-in
 spending functions, \code{\link[=graph_test_shortcut]{graph_test_shortcut()}} for the fixed-sample
-procedure, \code{\link[gsDesign:gsDesign]{gsDesign::gsDesign()}} and \code{\link[gsDesign:sequentiaPValue]{gsDesign::sequentialPValue()}} for
+procedure, \code{\link[gsDesign:gsDesign]{gsDesign::gsDesign()}} and \code{\link[gsDesign:sequentialPValue]{gsDesign::sequentialPValue()}} for
 the gsDesign functions used.
 }

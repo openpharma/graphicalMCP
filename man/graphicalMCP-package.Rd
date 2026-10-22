@@ -24,6 +24,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Dong Xi \email{dong.xi1@gilead.com}
   \item Ethan Brockmann \email{ethan.brockmann@atorusresearch.com}
 }
 

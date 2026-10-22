@@ -53,28 +53,31 @@
 #'   Xi, D., Glimm, E., Maurer, W., and Bretz, F. (2017). A unified framework
 #'   for weighted parametric multiple test procedures.
 #'   \emph{Biometrical Journal}, 59(5), 918-931.
-c_value_function <- function(x,
-                             hypotheses,
-                             test_corr,
-                             alpha,
-                             maxpts = 25000,
-                             abseps = 1e-6,
-                             releps = 0) {
+c_value_function <- function(
+  x,
+  hypotheses,
+  test_corr,
+  alpha,
+  maxpts = 25000,
+  abseps = 1e-6,
+  releps = 0
+) {
   hyps_nonzero <- which(hypotheses > 0)
   z <- stats::qnorm(x * hypotheses[hyps_nonzero] * alpha, lower.tail = FALSE)
   y <- ifelse(
     length(z) == 1,
     stats::pnorm(z, lower.tail = FALSE)[[1]],
-    1 - mvtnorm::pmvnorm(
-      lower = -Inf,
-      upper = z,
-      corr = test_corr[hyps_nonzero, hyps_nonzero, drop = FALSE],
-      algorithm = mvtnorm::GenzBretz(
-        maxpts = maxpts,
-        abseps = abseps,
-        releps = releps
-      )
-    )[[1]]
+    1 -
+      mvtnorm::pmvnorm(
+        lower = -Inf,
+        upper = z,
+        corr = test_corr[hyps_nonzero, hyps_nonzero, drop = FALSE],
+        algorithm = mvtnorm::GenzBretz(
+          maxpts = maxpts,
+          abseps = abseps,
+          releps = releps
+        )
+      )[[1]]
   )
 
   y - alpha * sum(hypotheses)
@@ -82,12 +85,14 @@ c_value_function <- function(x,
 
 #' @rdname adjust_weights_parametric_util
 #' @keywords internal
-solve_c_parametric <- function(hypotheses,
-                               test_corr,
-                               alpha,
-                               maxpts = 25000,
-                               abseps = 1e-6,
-                               releps = 0) {
+solve_c_parametric <- function(
+  hypotheses,
+  test_corr,
+  alpha,
+  maxpts = 25000,
+  abseps = 1e-6,
+  releps = 0
+) {
   num_hyps <- seq_along(hypotheses)
   c_value <- ifelse(
     length(num_hyps) == 1 || sum(hypotheses) == 0,
@@ -113,19 +118,22 @@ solve_c_parametric <- function(hypotheses,
   round(c_value, 10)
 }
 
-#' @rdname adjust_weights_parametric_util
-#' @keywords internal
 #' This function only allows `test_corr` to be a single correlation matrix. This
 #' is different from `adjust_weights_parametric()` which allows a list of
 #' correlation matrices.
-adjust_weights_parametric_util <- function(matrix_weights,
-                                           matrix_intersections,
-                                           test_corr,
-                                           alpha,
-                                           test_groups,
-                                           maxpts = 25000,
-                                           abseps = 1e-6,
-                                           releps = 0) {
+#'
+#' @rdname adjust_weights_parametric_util
+#' @keywords internal
+adjust_weights_parametric_util <- function(
+  matrix_weights,
+  matrix_intersections,
+  test_corr,
+  alpha,
+  test_groups,
+  maxpts = 25000,
+  abseps = 1e-6,
+  releps = 0
+) {
   c_values <- matrix(
     nrow = nrow(matrix_weights),
     ncol = ncol(matrix_weights),

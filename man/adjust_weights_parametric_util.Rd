@@ -99,23 +99,4 @@ for weighted parametric multiple test procedures.
 \code{\link[=adjust_weights_parametric]{adjust_weights_parametric()}} for adjusted hypothesis weights using
 parametric tests.
 }
-\keyword{This}
-\keyword{`adjust_weights_parametric()`}
-\keyword{`test_corr`}
-\keyword{a}
-\keyword{allows}
-\keyword{be}
-\keyword{correlation}
-\keyword{different}
-\keyword{from}
-\keyword{function}
 \keyword{internal}
-\keyword{is}
-\keyword{list}
-\keyword{matrices.}
-\keyword{matrix.}
-\keyword{of}
-\keyword{only}
-\keyword{single}
-\keyword{to}
-\keyword{which}
