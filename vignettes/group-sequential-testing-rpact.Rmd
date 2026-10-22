@@ -4,6 +4,7 @@ output:
   rmarkdown::html_vignette:
     number_sections: true
     toc: true
+    embed_resources: true
 vignette: >
   %\VignetteIndexEntry{Graphical Approaches in Group Sequential Design: Combining graphicalMCP and rpact}
   %\VignetteEngine{knitr::rmarkdown}
