@@ -192,7 +192,7 @@ and `rpact.repeated.pvalues.cap.enabled = FALSE` suppress validated-alpha
 warnings and extend the search above 0.5, respectively. The adapter sets
 these options locally and restores the caller's settings on exit. This
 does not extend rpact's validated alpha range. Environment variables take
-precedence in rpact, so `RPACT_REPEATED_PVALUES_CAP_ENABLED` must be unset
+precedence in rpact, so e.g. `RPACT_REPEATED_PVALUES_CAP_ENABLED` must be unset
 or `FALSE`.
 
 The dataset requirement is handled by `getDataset(est = ..., se = ...)`.
