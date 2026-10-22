@@ -164,24 +164,18 @@ Values near 1 may be numerical endpoints when no boundary crossing is
 attainable below 1.
 Sequential p-values (\code{look_back = TRUE}) are the running minimum of the
 repeated p-values.
-\item \strong{Spending time and over-running information.} rpact evaluates the
-spending function at the design's information rates and does not accept
-rates above 1. When \code{spending_time} differs from \code{info_frac}, or when
-\code{info_frac} exceeds 1 at the final analysis, the design is built in two
-steps with rpact's \code{"asUser"} type: the cumulative spending is taken from
-a design at the spending time and passed as \code{userAlphaSpending} to a
-design at the information fractions, divided by their maximum when they
-exceed 1 (the correlation between analyses depends only on their
-ratios). The classical boundary families are defined by their boundary
+\item \strong{Spending time and over-running information.} For alpha-spending
+designs, \code{spending_time} is passed to rpact as \code{spendingTime}, separately
+from the information rates that determine the correlation structure.
+Information fractions above 1 are divided by their maximum because
+rpact requires rates at most 1 and their ratios determine the
+correlations; spending time remains capped at 1. The classical boundary
+families are defined by their boundary
 shape over the whole planned schedule — their constant is calibrated so
 that the crossing probability over all planned analyses equals the level
 — so their final information fraction must be exactly 1 (rpact enforces
 this, as does \code{\link[=spending_wt]{spending_wt()}}): unlike the alpha spending designs, they
 cannot be given only the analyses conducted so far.
-For \code{"asOF"} with separate spending time (including over-running
-information), spending proportions vary with alpha. This case retains
-boundary inversion, rebuilding the spending at every candidate level;
-native \code{"asUser"} inversion would hold the proportions fixed.
 \item \strong{Optimized boundaries.} \code{"WToptimum"} is optimized once at the
 original \code{alpha}. Its \code{deltaWT} is then held fixed for both repeated
 p-values and allocated-level boundaries, matching rpact's nested family.

@@ -83,24 +83,18 @@
 #'   attainable below 1.
 #'   Sequential p-values (`look_back = TRUE`) are the running minimum of the
 #'   repeated p-values.
-#' * **Spending time and over-running information.** rpact evaluates the
-#'   spending function at the design's information rates and does not accept
-#'   rates above 1. When `spending_time` differs from `info_frac`, or when
-#'   `info_frac` exceeds 1 at the final analysis, the design is built in two
-#'   steps with rpact's `"asUser"` type: the cumulative spending is taken from
-#'   a design at the spending time and passed as `userAlphaSpending` to a
-#'   design at the information fractions, divided by their maximum when they
-#'   exceed 1 (the correlation between analyses depends only on their
-#'   ratios). The classical boundary families are defined by their boundary
+#' * **Spending time and over-running information.** For alpha-spending
+#'   designs, `spending_time` is passed to rpact as `spendingTime`, separately
+#'   from the information rates that determine the correlation structure.
+#'   Information fractions above 1 are divided by their maximum because
+#'   rpact requires rates at most 1 and their ratios determine the
+#'   correlations; spending time remains capped at 1. The classical boundary
+#'   families are defined by their boundary
 #'   shape over the whole planned schedule — their constant is calibrated so
 #'   that the crossing probability over all planned analyses equals the level
 #'   — so their final information fraction must be exactly 1 (rpact enforces
 #'   this, as does [spending_wt()]): unlike the alpha spending designs, they
 #'   cannot be given only the analyses conducted so far.
-#'   For `"asOF"` with separate spending time (including over-running
-#'   information), spending proportions vary with alpha. This case retains
-#'   boundary inversion, rebuilding the spending at every candidate level;
-#'   native `"asUser"` inversion would hold the proportions fixed.
 #' * **Optimized boundaries.** `"WToptimum"` is optimized once at the
 #'   original `alpha`. Its `deltaWT` is then held fixed for both repeated
 #'   p-values and allocated-level boundaries, matching rpact's nested family.

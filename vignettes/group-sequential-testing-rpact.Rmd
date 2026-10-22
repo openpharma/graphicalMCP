@@ -1006,30 +1006,23 @@ spending function. The two can differ when, for example, all-subjects
 hypotheses use all-subjects event counts for the correlation but subgroup
 event counts for spending.
 
-rpact evaluates the spending function at the design's information rates and
-has no separate spending time argument. `graph_test_shortcut_rpact()`
-provides one, `spending_time`, and realizes it with rpact's `"asUser"` design
-type in two steps: the cumulative spending is read from a design built at the
-spending time (its `alphaSpent`), and passed as `userAlphaSpending` to a
-design built at the information fractions. By default (`spending_time = NULL`),
-the spending time equals the information fraction (capped at 1) and a single
-design suffices. Otherwise, `spending_time` is either a vector with one value
-per analysis, applied to all hypotheses, or a matrix with the same dimensions
-and `NA` positions as `info_frac`, giving each hypothesis its own spending
-time. This plays the role of `spending_with_time()` in
+rpact accepts a `spendingTime` separately from `informationRates` for its
+alpha-spending designs. `graph_test_shortcut_rpact()` passes `spending_time`
+to that argument. By default (`spending_time = NULL`), the spending time equals
+the information fraction (capped at 1). Otherwise, `spending_time` is either a
+vector with one value per analysis, applied to all hypotheses, or a matrix
+with the same dimensions and `NA` positions as `info_frac`, giving each
+hypothesis its own spending time. This plays the role of `spending_with_time()` in
 `graph_test_shortcut_gsd()` and of `usTime` in
 `graph_test_shortcut_gsDesign()`. It applies to the alpha spending design
 types only: the classical boundary families have no spending function, and
 `"asUser"` already gives the spending directly.
 
-For `"asOF"`, the spending proportions depend on alpha. When spending time
-differs from information time (including over-running information), the
-adapter therefore retains boundary inversion and rebuilds the spending at
-every candidate alpha. Calling `getRepeatedPValues()` on one fixed `"asUser"`
-design would instead scale its spending proportionally and change the
-procedure. For `"asP"`, `"asHSD"`, and `"asKD"`, the spending is proportional,
-so native `getRepeatedPValues()` remains applicable with separate spending
-times.
+The spending time is retained in the rpact design. Consequently,
+`getRepeatedPValues()` re-evaluates the original spending function at the
+stored spending time for every candidate alpha. This is particularly relevant
+for `"asOF"`, whose spending proportions depend on alpha, and avoids replacing
+it with a proportionally scaled `"asUser"` design.
 
 Consider the oncology trial above. The all-subjects hypotheses ($H_2$ and
 $H_4$) use all-subjects event counts for their information fractions (which
@@ -1492,8 +1485,7 @@ calculations delegated to rpact. Key features include:
    Boundaries are the design's `stageLevels` at the level currently
    allocated to the hypothesis. Repeated p-values come directly from
    `getRepeatedPValues()` using general estimates datasets and locally
-   disabling the 0.5 cap, with boundary inversion retained for `"asOF"`
-   when spending and information times differ. rpact's integration is deterministic, so results are
+   disabling the 0.5 cap. rpact's integration is deterministic, so results are
    reproducible without setting a seed.
 
 2. **rpact's design specification**: Design types (`typeOfDesign`), their
@@ -1509,9 +1501,8 @@ calculations delegated to rpact. Key features include:
    same structure.
 
 4. **Spending time and monitoring**: `spending_time` separates the spending
-   time from the information fraction, realized through rpact's `"asUser"`
-   design, which also handles a final analysis whose information differs
-   from the plan.
+   time from the information fraction through rpact's native `spendingTime`
+   argument, including when final information differs from the plan.
 
 ## References
 

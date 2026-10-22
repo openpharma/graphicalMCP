@@ -47,9 +47,7 @@ schedule, \code{getDesignGroupSequential(kMax = K_j, informationRates, alpha, si
 \item Repeated p-values use \code{\link[rpact:getRepeatedPValues]{rpact::getRepeatedPValues()}} with a general
 estimates dataset reproducing the cumulative Z-statistics and information.
 The expert options disable alpha validation warnings and the 0.5 cap
-locally; the caller's options are restored on exit. For \code{asOF} with
-separate spending time, boundary inversion re-evaluates the nonlinear
-spending at every candidate alpha instead.
+locally; the caller's options are restored on exit.
 \item rpact evaluates the spending function at the design's information rates
 and does not accept rates above 1. A spending time that differs from the
 information fractions, or information fractions above 1 (over-running

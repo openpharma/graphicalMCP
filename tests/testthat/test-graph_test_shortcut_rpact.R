@@ -565,6 +565,42 @@ test_that("general estimates reconstruct cumulative Z statistics", {
   expect_equal(results$overallTestStatistics, z, tolerance = 1e-12)
 })
 
+test_that("separate spending time uses native rpact repeated p-values", {
+  skip_if_not_installed("rpact")
+  information <- c(.4, 1)
+  spending_time <- c(.25, 1)
+  p <- c(.03, .01)
+  engine <- gsd_engine_rpact(
+    .025, matrix(information, 1), list("asOF"), list(NULL),
+    list(NULL), list(NULL), matrix(spending_time, 1)
+  )
+
+  design <- rpact::getDesignGroupSequential(
+    kMax = 2, informationRates = information, spendingTime = spending_time,
+    alpha = .025, sided = 1, typeOfDesign = "asOF"
+  )
+  increments <- diff(c(0, information))
+  z <- stats::qnorm(p, lower.tail = FALSE)
+  data <- rpact::getDataset(
+    est = diff(c(0, z * sqrt(information))) / increments,
+    se = 1 / sqrt(increments)
+  )
+  results <- rpact::getStageResults(
+    design, data, thetaH0 = 0, directionUpper = TRUE
+  )
+  old_options <- options(
+    rpact.validate.alpha.enabled = FALSE,
+    rpact.repeated.pvalues.cap.enabled = FALSE
+  )
+  on.exit(options(old_options))
+
+  expect_equal(
+    engine$repeated_p(p, information, 1),
+    as.numeric(rpact::getRepeatedPValues(results))[2],
+    tolerance = 1e-12
+  )
+})
+
 test_that("rpact expert options are restored on success and error", {
   skip_if_not_installed("rpact")
   before <- options(rpact.validate.alpha.enabled = TRUE,

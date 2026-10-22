@@ -235,9 +235,7 @@ gsd_engine_gsDesign <- function(alpha, info_frac, sfu, sfupar, usTime) {
 #' * Repeated p-values use [rpact::getRepeatedPValues()] with a general
 #'   estimates dataset reproducing the cumulative Z-statistics and information.
 #'   The expert options disable alpha validation warnings and the 0.5 cap
-#'   locally; the caller's options are restored on exit. For `asOF` with
-#'   separate spending time, boundary inversion re-evaluates the nonlinear
-#'   spending at every candidate alpha instead.
+#'   locally; the caller's options are restored on exit.
 #' * rpact evaluates the spending function at the design's information rates
 #'   and does not accept rates above 1. A spending time that differs from the
 #'   information fractions, or information fractions above 1 (over-running
@@ -286,9 +284,6 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
     list(
       t = t_j, st = st_j, rates = rates, K = length(t_j), type = type,
       classical = is_classical, user = is_user,
-      # Spending at a time other than the information rates needs the
-      # "asUser" construction
-      separate = !is_classical && !is_user && !isTRUE(all.equal(st_j, rates)),
       # A single analysis at full information (or of a classical family) is
       # a fixed-sample test
       fixed = length(t_j) == 1 && (is_classical || t_j[1] >= 1)
@@ -342,18 +337,6 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
     }
   }
 
-  # Cumulative spending of hypothesis j at level `a` at its spending time
-  spend_at <- function(j, a) {
-    s <- sched[[j]]
-    if (s$K == 1) {
-      if (s$st[1] >= 1) {
-        return(a)
-      }
-      return(get_design(design_args(j, a, c(s$st[1], 1), s$type))$alphaSpent[1])
-    }
-    get_design(design_args(j, a, s$st, s$type))$alphaSpent
-  }
-
   # Signed and infinite critical values are valid (the latter disables an
   # early efficacy analysis). Only missing designs/values indicate failure.
   build_design <- function(j, a) {
@@ -361,14 +344,16 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
     d <- tryCatch(
       {
         rates <- pad(s$rates)
-        if (s$user || s$separate) {
-          spent <- if (s$user) userAlphaSpending[[j]] * a / alpha else spend_at(j, a)
+        if (s$user) {
+          spent <- userAlphaSpending[[j]] * a / alpha
           if (length(spent) < length(rates)) spent <- c(spent, a)
           args <- design_args(j, a, rates, "asUser")
           args$userAlphaSpending <- pmin(spent, a)
           get_design(args)
         } else {
-          get_design(design_args(j, a, rates, s$type))
+          args <- design_args(j, a, rates, s$type)
+          if (!s$classical) args$spendingTime <- pad(s$st)
+          get_design(args)
         }
       },
       error = function(e) NULL
@@ -392,31 +377,6 @@ gsd_engine_rpact <- function(alpha, info_frac, typeOfDesign, gammaA, deltaWT,
         rpact.repeated.pvalues.cap.enabled = FALSE
       )
       on.exit(options(old_options), add = TRUE)
-      # asOF spending is nonlinear in alpha. With separate spending times,
-      # asUser's proportional inversion would change the testing family.
-      # Re-evaluate the spending at every candidate level in this one case.
-      if (s$separate && identical(s$type, "asOF")) {
-        z <- stats::qnorm(p[k], lower.tail = FALSE)
-        exceed <- function(a) {
-          design <- build_design(j, a)
-          if (is.null(design)) return(NA_real_)
-          z - design$criticalValues[k]
-        }
-        lower <- 1e-6
-        upper <- 1 - 1e-6
-        upper_value <- exceed(upper)
-        if (is.na(upper_value)) stop("rpact could not compute the upper search boundary.")
-        if (upper_value <= 0) return(1)
-        # Very small spending can underflow in rpact's asUser construction.
-        lower_value <- exceed(lower)
-        while (is.na(lower_value) && lower < upper / 2) {
-          lower <- lower * 2
-          lower_value <- exceed(lower)
-        }
-        if (is.na(lower_value)) stop("rpact could not compute the lower search boundary.")
-        if (lower_value >= 0) return(lower)
-        return(stats::uniroot(exceed, c(lower, upper), tol = 1e-8)$root)
-      }
       d <- build_design(j, alpha)
       if (is.null(d)) stop("rpact could not compute the group sequential design.")
       # DatasetGeneral takes independent stage increments, whereas p contains
