@@ -32,6 +32,12 @@
 #'   gsDesign's template [gsDesign::spendingFunction()]: they take
 #'   `(alpha, t, param)` and return a `spendfn` object whose `spend` element
 #'   is the cumulative alpha spent at `t`.
+#'
+#'   The classical families are defined by their boundary shape over the
+#'   whole planned schedule and can only be evaluated on the complete
+#'   schedule: a hypothesis using one must have a final information fraction
+#'   of exactly 1 (see Details). For interim analyses use a spending
+#'   function, such as [gsDesign::sfLDOF()] or [gsDesign::sfLDPocock()].
 #' @param sfupar Parameter(s) of the spending function(s), passed to gsDesign
 #'   as `sfupar`. A non-list value (including `NULL`, gsDesign's default) is
 #'   applied to all hypotheses; a list of \eqn{m} values gives one per
@@ -100,7 +106,17 @@
 #'   classical boundary families (`"OF"`, `"Pocock"`, `"WT"`), which gsDesign
 #'   represents as boundary shapes rather than spending functions, the
 #'   repeated p-value is instead found by solving \eqn{b_k(\alpha) = Z_k}
-#'   directly on the design's upper boundary. Sequential p-values
+#'   directly on the upper boundary of the design at level \eqn{\alpha}.
+#'   gsDesign calibrates such a design on the analyses it is given, so these
+#'   families require the complete planned schedule (final information
+#'   fraction 1): given only the analyses conducted so far, gsDesign would
+#'   treat the last of them as the final analysis and spend all of
+#'   \eqn{\alpha} by then, which makes every interim boundary too liberal.
+#'   Spending functions do not have this problem, because their boundaries at
+#'   analyses \eqn{1, \ldots, k} depend only on the spending at
+#'   \eqn{t_1, \ldots, t_k}; they are therefore the choice for interim
+#'   analyses, with [gsDesign::sfLDOF()] and [gsDesign::sfLDPocock()] as the
+#'   usual substitutes for the classical shapes. Sequential p-values
 #'   (`look_back = TRUE`) are the running minimum of the repeated p-values.
 #' * **Nominal boundaries.** For `test_values` and `boundary_table`, the
 #'   boundary at analysis \eqn{k} for an allocated level \eqn{w_j \alpha} is
@@ -380,6 +396,25 @@ gsd_input_val_gsDesign <- function(sfu, sfupar, usTime, info_frac, num_hyps) {
       "specify the same spending with gsDesign::sfLinear() instead.",
       call. = FALSE
     )
+  }
+
+  # gsDesign calibrates the classical boundary families on the analyses it is
+  # given, so they can only be evaluated on the complete planned schedule:
+  # given the analyses conducted so far, it would treat the last of them as
+  # the final analysis and spend all of alpha by then
+  for (j in seq_len(num_hyps)) {
+    if (!is.character(sfu[[j]])) next
+    t_j <- info_frac[j, !is.na(info_frac[j, ])]
+    if (length(t_j) > 1 && !isTRUE(all.equal(t_j[length(t_j)], 1))) {
+      stop(
+        "gsDesign calibrates the classical boundary families on the analyses ",
+        "supplied, so the final information fraction must be exactly 1 for \"",
+        sfu[[j]], "\" (hypothesis ", j, "): supply the complete planned ",
+        "schedule, or use a spending function such as gsDesign::sfLDOF for ",
+        "interim analyses.",
+        call. = FALSE
+      )
+    }
   }
 
   if (!is.null(usTime)) {

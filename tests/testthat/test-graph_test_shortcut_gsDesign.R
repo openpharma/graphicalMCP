@@ -452,6 +452,83 @@ test_that("usTime is ignored with a warning for classical boundary families", {
   expect_identical(with_ust$outputs$repeated_p, without_ust$outputs$repeated_p)
 })
 
+test_that("classical boundary families require the complete planned schedule", {
+  skip_if_not_installed("gsDesign")
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  p <- rbind(H1 = c(0.2, 0.0003), H2 = c(0.5, 0.4))
+
+  # Second of three planned analyses: a classical family cannot be evaluated
+  expect_error(
+    graph_test_shortcut_gsDesign(
+      g, p,
+      alpha = 0.025, info_frac = c(1 / 3, 2 / 3),
+      sfu = "WT", sfupar = 0.25
+    ),
+    "complete planned schedule"
+  )
+  # The error names the family and the hypothesis
+  expect_error(
+    graph_test_shortcut_gsDesign(
+      g, p,
+      alpha = 0.025, info_frac = c(1 / 3, 2 / 3),
+      sfu = list(gsDesign::sfLDOF, "OF")
+    ),
+    "\"OF\" \\(hypothesis 2\\)"
+  )
+  # A spending function at the same interim is fine
+  interim <- graph_test_shortcut_gsDesign(
+    g, p,
+    alpha = 0.025, info_frac = c(1 / 3, 2 / 3), sfu = gsDesign::sfLDOF
+  )
+  expect_s3_class(interim, "gsd_graph_report")
+  # Per hypothesis: only the hypothesis using a classical family needs its
+  # complete schedule
+  p_na <- rbind(H1 = c(0.2, 0.0003, 0.001), H2 = c(0.5, 0.4, NA))
+  if_na <- rbind(H1 = c(1 / 3, 2 / 3, 1), H2 = c(0.5, 0.8, NA))
+  mixed <- graph_test_shortcut_gsDesign(
+    g, p_na,
+    alpha = 0.025, info_frac = if_na,
+    sfu = list("WT", gsDesign::sfLDOF), sfupar = list(0.25, NULL)
+  )
+  expect_s3_class(mixed, "gsd_graph_report")
+})
+
+test_that("classical repeated p-values come from the complete planned design", {
+  skip_if_not_installed("gsDesign")
+  g <- graph_create(c(0.5, 0.5), rbind(c(0, 1), c(1, 0)))
+  plan <- c(1 / 3, 2 / 3, 1)
+  p <- rbind(H1 = c(0.2, 0.0003, 0.1), H2 = c(0.5, 0.4, 0.3))
+
+  result <- graph_test_shortcut_gsDesign(
+    g, p,
+    alpha = 0.025, info_frac = plan, sfu = "WT", sfupar = 0.25
+  )
+
+  # Reference: the smallest level at which the Wang-Tsiatis design over the
+  # planned schedule is crossed at analysis 2
+  z2 <- stats::qnorm(1 - p["H1", 2])
+  wt_bound2 <- function(a, n_i) {
+    gsDesign::gsDesign(
+      k = length(n_i), test.type = 1, alpha = a, beta = (1 - a) / 2,
+      sfu = "WT", sfupar = 0.25, n.I = n_i, maxn.IPlan = 1
+    )$upper$bound[2]
+  }
+  reference <- stats::uniroot(
+    function(a) wt_bound2(a, plan) - z2, c(1e-6, 0.4),
+    tol = 1e-10
+  )$root
+  expect_lt(abs(result$outputs$repeated_p["H1", 2] - reference), 1e-6)
+
+  # Calibrating on the first two analyses alone, as gsDesign does when given
+  # only those, would spend all of alpha by analysis 2 and give a much smaller
+  # repeated p-value
+  truncated <- stats::uniroot(
+    function(a) wt_bound2(a, plan[1:2]) - z2, c(1e-6, 0.4),
+    tol = 1e-10
+  )$root
+  expect_gt(result$outputs$repeated_p["H1", 2], 3 * truncated)
+})
+
 # Input handling --------------------------------------------------------------
 
 test_that("sfupar given as a single non-list value applies to all hypotheses", {

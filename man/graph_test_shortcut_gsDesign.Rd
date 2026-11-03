@@ -66,7 +66,13 @@ This excludes \code{\link[gsDesign:sfPoints]{gsDesign::sfPoints()}}; the same sp
 with \code{\link[gsDesign:sfLinear]{gsDesign::sfLinear()}}. User-defined spending functions follow
 gsDesign's template \code{\link[gsDesign:spendingFunction]{gsDesign::spendingFunction()}}: they take
 \verb{(alpha, t, param)} and return a \code{spendfn} object whose \code{spend} element
-is the cumulative alpha spent at \code{t}.}
+is the cumulative alpha spent at \code{t}.
+
+The classical families are defined by their boundary shape over the
+whole planned schedule and can only be evaluated on the complete
+schedule: a hypothesis using one must have a final information fraction
+of exactly 1 (see Details). For interim analyses use a spending
+function, such as \code{\link[gsDesign:sfLDOF]{gsDesign::sfLDOF()}} or \code{\link[gsDesign:sfLDOF]{gsDesign::sfLDPocock()}}.}
 
 \item{sfupar}{Parameter(s) of the spending function(s), passed to gsDesign
 as \code{sfupar}. A non-list value (including \code{NULL}, gsDesign's default) is
@@ -179,7 +185,17 @@ change the interim spending when a trial over-runs its plan. For the
 classical boundary families (\code{"OF"}, \code{"Pocock"}, \code{"WT"}), which gsDesign
 represents as boundary shapes rather than spending functions, the
 repeated p-value is instead found by solving \eqn{b_k(\alpha) = Z_k}
-directly on the design's upper boundary. Sequential p-values
+directly on the upper boundary of the design at level \eqn{\alpha}.
+gsDesign calibrates such a design on the analyses it is given, so these
+families require the complete planned schedule (final information
+fraction 1): given only the analyses conducted so far, gsDesign would
+treat the last of them as the final analysis and spend all of
+\eqn{\alpha} by then, which makes every interim boundary too liberal.
+Spending functions do not have this problem, because their boundaries at
+analyses \eqn{1, \ldots, k} depend only on the spending at
+\eqn{t_1, \ldots, t_k}; they are therefore the choice for interim
+analyses, with \code{\link[gsDesign:sfLDOF]{gsDesign::sfLDOF()}} and \code{\link[gsDesign:sfLDOF]{gsDesign::sfLDPocock()}} as the
+usual substitutes for the classical shapes. Sequential p-values
 (\code{look_back = TRUE}) are the running minimum of the repeated p-values.
 \item \strong{Nominal boundaries.} For \code{test_values} and \code{boundary_table}, the
 boundary at analysis \eqn{k} for an allocated level \eqn{w_j \alpha} is

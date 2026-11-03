@@ -77,5 +77,5 @@
 
 # graphicalMCP (development version)
 
-* Added `graph_test_shortcut_gsDesign()`, which performs the group sequential graphical procedure of `graph_test_shortcut_gsd()` with all group sequential calculations (boundaries and repeated p-values) delegated to the gsDesign package, using gsDesign's spending functions (`sfu`, `sfupar`) and spending time (`usTime`). gsDesign is a suggested package and is only required by this function
+* Added `graph_test_shortcut_gsDesign()`, which performs the group sequential graphical procedure of `graph_test_shortcut_gsd()` with all group sequential calculations (boundaries and repeated p-values) delegated to the gsDesign package, using gsDesign's spending functions (`sfu`, `sfupar`) and spending time (`usTime`). The classical boundary families (`"OF"`, `"Pocock"`, `"WT"`) require the complete planned schedule, because gsDesign calibrates them on the analyses supplied; spending functions serve interim analyses. gsDesign is a suggested package and is only required by this function
 * Added a vignette on group sequential testing with `graph_test_shortcut_gsDesign()`, which reproduces the case studies of the group sequential testing vignette with gsDesign's spending functions and spending time
